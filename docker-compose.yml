@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: tienda
+      POSTGRES_USER: tienda
+      POSTGRES_PASSWORD: tienda
+    ports:
+      - "5432:5432"   # para inspeccionar las tablas con DBeaver/pgAdmin durante la demo
+    volumes:
+      - pg_data:/var/lib/postgresql/data   # los pedidos y usuarios sobreviven a caídas y reinicios
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tienda -d tienda"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"   # panel web: guest / guest
+    environment:
+      # refresca las estadísticas cada 0.5 s (por defecto 5 s) para que el panel se vea en vivo
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit collect_statistics_interval 500"
+    volumes:
+      - rabbit_data:/var/lib/rabbitmq   # la cola sobrevive a reinicios del contenedor
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment: &env
+      RABBITMQ_HOST: rabbitmq
+      DATABASE_URL: postgresql://tienda:tienda@postgres:5432/tienda
+      CONTROL_PATH: /data/control.json
+      PUBLIC_URL: ${PUBLIC_URL:-}   # la define iniciar.ps1 con la IP de la laptop en la red local
+      SECRET_KEY: ${SECRET_KEY:-demo-black-friday-cambia-esta-clave}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@tienda.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin2025!}
+    volumes:
+      - app_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock   # permite los botones de sabotaje reales
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  worker:
+    build: .
+    command: ["python", "-m", "app.worker"]
+    environment: *env
+    volumes:
+      - app_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  pg_data:
+  rabbit_data:
+  app_data:

@@ -1,0 +1,1744 @@
+[
+ {
+  "sku": "GALAXY-S24U",
+  "name": "Samsung Galaxy S24 Ultra 256 GB 12 GB RAM",
+  "category": "Celulares",
+  "price": 3999.0,
+  "list_price": 5999.0,
+  "rating": 4.3,
+  "reviews": 990,
+  "stock": 40,
+  "image": "galaxy-s24u.jpg",
+  "description": "Cámara de 200 MP, S Pen integrado, pantalla de 6.8\" y Galaxy AI.",
+  "related": [
+   "CASE-CLEAR",
+   "MICA-MATE",
+   "CARGADOR-25W",
+   "POWERBANK-10K",
+   "AUDIF-TWS"
+  ]
+ },
+ {
+  "sku": "TV-SAM-55Q",
+  "name": "Smart TV Samsung 55\" QLED 4K",
+  "category": "Televisores",
+  "price": 2299.0,
+  "list_price": 2999.0,
+  "rating": 4.5,
+  "reviews": 2714,
+  "stock": 12,
+  "image": "tv-sam-55q.jpg",
+  "description": "Tecnología Quantum Dot con mil millones de colores.",
+  "related": [
+   "SOUNDBAR-KAL",
+   "RACK-TV",
+   "HDMI-4K",
+   "ANTENA-HD"
+  ]
+ },
+ {
+  "sku": "ACER-NITRO",
+  "name": "Laptop gamer Acer Nitro V 15 RTX 4050 16 GB",
+  "category": "Cómputo",
+  "price": 3899.0,
+  "list_price": 4999.0,
+  "rating": 4.5,
+  "reviews": 391,
+  "stock": 5,
+  "image": "acer-nitro.jpg",
+  "description": "NVIDIA GeForce RTX 4050, pantalla IPS de 144 Hz y 512 GB SSD.",
+  "related": [
+   "MOUSE-GAMER",
+   "TECLADO-RGB",
+   "HEADSET-GAMER",
+   "MON-G3-24"
+  ]
+ },
+ {
+  "sku": "SOUNDBAR-KAL",
+  "name": "Barra de sonido Kalley con subwoofer",
+  "category": "Audio",
+  "price": 449.0,
+  "list_price": 699.0,
+  "rating": 4.6,
+  "reviews": 2830,
+  "stock": 20,
+  "image": "soundbar-kal.jpg",
+  "description": "Barra de sonido 2.1 con subwoofer inalámbrico, Bluetooth y control remoto.",
+  "related": [
+   "TV-SAM-55Q",
+   "HDMI-4K",
+   "RACK-TV"
+  ]
+ },
+ {
+  "sku": "REFRI-SAM300",
+  "name": "Refrigeradora Samsung No Frost 300 L",
+  "category": "Electrohogar",
+  "price": 1699.0,
+  "list_price": 2299.0,
+  "rating": 4.6,
+  "reviews": 293,
+  "stock": 30,
+  "image": "refri-sam300.jpg",
+  "description": "Tecnología No Frost sin escarcha, eficiencia A+ y 300 litros de capacidad. Acabado inox.",
+  "related": [
+   "DISPENSADOR",
+   "CONGELADORA",
+   "MICROONDAS"
+  ]
+ },
+ {
+  "sku": "FREIDORA",
+  "name": "Freidora de aire digital Mertec",
+  "category": "Cocina",
+  "price": 249.0,
+  "list_price": 399.0,
+  "rating": 4.7,
+  "reviews": 1791,
+  "stock": 12,
+  "image": "freidora.jpg",
+  "description": "Cocina sin aceite con panel táctil, 8 programas y canasta antiadherente.",
+  "related": [
+   "MICROONDAS",
+   "LICUADORA",
+   "HORNO-40"
+  ]
+ },
+ {
+  "sku": "ASPIRADORA",
+  "name": "Aspiradora Midea 1400W filtro HEPA",
+  "category": "Hogar",
+  "price": 329.0,
+  "list_price": 499.0,
+  "rating": 4.4,
+  "reviews": 339,
+  "stock": 4,
+  "image": "aspiradora.jpg",
+  "description": "Tecnología Direct Cyclone sin bolsa, filtro HEPA y depósito fácil de limpiar.",
+  "related": [
+   "PURIFICADOR",
+   "PLANCHA",
+   "VENTILADOR"
+  ]
+ },
+ {
+  "sku": "REALME-C31",
+  "name": "Realme C31 64 GB 4 GB RAM",
+  "category": "Celulares",
+  "price": 449.0,
+  "list_price": 649.0,
+  "rating": 4.4,
+  "reviews": 600,
+  "stock": 15,
+  "image": "realme-c31.jpg",
+  "description": "Pantalla de 6.5\", triple cámara y batería de 5000 mAh.",
+  "related": [
+   "CASE-CLEAR",
+   "MICA-MATE",
+   "CARGADOR-25W",
+   "POWERBANK-10K",
+   "AUDIF-TWS"
+  ]
+ },
+ {
+  "sku": "HDMI-4K",
+  "name": "Cable HDMI 4K Ultra HD 2 m",
+  "category": "Televisores",
+  "price": 22.0,
+  "list_price": 39.0,
+  "rating": 4.4,
+  "reviews": 2297,
+  "stock": 15,
+  "image": "hdmi-4k.jpg",
+  "description": "Cable HDMI de alta velocidad con conectores bañados en oro. Soporta 4K y HDR.",
+  "related": [
+   "TV-MI-55",
+   "MON-G3-24",
+   "RACK-TV"
+  ]
+ },
+ {
+  "sku": "HEADSET-GAMER",
+  "name": "Audífonos gamer Micronics Stingray 7.1 RGB",
+  "category": "Cómputo",
+  "price": 169.0,
+  "list_price": 249.0,
+  "rating": 4.7,
+  "reviews": 306,
+  "stock": 3,
+  "image": "headset-gamer.jpg",
+  "description": "Sonido envolvente 7.1 USB, micrófono flexible e iluminación RGB.",
+  "related": [
+   "TECLADO-RGB",
+   "MOUSE-GAMER",
+   "ACER-NITRO"
+  ]
+ },
+ {
+  "sku": "MIC-INAL",
+  "name": "Micrófono inalámbrico con receptor USB",
+  "category": "Audio",
+  "price": 129.0,
+  "list_price": 199.0,
+  "rating": 4.4,
+  "reviews": 657,
+  "stock": 15,
+  "image": "mic-inal.jpg",
+  "description": "Micrófono de mano inalámbrico con receptor USB plug & play. Ideal para karaoke, clases y eventos.",
+  "related": [
+   "TORRE-BLIK",
+   "TRIPODE-PARL",
+   "XBOOM"
+  ]
+ },
+ {
+  "sku": "REFRI-SBS",
+  "name": "Refrigeradora Side by Side 430 L",
+  "category": "Electrohogar",
+  "price": 2899.0,
+  "list_price": 3999.0,
+  "rating": 4.6,
+  "reviews": 243,
+  "stock": 6,
+  "image": "refri-sbs.jpg",
+  "description": "Dos puertas de piso a techo, panel digital y gran capacidad para toda la familia.",
+  "related": [
+   "DISPENSADOR",
+   "PURIFICADOR",
+   "MICROONDAS"
+  ]
+ },
+ {
+  "sku": "COCINA-MIDEA",
+  "name": "Cocina a gas Midea 4 hornillas",
+  "category": "Cocina",
+  "price": 849.0,
+  "list_price": 1199.0,
+  "rating": 4.6,
+  "reviews": 1565,
+  "stock": 4,
+  "image": "cocina-midea.jpg",
+  "description": "Cocina de 4 quemadores con horno, encendido eléctrico y tapa de vidrio templado.",
+  "related": [
+   "HORNO-40",
+   "MICROONDAS",
+   "FREIDORA"
+  ]
+ },
+ {
+  "sku": "PLANCHA",
+  "name": "Plancha a vapor Home Elements",
+  "category": "Hogar",
+  "price": 59.0,
+  "list_price": 99.0,
+  "rating": 4.6,
+  "reviews": 715,
+  "stock": 12,
+  "image": "plancha.jpg",
+  "description": "Vapor continuo, golpe de vapor y suela antiadherente.",
+  "related": [
+   "ASPIRADORA",
+   "LAVADORA-13"
+  ]
+ },
+ {
+  "sku": "MOTO-G23",
+  "name": "Motorola Moto G23 128 GB 4 GB RAM",
+  "category": "Celulares",
+  "price": 579.0,
+  "list_price": 799.0,
+  "rating": 4.8,
+  "reviews": 1180,
+  "stock": 15,
+  "image": "moto-g23.jpg",
+  "description": "Cámara de 50 MP, pantalla de 6.5\" a 90 Hz y Android 13.",
+  "related": [
+   "CASE-CLEAR",
+   "MICA-MATE",
+   "CARGADOR-25W",
+   "POWERBANK-10K",
+   "AUDIF-TWS"
+  ]
+ },
+ {
+  "sku": "TV-SAM-32",
+  "name": "Smart TV Samsung 32\" HD 2025",
+  "category": "Televisores",
+  "price": 749.0,
+  "list_price": 999.0,
+  "rating": 4.9,
+  "reviews": 1871,
+  "stock": 12,
+  "image": "tv-sam-32.jpg",
+  "description": "Smart TV HD con Tizen, apps de streaming y diseño delgado.",
+  "related": [
+   "SOUNDBAR-KAL",
+   "RACK-TV",
+   "HDMI-4K",
+   "ANTENA-HD"
+  ]
+ },
+ {
+  "sku": "LENOVO-I3",
+  "name": "Laptop Lenovo IdeaPad 14\" Core i3 8 GB 256 GB SSD",
+  "category": "Cómputo",
+  "price": 1599.0,
+  "list_price": 2199.0,
+  "rating": 4.5,
+  "reviews": 2638,
+  "stock": 8,
+  "image": "lenovo-i3.jpg",
+  "description": "Ideal para estudios y oficina: Intel Core i3, 8 GB de RAM y SSD de 256 GB.",
+  "related": [
+   "MOCHILA-HP",
+   "MOUSE-VERT",
+   "HUB-USB7",
+   "SSD-1TB",
+   "MON-LG-27"
+  ]
+ },
+ {
+  "sku": "MIC-COND",
+  "name": "Micrófono condensador PreSonus M7",
+  "category": "Audio",
+  "price": 349.0,
+  "list_price": 499.0,
+  "rating": 4.7,
+  "reviews": 336,
+  "stock": 25,
+  "image": "mic-cond.jpg",
+  "description": "Micrófono de condensador de diafragma grande para podcast, streaming y grabación de voz.",
+  "related": [
+   "AUDIF-ANC",
+   "CONV-AUDIO",
+   "HUB-USB7"
+  ]
+ },
+ {
+  "sku": "CONGELADORA",
+  "name": "Congeladora horizontal Briket 200 L",
+  "category": "Electrohogar",
+  "price": 999.0,
+  "list_price": 1399.0,
+  "rating": 4.2,
+  "reviews": 585,
+  "stock": 8,
+  "image": "congeladora.jpg",
+  "description": "Congeladora de tapa superior con control de temperatura y bajo consumo.",
+  "related": [
+   "REFRI-SAM300",
+   "DISPENSADOR"
+  ]
+ },
+ {
+  "sku": "MICROONDAS",
+  "name": "Microondas Consumer 20 L",
+  "category": "Cocina",
+  "price": 229.0,
+  "list_price": 349.0,
+  "rating": 4.6,
+  "reviews": 297,
+  "stock": 30,
+  "image": "microondas.jpg",
+  "description": "5 niveles de potencia, temporizador de 35 minutos y función descongelar.",
+  "related": [
+   "FREIDORA",
+   "HERVIDOR",
+   "HORNO-40"
+  ]
+ },
+ {
+  "sku": "VENTILADOR",
+  "name": "Ventilador de pie Imaco 18\"",
+  "category": "Hogar",
+  "price": 129.0,
+  "list_price": 199.0,
+  "rating": 4.3,
+  "reviews": 2042,
+  "stock": 15,
+  "image": "ventilador.jpg",
+  "description": "5 aspas, 3 velocidades, oscilación y altura regulable.",
+  "related": [
+   "PURIFICADOR",
+   "DISPENSADOR"
+  ]
+ },
+ {
+  "sku": "GALAXY-A16",
+  "name": "Samsung Galaxy A16 5G 128 GB 6 GB RAM",
+  "category": "Celulares",
+  "price": 749.0,
+  "list_price": 999.0,
+  "rating": 4.9,
+  "reviews": 2836,
+  "stock": 15,
+  "image": "galaxy-a16.jpg",
+  "description": "Pantalla de 6.7\", conectividad 5G y funciones con inteligencia artificial.",
+  "related": [
+   "CASE-CLEAR",
+   "MICA-MATE",
+   "CARGADOR-25W",
+   "POWERBANK-10K",
+   "AUDIF-TWS"
+  ]
+ },
+ {
+  "sku": "TV-HIS-40",
+  "name": "Smart TV Hisense 40\" Full HD",
+  "category": "Televisores",
+  "price": 899.0,
+  "list_price": 1199.0,
+  "rating": 4.9,
+  "reviews": 1533,
+  "stock": 4,
+  "image": "tv-his-40.jpg",
+  "description": "Full HD con sintonizador digital y Natural Colour Enhancer.",
+  "related": [
+   "SOUNDBAR-KAL",
+   "RACK-TV",
+   "HDMI-4K",
+   "ANTENA-HD"
+  ]
+ },
+ {
+  "sku": "LENOVO-V15",
+  "name": "Laptop Lenovo V15 15.6\" Core i5 8 GB 512 GB SSD",
+  "category": "Cómputo",
+  "price": 2099.0,
+  "list_price": 2699.0,
+  "rating": 4.9,
+  "reviews": 2506,
+  "stock": 12,
+  "image": "lenovo-v15.jpg",
+  "description": "Pantalla Full HD de 15.6\", Intel Core i5 y SSD de 512 GB.",
+  "related": [
+   "MOCHILA-HP",
+   "MOUSE-VERT",
+   "HUB-USB7",
+   "SSD-1TB",
+   "MON-LG-27"
+  ]
+ },
+ {
+  "sku": "TOCADISCOS",
+  "name": "Tocadiscos con Bluetooth y tapa acrílica",
+  "category": "Audio",
+  "price": 649.0,
+  "list_price": 899.0,
+  "rating": 4.3,
+  "reviews": 2427,
+  "stock": 3,
+  "image": "tocadiscos.jpg",
+  "description": "Reproduce tus vinilos en 33 y 45 RPM y transmite el sonido por Bluetooth a tus parlantes.",
+  "related": [
+   "CONV-AUDIO",
+   "EQUIPO-PANA",
+   "PARL-STEREN"
+  ]
+ },
+ {
+  "sku": "LAVADORA-13",
+  "name": "Lavadora carga superior 13 kg",
+  "category": "Electrohogar",
+  "price": 1299.0,
+  "list_price": 1799.0,
+  "rating": 4.5,
+  "reviews": 2254,
+  "stock": 4,
+  "image": "lavadora-13.jpg",
+  "description": "Lavado inteligente con un solo toque, pulsador de chorro de agua y limpieza automática. Eficiencia A.",
+  "related": [
+   "SECADORA-LG",
+   "PLANCHA",
+   "ASPIRADORA"
+  ]
+ },
+ {
+  "sku": "HORNO-40",
+  "name": "Horno eléctrico 40 L",
+  "category": "Cocina",
+  "price": 269.0,
+  "list_price": 399.0,
+  "rating": 4.2,
+  "reviews": 883,
+  "stock": 20,
+  "image": "horno-40.jpg",
+  "description": "Horno con temporizador, control de temperatura y bandeja incluida. Ideal para pizzas y postres.",
+  "related": [
+   "FREIDORA",
+   "BATIDORA",
+   "MICROONDAS"
+  ]
+ },
+ {
+  "sku": "AIRE-12K",
+  "name": "Aire acondicionado split 12000 BTU",
+  "category": "Hogar",
+  "price": 1399.0,
+  "list_price": 1899.0,
+  "rating": 4.2,
+  "reviews": 2777,
+  "stock": 4,
+  "image": "aire-12k.jpg",
+  "description": "Frío rápido, función deshumidificador, modo sleep y control remoto.",
+  "related": [
+   "PURIFICADOR",
+   "VENTILADOR"
+  ]
+ },
+ {
+  "sku": "GALAXY-A17",
+  "name": "Samsung Galaxy A17 256 GB 8 GB RAM",
+  "category": "Celulares",
+  "price": 899.0,
+  "list_price": 1199.0,
+  "rating": 4.9,
+  "reviews": 658,
+  "stock": 4,
+  "image": "galaxy-a17.jpg",
+  "description": "Pantalla de 6.7\", 256 GB de almacenamiento, Android 15 y batería de 5000 mAh.",
+  "related": [
+   "CASE-CLEAR",
+   "MICA-MATE",
+   "CARGADOR-25W",
+   "POWERBANK-10K",
+   "AUDIF-TWS"
+  ]
+ },
+ {
+  "sku": "TV-MI-43",
+  "name": "Smart TV Xiaomi P1 43\" 4K UHD",
+  "category": "Televisores",
+  "price": 1199.0,
+  "list_price": 1599.0,
+  "rating": 4.4,
+  "reviews": 969,
+  "stock": 20,
+  "image": "tv-mi-43.jpg",
+  "description": "4K UHD con Android TV, Google Assistant y Chromecast integrado.",
+  "related": [
+   "SOUNDBAR-KAL",
+   "RACK-TV",
+   "HDMI-4K",
+   "ANTENA-HD"
+  ]
+ },
+ {
+  "sku": "HP15-R5",
+  "name": "Laptop HP 15\" Ryzen 5 16 GB 512 GB SSD",
+  "category": "Cómputo",
+  "price": 2299.0,
+  "list_price": 2899.0,
+  "rating": 4.5,
+  "reviews": 512,
+  "stock": 20,
+  "image": "hp15-r5.jpg",
+  "description": "AMD Ryzen 5 serie 7000, 16 GB de RAM y gráficos Radeon.",
+  "related": [
+   "MOCHILA-HP",
+   "MOUSE-VERT",
+   "HUB-USB7",
+   "SSD-1TB",
+   "MON-LG-27"
+  ]
+ },
+ {
+  "sku": "RADIO-AMFM",
+  "name": "Radio portátil AM/FM Suono",
+  "category": "Audio",
+  "price": 59.0,
+  "list_price": 89.0,
+  "rating": 4.8,
+  "reviews": 919,
+  "stock": 3,
+  "image": "radio-amfm.jpg",
+  "description": "Radio clásica AM/FM con antena telescópica, correa y gran parlante frontal.",
+  "related": [
+   "PARL-STEREN",
+   "AUDIF-CABLE"
+  ]
+ },
+ {
+  "sku": "LAVASECA",
+  "name": "Lavaseca Midea carga frontal 10/7 kg",
+  "category": "Electrohogar",
+  "price": 2299.0,
+  "list_price": 2999.0,
+  "rating": 4.6,
+  "reviews": 2334,
+  "stock": 40,
+  "image": "lavaseca.jpg",
+  "description": "Lava y seca en un solo equipo. Motor inverter silencioso y múltiples programas.",
+  "related": [
+   "PLANCHA",
+   "ASPIRADORA"
+  ]
+ },
+ {
+  "sku": "LICUADORA",
+  "name": "Licuadora Peabody 1.5 L",
+  "category": "Cocina",
+  "price": 129.0,
+  "list_price": 199.0,
+  "rating": 4.5,
+  "reviews": 1896,
+  "stock": 12,
+  "image": "licuadora.jpg",
+  "description": "5 velocidades más función pulso y cuchillas de acero inoxidable.",
+  "related": [
+   "BATIDORA",
+   "FREIDORA",
+   "CAFETERA"
+  ]
+ },
+ {
+  "sku": "PURIFICADOR",
+  "name": "Purificador de aire Gadnic HEPA",
+  "category": "Hogar",
+  "price": 329.0,
+  "list_price": 499.0,
+  "rating": 4.7,
+  "reviews": 2387,
+  "stock": 12,
+  "image": "purificador.jpg",
+  "description": "Filtro HEPA verdadero que elimina el 99.9% de impurezas. 4 velocidades y temporizador.",
+  "related": [
+   "ASPIRADORA",
+   "VENTILADOR",
+   "AIRE-12K"
+  ]
+ },
+ {
+  "sku": "GALAXY-ZFLIP7",
+  "name": "Samsung Galaxy Z Flip7 256 GB 12 GB RAM",
+  "category": "Celulares",
+  "price": 3799.0,
+  "list_price": 4999.0,
+  "rating": 4.4,
+  "reviews": 2026,
+  "stock": 30,
+  "image": "galaxy-zflip7.jpg",
+  "description": "Plegable, delgado y liviano, con FlexWindow para usarlo sin abrirlo.",
+  "related": [
+   "CASE-CLEAR",
+   "MICA-MATE",
+   "CARGADOR-25W",
+   "POWERBANK-10K",
+   "AUDIF-TWS"
+  ]
+ },
+ {
+  "sku": "TV-LG-50",
+  "name": "Smart TV LG 50\" 4K UHD ThinQ AI",
+  "category": "Televisores",
+  "price": 1599.0,
+  "list_price": 2099.0,
+  "rating": 4.3,
+  "reviews": 877,
+  "stock": 20,
+  "image": "tv-lg-50.jpg",
+  "description": "4K UHD con webOS, inteligencia artificial ThinQ y HDR.",
+  "related": [
+   "SOUNDBAR-KAL",
+   "RACK-TV",
+   "HDMI-4K",
+   "ANTENA-HD"
+  ]
+ },
+ {
+  "sku": "HP-OLED-I7",
+  "name": "Laptop HP 14\" OLED 2.8K Core i7 16 GB 1 TB RTX",
+  "category": "Cómputo",
+  "price": 4699.0,
+  "list_price": 5999.0,
+  "rating": 4.9,
+  "reviews": 1948,
+  "stock": 20,
+  "image": "hp-oled-i7.jpg",
+  "description": "Pantalla OLED 2.8K, Intel Core i7 de 10 núcleos y gráficos NVIDIA RTX.",
+  "related": [
+   "MOUSE-GAMER",
+   "TECLADO-RGB",
+   "HEADSET-GAMER",
+   "MON-G3-24"
+  ]
+ },
+ {
+  "sku": "AUDIF-CABLE",
+  "name": "Audífonos con cable y micrófono",
+  "category": "Audio",
+  "price": 19.0,
+  "list_price": 39.0,
+  "rating": 4.3,
+  "reviews": 1752,
+  "stock": 4,
+  "image": "audif-cable.jpg",
+  "description": "Audífonos in-ear con conector 3.5 mm, control de volumen y micrófono para llamadas.",
+  "related": [
+   "GALAXY-A16",
+   "CASE-CLEAR"
+  ]
+ },
+ {
+  "sku": "SECADORA-LG",
+  "name": "Secadora LG carga frontal",
+  "category": "Electrohogar",
+  "price": 2599.0,
+  "list_price": 3499.0,
+  "rating": 4.3,
+  "reviews": 2422,
+  "stock": 30,
+  "image": "secadora-lg.jpg",
+  "description": "Gran capacidad, sensor de humedad y operación silenciosa.",
+  "related": [
+   "LAVADORA-13",
+   "PLANCHA"
+  ]
+ },
+ {
+  "sku": "BATIDORA",
+  "name": "Batidora de mano RCA 5 velocidades",
+  "category": "Cocina",
+  "price": 59.0,
+  "list_price": 99.0,
+  "rating": 4.4,
+  "reviews": 776,
+  "stock": 6,
+  "image": "batidora.jpg",
+  "description": "Liviana y potente, con varillas de acero inoxidable desmontables.",
+  "related": [
+   "LICUADORA",
+   "HORNO-40"
+  ]
+ },
+ {
+  "sku": "DISPENSADOR",
+  "name": "Dispensador de agua fría y caliente Atvio",
+  "category": "Hogar",
+  "price": 479.0,
+  "list_price": 699.0,
+  "rating": 4.4,
+  "reviews": 1474,
+  "stock": 30,
+  "image": "dispensador.jpg",
+  "description": "Agua fría y caliente al instante, con gabinete de almacenamiento.",
+  "related": [
+   "REFRI-SAM300",
+   "HERVIDOR"
+  ]
+ },
+ {
+  "sku": "GALAXY-A25",
+  "name": "Samsung Galaxy A25 5G 128 GB",
+  "category": "Celulares",
+  "price": 799.0,
+  "list_price": 1099.0,
+  "rating": 4.3,
+  "reviews": 1194,
+  "stock": 3,
+  "image": "galaxy-a25.jpg",
+  "description": "Pantalla Super AMOLED, cámara de 50 MP y conectividad 5G.",
+  "related": [
+   "CASE-CLEAR",
+   "MICA-MATE",
+   "CARGADOR-25W",
+   "POWERBANK-10K",
+   "AUDIF-TWS"
+  ]
+ },
+ {
+  "sku": "TV-MI-55",
+  "name": "Smart TV Xiaomi P1 55\" 4K UHD",
+  "category": "Televisores",
+  "price": 1699.0,
+  "list_price": 2199.0,
+  "rating": 4.6,
+  "reviews": 2539,
+  "stock": 3,
+  "image": "tv-mi-55.jpg",
+  "description": "Pantalla 4K de 55\" con Android TV y Dolby Audio.",
+  "related": [
+   "SOUNDBAR-KAL",
+   "RACK-TV",
+   "HDMI-4K",
+   "ANTENA-HD"
+  ]
+ },
+ {
+  "sku": "HP-OMEN",
+  "name": "Laptop gamer HP Omen 16 Core i7 RTX 4060 1 TB",
+  "category": "Cómputo",
+  "price": 5899.0,
+  "list_price": 7499.0,
+  "rating": 4.3,
+  "reviews": 1443,
+  "stock": 8,
+  "image": "hp-omen.jpg",
+  "description": "Intel Core i7, RTX 4060, 16 GB de RAM y 1 TB SSD para jugar en ultra.",
+  "related": [
+   "MOUSE-GAMER",
+   "TECLADO-RGB",
+   "HEADSET-GAMER",
+   "MON-G3-24"
+  ]
+ },
+ {
+  "sku": "TRIPODE-PARL",
+  "name": "Trípode soporte para parlante",
+  "category": "Audio",
+  "price": 99.0,
+  "list_price": 149.0,
+  "rating": 4.2,
+  "reviews": 2356,
+  "stock": 4,
+  "image": "tripode-parl.jpg",
+  "description": "Soporte de aluminio con altura regulable para parlantes de hasta 50 kg.",
+  "related": [
+   "TORRE-BLIK",
+   "MIC-INAL",
+   "XBOOM"
+  ]
+ },
+ {
+  "sku": "CAFETERA",
+  "name": "Cafetera de goteo 12 tazas",
+  "category": "Cocina",
+  "price": 119.0,
+  "list_price": 179.0,
+  "rating": 4.3,
+  "reviews": 1269,
+  "stock": 25,
+  "image": "cafetera.jpg",
+  "description": "Jarra de vidrio de 12 tazas, filtro permanente y placa que mantiene el café caliente.",
+  "related": [
+   "HERVIDOR",
+   "LICUADORA",
+   "MICROONDAS"
+  ]
+ },
+ {
+  "sku": "GALAXY-A57",
+  "name": "Samsung Galaxy A57 5G 256 GB 8 GB RAM",
+  "category": "Celulares",
+  "price": 1599.0,
+  "list_price": 1999.0,
+  "rating": 4.3,
+  "reviews": 2229,
+  "stock": 12,
+  "image": "galaxy-a57.jpg",
+  "description": "Pantalla AMOLED de 6.7\" a 120 Hz, procesador octa-core y batería de 5000 mAh.",
+  "related": [
+   "CASE-CLEAR",
+   "MICA-MATE",
+   "CARGADOR-25W",
+   "POWERBANK-10K",
+   "AUDIF-TWS"
+  ]
+ },
+ {
+  "sku": "TV-MG-58",
+  "name": "Smart TV Master-G 58\" 4K Google TV",
+  "category": "Televisores",
+  "price": 1699.0,
+  "list_price": 2299.0,
+  "rating": 4.8,
+  "reviews": 387,
+  "stock": 40,
+  "image": "tv-mg-58.jpg",
+  "description": "Pantalla sin bordes de 58\", Google TV y control por voz.",
+  "related": [
+   "SOUNDBAR-KAL",
+   "RACK-TV",
+   "HDMI-4K",
+   "ANTENA-HD"
+  ]
+ },
+ {
+  "sku": "DELL-2EN1",
+  "name": "Laptop Dell Inspiron 2 en 1 13\" táctil",
+  "category": "Cómputo",
+  "price": 2199.0,
+  "list_price": 2999.0,
+  "rating": 4.5,
+  "reviews": 2874,
+  "stock": 5,
+  "image": "dell-2en1.jpg",
+  "description": "Pantalla táctil que gira 360°: úsala como laptop o como tablet.",
+  "related": [
+   "MOCHILA-HP",
+   "MOUSE-VERT",
+   "HUB-USB7",
+   "SSD-1TB",
+   "MON-LG-27"
+  ]
+ },
+ {
+  "sku": "CONV-AUDIO",
+  "name": "Convertidor de audio digital a analógico",
+  "category": "Audio",
+  "price": 49.0,
+  "list_price": 79.0,
+  "rating": 4.9,
+  "reviews": 2623,
+  "stock": 40,
+  "image": "conv-audio.jpg",
+  "description": "Convierte la salida óptica o coaxial de tu TV a RCA o 3.5 mm para equipos de sonido.",
+  "related": [
+   "SOUNDBAR-KAL",
+   "HDMI-4K",
+   "TOCADISCOS"
+  ]
+ },
+ {
+  "sku": "HERVIDOR",
+  "name": "Hervidor eléctrico Black+Decker 1.7 L",
+  "category": "Cocina",
+  "price": 99.0,
+  "list_price": 149.0,
+  "rating": 4.5,
+  "reviews": 1446,
+  "stock": 20,
+  "image": "hervidor.jpg",
+  "description": "Hierve agua en minutos, con indicador de nivel iluminado y apagado automático.",
+  "related": [
+   "CAFETERA",
+   "MICROONDAS"
+  ]
+ },
+ {
+  "sku": "INFINIX-GT",
+  "name": "Infinix GT Gamer 256 GB 12 GB RAM",
+  "category": "Celulares",
+  "price": 1099.0,
+  "list_price": 1499.0,
+  "rating": 4.6,
+  "reviews": 1345,
+  "stock": 5,
+  "image": "infinix-gt.jpg",
+  "description": "Diseño gamer con luces, cámara de 108 MP y gran rendimiento para juegos.",
+  "related": [
+   "CASE-CLEAR",
+   "MICA-MATE",
+   "CARGADOR-25W",
+   "POWERBANK-10K",
+   "AUDIF-TWS"
+  ]
+ },
+ {
+  "sku": "TV-LG-65-SB",
+  "name": "Smart TV LG 65\" 4K + barra de sonido",
+  "category": "Televisores",
+  "price": 2999.0,
+  "list_price": 3999.0,
+  "rating": 4.3,
+  "reviews": 1631,
+  "stock": 6,
+  "image": "tv-lg-65-sb.jpg",
+  "description": "Pack: TV LG UHD 65\" con webOS y barra de sonido incluida.",
+  "related": [
+   "SOUNDBAR-51",
+   "HOMETHEATER",
+   "RACK-TV",
+   "HDMI-4K"
+  ]
+ },
+ {
+  "sku": "ASUS-ZEN14",
+  "name": "Laptop ASUS Zenbook 14 Ryzen 7 16 GB 512 GB",
+  "category": "Cómputo",
+  "price": 3099.0,
+  "list_price": 3999.0,
+  "rating": 4.6,
+  "reviews": 880,
+  "stock": 25,
+  "image": "asus-zen14.jpg",
+  "description": "Ultradelgada, AMD Ryzen 7 y pantalla Full HD. Incluye funda.",
+  "related": [
+   "MOCHILA-HP",
+   "MOUSE-VERT",
+   "HUB-USB7",
+   "SSD-1TB",
+   "MON-LG-27"
+  ]
+ },
+ {
+  "sku": "AUDIF-TWS",
+  "name": "Audífonos inalámbricos TWS STF",
+  "category": "Audio",
+  "price": 119.0,
+  "list_price": 199.0,
+  "rating": 4.5,
+  "reviews": 1908,
+  "stock": 4,
+  "image": "audif-tws.jpg",
+  "description": "True wireless con estuche de carga, controles táctiles y Bluetooth 5.3.",
+  "related": [
+   "GALAXY-A25",
+   "POWERBANK-10K",
+   "CASE-CLEAR"
+  ]
+ },
+ {
+  "sku": "UNNEC-MINI",
+  "name": "Smartphone compacto Unnec",
+  "category": "Celulares",
+  "price": 199.0,
+  "list_price": 299.0,
+  "rating": 4.7,
+  "reviews": 2151,
+  "stock": 30,
+  "image": "unnec-mini.jpg",
+  "description": "Pequeño y práctico, ideal como primer celular o equipo de respaldo.",
+  "related": [
+   "CASE-CLEAR",
+   "MICA-MATE",
+   "CARGADOR-25W",
+   "POWERBANK-10K",
+   "AUDIF-TWS"
+  ]
+ },
+ {
+  "sku": "TV-SAM-65Q",
+  "name": "Smart TV Samsung 65\" QLED 2025",
+  "category": "Televisores",
+  "price": 3399.0,
+  "list_price": 4499.0,
+  "rating": 4.5,
+  "reviews": 771,
+  "stock": 15,
+  "image": "tv-sam-65q.jpg",
+  "description": "QLED 4K 2025 con 7 años de actualizaciones y garantía de 2 años.",
+  "related": [
+   "SOUNDBAR-51",
+   "HOMETHEATER",
+   "RACK-TV",
+   "HDMI-4K"
+  ]
+ },
+ {
+  "sku": "HP-CHROME",
+  "name": "HP Chromebook 14\"",
+  "category": "Cómputo",
+  "price": 899.0,
+  "list_price": 1299.0,
+  "rating": 4.5,
+  "reviews": 2866,
+  "stock": 25,
+  "image": "hp-chrome.jpg",
+  "description": "Rápida, segura y con batería para todo el día. Ideal para estudiantes.",
+  "related": [
+   "MOCHILA-HP",
+   "MOUSE-VERT",
+   "HUB-USB7",
+   "SSD-1TB",
+   "MON-LG-27"
+  ]
+ },
+ {
+  "sku": "AUDIF-ANC",
+  "name": "Audífonos Noblex con cancelación activa de ruido",
+  "category": "Audio",
+  "price": 229.0,
+  "list_price": 349.0,
+  "rating": 4.8,
+  "reviews": 1145,
+  "stock": 20,
+  "image": "audif-anc.jpg",
+  "description": "Cancelación activa de ruido, 16 horas de batería y almohadillas super soft.",
+  "related": [
+   "POWERBANK-10K",
+   "GALAXY-A57",
+   "AUDIF-TWS"
+  ]
+ },
+ {
+  "sku": "XIAOMI-128",
+  "name": "Xiaomi Redmi 128 GB 4 GB RAM",
+  "category": "Celulares",
+  "price": 499.0,
+  "list_price": 699.0,
+  "rating": 4.7,
+  "reviews": 3070,
+  "stock": 3,
+  "image": "xiaomi-128.jpg",
+  "description": "Cámara dual de 32 MP, diseño elegante color dorado y batería de larga duración.",
+  "related": [
+   "CASE-CLEAR",
+   "MICA-MATE",
+   "CARGADOR-25W",
+   "POWERBANK-10K",
+   "AUDIF-TWS"
+  ]
+ },
+ {
+  "sku": "TV-TCL-65",
+  "name": "Smart TV TCL 65\" QD-MiniLED",
+  "category": "Televisores",
+  "price": 3699.0,
+  "list_price": 4999.0,
+  "rating": 4.8,
+  "reviews": 1401,
+  "stock": 4,
+  "image": "tv-tcl-65.jpg",
+  "description": "QD-MiniLED con brillo extremo y contraste profundo.",
+  "related": [
+   "SOUNDBAR-51",
+   "HOMETHEATER",
+   "RACK-TV",
+   "HDMI-4K"
+  ]
+ },
+ {
+  "sku": "HP15-I5-RM",
+  "name": "Laptop HP 15 Core i5 8 GB 512 GB Edición Real Madrid",
+  "category": "Cómputo",
+  "price": 2199.0,
+  "list_price": 2799.0,
+  "rating": 4.8,
+  "reviews": 3145,
+  "stock": 25,
+  "image": "hp15-i5-rm.jpg",
+  "description": "Edición especial Real Madrid con Intel Core i5 y pantalla Full HD.",
+  "related": [
+   "MOCHILA-HP",
+   "MOUSE-VERT",
+   "HUB-USB7",
+   "SSD-1TB",
+   "MON-LG-27"
+  ]
+ },
+ {
+  "sku": "AUDIF-SPORT",
+  "name": "Audífonos deportivos Bluetooth Linkon",
+  "category": "Audio",
+  "price": 59.0,
+  "list_price": 99.0,
+  "rating": 4.7,
+  "reviews": 1308,
+  "stock": 40,
+  "image": "audif-sport.jpg",
+  "description": "Resisten salpicaduras y sudor, 8 horas de música y micrófono para llamadas.",
+  "related": [
+   "POWERBANK-10K",
+   "PARL-STEREN"
+  ]
+ },
+ {
+  "sku": "HONOR-M7P",
+  "name": "Honor Magic7 Pro 512 GB 12 GB RAM",
+  "category": "Celulares",
+  "price": 3699.0,
+  "list_price": 4999.0,
+  "rating": 4.5,
+  "reviews": 2827,
+  "stock": 25,
+  "image": "honor-m7p.jpg",
+  "description": "Triple cámara profesional, pantalla de 6.7\" y 512 GB de almacenamiento.",
+  "related": [
+   "CASE-CLEAR",
+   "MICA-MATE",
+   "CARGADOR-25W",
+   "POWERBANK-10K",
+   "AUDIF-TWS"
+  ]
+ },
+ {
+  "sku": "TV-SAM-70",
+  "name": "Smart TV Samsung 70\" 4K UHD",
+  "category": "Televisores",
+  "price": 3299.0,
+  "list_price": 4299.0,
+  "rating": 4.8,
+  "reviews": 2996,
+  "stock": 15,
+  "image": "tv-sam-70.jpg",
+  "description": "Pantalla gigante de 70\" con procesador Crystal 4K.",
+  "related": [
+   "SOUNDBAR-51",
+   "HOMETHEATER",
+   "RACK-TV",
+   "HDMI-4K"
+  ]
+ },
+ {
+  "sku": "MON-G3-24",
+  "name": "Monitor gamer Samsung Odyssey G3 24\" 180 Hz",
+  "category": "Cómputo",
+  "price": 599.0,
+  "list_price": 799.0,
+  "rating": 4.4,
+  "reviews": 2673,
+  "stock": 4,
+  "image": "mon-g3-24.jpg",
+  "description": "Full HD a 180 Hz, 1 ms y sRGB 95% para juegos fluidos.",
+  "related": [
+   "HDMI-4K",
+   "TECLADO-RGB",
+   "MOUSE-GAMER"
+  ]
+ },
+ {
+  "sku": "SOUNDBAR-51",
+  "name": "Barra de sonido 5.1 Dolby Audio 260W",
+  "category": "Audio",
+  "price": 899.0,
+  "list_price": 1299.0,
+  "rating": 4.4,
+  "reviews": 1620,
+  "stock": 40,
+  "image": "soundbar-51.jpg",
+  "description": "Sistema 5.1 con subwoofer de 6.5\", satélites y Dolby Audio. HDMI, óptico y Bluetooth 5.3.",
+  "related": [
+   "TV-SAM-65Q",
+   "HDMI-4K",
+   "RACK-TV"
+  ]
+ },
+ {
+  "sku": "LENOVO-M8",
+  "name": "Tablet Lenovo Tab M8 8\" 32 GB",
+  "category": "Celulares",
+  "price": 349.0,
+  "list_price": 499.0,
+  "rating": 4.5,
+  "reviews": 1674,
+  "stock": 15,
+  "image": "lenovo-m8.jpg",
+  "description": "Tablet compacta de 8\" ideal para niños, lectura y videos.",
+  "related": [
+   "CARGADOR-25W",
+   "AUDIF-TWS",
+   "POWERBANK-10K",
+   "CABLE-USBC-60W"
+  ]
+ },
+ {
+  "sku": "TV-TCL-75",
+  "name": "Smart TV TCL 75\" 4K HDR",
+  "category": "Televisores",
+  "price": 3799.0,
+  "list_price": 4999.0,
+  "rating": 4.5,
+  "reviews": 3084,
+  "stock": 4,
+  "image": "tv-tcl-75.jpg",
+  "description": "Dolby Vision y Atmos, HDR10+ y control por voz manos libres.",
+  "related": [
+   "SOUNDBAR-51",
+   "HOMETHEATER",
+   "RACK-TV",
+   "HDMI-4K"
+  ]
+ },
+ {
+  "sku": "MON-MSI-27",
+  "name": "Monitor MSI 27\" IPS 144 Hz",
+  "category": "Cómputo",
+  "price": 649.0,
+  "list_price": 899.0,
+  "rating": 4.7,
+  "reviews": 1109,
+  "stock": 25,
+  "image": "mon-msi-27.jpg",
+  "description": "Panel IPS Full HD a 144 Hz con protección ocular y parlantes.",
+  "related": [
+   "HDMI-4K",
+   "TECLADO-RGB",
+   "MOUSE-VERT"
+  ]
+ },
+ {
+  "sku": "HOMETHEATER",
+  "name": "Home theater LG 5.1 1000W",
+  "category": "Audio",
+  "price": 1399.0,
+  "list_price": 1999.0,
+  "rating": 4.4,
+  "reviews": 1931,
+  "stock": 12,
+  "image": "hometheater.jpg",
+  "description": "Sonido envolvente 5.1 de 1000W con torres y subwoofer para una experiencia de cine.",
+  "related": [
+   "TV-SAM-75Q",
+   "HDMI-4K"
+  ]
+ },
+ {
+  "sku": "TABLET-10",
+  "name": "Tablet 10.1\" 64 GB + funda y USB de regalo",
+  "category": "Celulares",
+  "price": 399.0,
+  "list_price": 599.0,
+  "rating": 4.3,
+  "reviews": 2638,
+  "stock": 15,
+  "image": "tablet-10.jpg",
+  "description": "Pantalla IPS de 10.1\", 4 GB de RAM. Incluye funda y memoria USB de regalo.",
+  "related": [
+   "CARGADOR-25W",
+   "AUDIF-TWS",
+   "POWERBANK-10K",
+   "CABLE-USBC-60W"
+  ]
+ },
+ {
+  "sku": "TV-SAM-75Q",
+  "name": "Smart TV Samsung 75\" QLED",
+  "category": "Televisores",
+  "price": 4999.0,
+  "list_price": 6499.0,
+  "rating": 4.7,
+  "reviews": 736,
+  "stock": 5,
+  "image": "tv-sam-75q.jpg",
+  "description": "QLED de 75\" con colores vibrantes y Smart Hub.",
+  "related": [
+   "SOUNDBAR-51",
+   "HOMETHEATER",
+   "RACK-TV",
+   "HDMI-4K"
+  ]
+ },
+ {
+  "sku": "MON-CURVO-32",
+  "name": "Monitor curvo 32\" 4K UHD con parlantes",
+  "category": "Cómputo",
+  "price": 1199.0,
+  "list_price": 1599.0,
+  "rating": 4.5,
+  "reviews": 724,
+  "stock": 12,
+  "image": "mon-curvo-32.jpg",
+  "description": "Curvatura 1500R, resolución 4K y parlantes integrados.",
+  "related": [
+   "HDMI-4K",
+   "TECLADO-RGB",
+   "MOUSE-GAMER"
+  ]
+ },
+ {
+  "sku": "PARL-STEREN",
+  "name": "Parlante Bluetooth Steren resistente al agua",
+  "category": "Audio",
+  "price": 129.0,
+  "list_price": 199.0,
+  "rating": 4.3,
+  "reviews": 519,
+  "stock": 20,
+  "image": "parl-steren.jpg",
+  "description": "Compacto, resistente al agua y con luz LED. Hasta 10 horas de reproducción.",
+  "related": [
+   "POWERBANK-10K",
+   "AUDIF-SPORT"
+  ]
+ },
+ {
+  "sku": "LENOVO-M11",
+  "name": "Tablet Lenovo Tab M11 128 GB 8 GB RAM",
+  "category": "Celulares",
+  "price": 849.0,
+  "list_price": 1099.0,
+  "rating": 4.2,
+  "reviews": 315,
+  "stock": 6,
+  "image": "lenovo-m11.jpg",
+  "description": "Pantalla de 11\" a 90 Hz, 8 GB de RAM y sonido Dolby Atmos.",
+  "related": [
+   "CARGADOR-25W",
+   "AUDIF-TWS",
+   "POWERBANK-10K",
+   "CABLE-USBC-60W"
+  ]
+ },
+ {
+  "sku": "TV-SAM-85Q",
+  "name": "Smart TV Samsung 85\" QLED",
+  "category": "Televisores",
+  "price": 7499.0,
+  "list_price": 9999.0,
+  "rating": 4.2,
+  "reviews": 2459,
+  "stock": 20,
+  "image": "tv-sam-85q.jpg",
+  "description": "La experiencia de cine definitiva: 85\" QLED 4K.",
+  "related": [
+   "SOUNDBAR-51",
+   "HOMETHEATER",
+   "RACK-TV",
+   "HDMI-4K"
+  ]
+ },
+ {
+  "sku": "TECLADO-RGB",
+  "name": "Teclado mecánico gamer 60% RGB",
+  "category": "Cómputo",
+  "price": 279.0,
+  "list_price": 399.0,
+  "rating": 4.7,
+  "reviews": 2221,
+  "stock": 25,
+  "image": "teclado-rgb.jpg",
+  "description": "Formato compacto 60%, switches mecánicos e iluminación RGB por tecla.",
+  "related": [
+   "MOUSE-GAMER",
+   "HEADSET-GAMER",
+   "MON-G3-24"
+  ]
+ },
+ {
+  "sku": "PARL-ROYQ",
+  "name": "Parlante Bluetooth Royqueen IPX7 con luces",
+  "category": "Audio",
+  "price": 189.0,
+  "list_price": 299.0,
+  "rating": 4.2,
+  "reviews": 3186,
+  "stock": 8,
+  "image": "parl-royq.jpg",
+  "description": "Sumergible IPX7, bajos potentes y anillos de luz RGB.",
+  "related": [
+   "POWERBANK-10K",
+   "MIC-INAL"
+  ]
+ },
+ {
+  "sku": "CARGADOR-25W",
+  "name": "Cargador Samsung 25W USB-C + cable",
+  "category": "Celulares",
+  "price": 69.0,
+  "list_price": 119.0,
+  "rating": 4.5,
+  "reviews": 490,
+  "stock": 12,
+  "image": "cargador-25w.jpg",
+  "description": "Carga súper rápida de 25W. Incluye cable USB-C a USB-C.",
+  "related": [
+   "GALAXY-A25",
+   "POWERBANK-10K",
+   "CASE-CLEAR"
+  ]
+ },
+ {
+  "sku": "TV-KEN-24",
+  "name": "TV Kenwood 24\" HD",
+  "category": "Televisores",
+  "price": 399.0,
+  "list_price": 549.0,
+  "rating": 4.8,
+  "reviews": 638,
+  "stock": 30,
+  "image": "tv-ken-24.jpg",
+  "description": "Compacto y práctico, ideal para dormitorio o cocina. HDMI y sonido estéreo.",
+  "related": [
+   "SOUNDBAR-KAL",
+   "RACK-TV",
+   "HDMI-4K",
+   "ANTENA-HD"
+  ]
+ },
+ {
+  "sku": "MOUSE-VERT",
+  "name": "Mouse vertical ergonómico inalámbrico",
+  "category": "Cómputo",
+  "price": 55.0,
+  "list_price": 89.0,
+  "rating": 4.7,
+  "reviews": 1390,
+  "stock": 40,
+  "image": "mouse-vert.jpg",
+  "description": "Diseño vertical que reduce la tensión de la muñeca.",
+  "related": [
+   "HUB-USB7",
+   "MOCHILA-HP",
+   "TECLADO-RGB"
+  ]
+ },
+ {
+  "sku": "TORRE-BLIK",
+  "name": "Torre de sonido Blik con luces y micrófono",
+  "category": "Audio",
+  "price": 999.0,
+  "list_price": 1499.0,
+  "rating": 4.3,
+  "reviews": 1054,
+  "stock": 15,
+  "image": "torre-blik.jpg",
+  "description": "Torre para fiestas con iluminación RGB, ruedas y micrófono inalámbrico incluido.",
+  "related": [
+   "MIC-INAL",
+   "TRIPODE-PARL",
+   "PARL-ROYQ"
+  ]
+ },
+ {
+  "sku": "CABLE-USBC-60W",
+  "name": "Cable USB-C a USB-C 60W 1 m",
+  "category": "Celulares",
+  "price": 59.0,
+  "list_price": 99.0,
+  "rating": 4.6,
+  "reviews": 459,
+  "stock": 3,
+  "image": "cable-usbc-60w.jpg",
+  "description": "Carga rápida de hasta 60W y transferencia de datos.",
+  "related": [
+   "CARGADOR-25W",
+   "POWERBANK-10K"
+  ]
+ },
+ {
+  "sku": "TV-GTV-32",
+  "name": "Smart TV 32\" HD Google TV",
+  "category": "Televisores",
+  "price": 599.0,
+  "list_price": 799.0,
+  "rating": 4.8,
+  "reviews": 1982,
+  "stock": 40,
+  "image": "tv-gtv-32.jpg",
+  "description": "Google TV con Netflix, YouTube, Prime Video y más.",
+  "related": [
+   "SOUNDBAR-KAL",
+   "RACK-TV",
+   "HDMI-4K",
+   "ANTENA-HD"
+  ]
+ },
+ {
+  "sku": "MOUSE-GAMER",
+  "name": "Mouse gamer RGB 7200 DPI",
+  "category": "Cómputo",
+  "price": 79.0,
+  "list_price": 129.0,
+  "rating": 4.4,
+  "reviews": 3146,
+  "stock": 6,
+  "image": "mouse-gamer.jpg",
+  "description": "Sensor de alta precisión, botones programables e iluminación RGB.",
+  "related": [
+   "TECLADO-RGB",
+   "HEADSET-GAMER",
+   "MON-G3-24"
+  ]
+ },
+ {
+  "sku": "EQUIPO-PANA",
+  "name": "Equipo de sonido Panasonic con Bluetooth",
+  "category": "Audio",
+  "price": 1299.0,
+  "list_price": 1799.0,
+  "rating": 4.5,
+  "reviews": 2073,
+  "stock": 4,
+  "image": "equipo-pana.jpg",
+  "description": "Minicomponente con super woofers, grabación USB y conexión Bluetooth.",
+  "related": [
+   "MIC-INAL",
+   "TRIPODE-PARL",
+   "PARL-ROYQ"
+  ]
+ },
+ {
+  "sku": "MICA-MATE",
+  "name": "Protector de pantalla mate antihuellas",
+  "category": "Celulares",
+  "price": 19.0,
+  "list_price": 39.0,
+  "rating": 4.6,
+  "reviews": 2237,
+  "stock": 4,
+  "image": "mica-mate.jpg",
+  "description": "Vidrio templado mate que reduce reflejos y huellas.",
+  "related": [
+   "CASE-CLEAR",
+   "CARGADOR-25W"
+  ]
+ },
+ {
+  "sku": "PROYECTOR",
+  "name": "Proyector portátil Full HD con Wi-Fi",
+  "category": "Televisores",
+  "price": 449.0,
+  "list_price": 699.0,
+  "rating": 4.6,
+  "reviews": 127,
+  "stock": 3,
+  "image": "proyector.jpg",
+  "description": "Proyecta hasta 120\", conexión Wi-Fi para tu celular y control remoto.",
+  "related": [
+   "PARL-ROYQ",
+   "HDMI-4K",
+   "SOUNDBAR-KAL"
+  ]
+ },
+ {
+  "sku": "MOCHILA-HP",
+  "name": "Mochila HP Travel 15.6\" azul noche",
+  "category": "Cómputo",
+  "price": 139.0,
+  "list_price": 199.0,
+  "rating": 4.8,
+  "reviews": 1681,
+  "stock": 6,
+  "image": "mochila-hp.jpg",
+  "description": "Compartimento acolchado para laptop de 15.6\" y bolsillos laterales.",
+  "related": [
+   "LENOVO-V15",
+   "MOUSE-VERT",
+   "SSD-1TB"
+  ]
+ },
+ {
+  "sku": "XBOOM",
+  "name": "Parlante LG XBOOM para karaoke",
+  "category": "Audio",
+  "price": 1999.0,
+  "list_price": 2799.0,
+  "rating": 4.3,
+  "reviews": 1685,
+  "stock": 25,
+  "image": "xboom.jpg",
+  "description": "Sonido de alta potencia, efectos de luz y funciones de karaoke y DJ.",
+  "related": [
+   "MIC-INAL",
+   "TRIPODE-PARL",
+   "PARL-ROYQ"
+  ]
+ },
+ {
+  "sku": "CASE-CLEAR",
+  "name": "Case transparente antigolpes",
+  "category": "Celulares",
+  "price": 19.0,
+  "list_price": 35.0,
+  "rating": 4.9,
+  "reviews": 2553,
+  "stock": 3,
+  "image": "case-clear.jpg",
+  "description": "Protección con esquinas reforzadas sin ocultar el diseño de tu celular.",
+  "related": [
+   "MICA-MATE",
+   "CARGADOR-25W"
+  ]
+ },
+ {
+  "sku": "RACK-TV",
+  "name": "Rack soporte articulado para TV 26\"-55\"",
+  "category": "Televisores",
+  "price": 79.0,
+  "list_price": 129.0,
+  "rating": 4.8,
+  "reviews": 3015,
+  "stock": 40,
+  "image": "rack-tv.jpg",
+  "description": "Brazo articulado con giro e inclinación. Incluye accesorios de instalación.",
+  "related": [
+   "TV-MI-55",
+   "HDMI-4K",
+   "ANTENA-HD"
+  ]
+ },
+ {
+  "sku": "SSD-1TB",
+  "name": "SSD portátil SanDisk Extreme 1 TB",
+  "category": "Cómputo",
+  "price": 479.0,
+  "list_price": 699.0,
+  "rating": 4.3,
+  "reviews": 2058,
+  "stock": 12,
+  "image": "ssd-1tb.jpg",
+  "description": "Hasta 1050 MB/s, resistente al agua y a caídas.",
+  "related": [
+   "HUB-USB7",
+   "LENOVO-V15",
+   "MOCHILA-HP"
+  ]
+ },
+ {
+  "sku": "POWERBANK-10K",
+  "name": "Power bank Xiaomi Redmi 10000 mAh",
+  "category": "Celulares",
+  "price": 65.0,
+  "list_price": 99.0,
+  "rating": 4.2,
+  "reviews": 891,
+  "stock": 30,
+  "image": "powerbank-10k.jpg",
+  "description": "Batería portátil de 10000 mAh con doble salida y entrada USB-C.",
+  "related": [
+   "CARGADOR-25W",
+   "AUDIF-TWS",
+   "CABLE-USBC-60W"
+  ]
+ },
+ {
+  "sku": "ANTENA-HD",
+  "name": "Antena HDTV digital Konstar",
+  "category": "Televisores",
+  "price": 49.0,
+  "list_price": 89.0,
+  "rating": 4.3,
+  "reviews": 3109,
+  "stock": 5,
+  "image": "antena-hd.jpg",
+  "description": "Recibe canales de TV digital en alta definición sin costo mensual.",
+  "related": [
+   "TV-SAM-32",
+   "RACK-TV",
+   "HDMI-4K"
+  ]
+ },
+ {
+  "sku": "HUB-USB7",
+  "name": "Hub USB-C 7 en 1",
+  "category": "Cómputo",
+  "price": 79.0,
+  "list_price": 119.0,
+  "rating": 4.7,
+  "reviews": 154,
+  "stock": 8,
+  "image": "hub-usb7.jpg",
+  "description": "Amplía tu laptop con puertos USB 3.0 y USB-C. Cuerpo de aluminio.",
+  "related": [
+   "SSD-1TB",
+   "HDMI-4K",
+   "MOUSE-VERT"
+  ]
+ },
+ {
+  "sku": "IMPRESORA-HP",
+  "name": "Impresora multifuncional HP Smart Tank Wi-Fi",
+  "category": "Cómputo",
+  "price": 849.0,
+  "list_price": 1099.0,
+  "rating": 4.5,
+  "reviews": 833,
+  "stock": 30,
+  "image": "impresora-hp.jpg",
+  "description": "Imprime, copia y escanea con tanques de tinta recargables y Wi-Fi.",
+  "related": [
+   "LENOVO-V15",
+   "MOUSE-VERT",
+   "HUB-USB7"
+  ]
+ },
+ {
+  "sku": "MON-LG-27",
+  "name": "Monitor LG 27\" IPS Full HD 120 Hz",
+  "category": "Cómputo",
+  "price": 579.0,
+  "list_price": 799.0,
+  "rating": 4.9,
+  "reviews": 678,
+  "stock": 25,
+  "image": "mon-lg-27.jpg",
+  "description": "IPS Full HD a 120 Hz con HDR10 y diseño sin bordes.",
+  "related": [
+   "HDMI-4K",
+   "MOUSE-VERT",
+   "TECLADO-RGB"
+  ]
+ }
+]
