@@ -1,9 +1,11 @@
 import pytest
 
-from app.application.order_service import OrderService, ProcessingError
-from app.application.ports import OrderPublisher
-from app.domain.order import OrderStatus
-from app.infrastructure.persistence.sqlite_order_repository import SqliteOrderRepository, SqliteOutbox
+from app.models.order import OrderStatus
+from app.repositories.catalog_repository import InMemoryProductRepository
+from app.repositories.interfaces import OrderPublisher
+from app.repositories.sqlite_repository import SqliteOrderRepository, SqliteOutbox
+from app.services.checkout_service import CheckoutError, CheckoutService
+from app.services.order_service import OrderService, ProcessingError
 
 
 class FakePublisher(OrderPublisher):
@@ -84,9 +86,6 @@ def test_failing_sku_raises():
 
 
 # --- checkout de la tienda --------------------------------------------------
-from app.application.checkout_service import CheckoutError, CheckoutService
-from app.infrastructure.persistence.catalog import InMemoryProductRepository
-
 
 def make_checkout():
     svc, _ = make()

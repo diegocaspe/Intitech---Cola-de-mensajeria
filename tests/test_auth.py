@@ -1,9 +1,9 @@
 import pytest
 
-from app.application.auth_service import AuthError, AuthService
-from app.application.ports import UserRepository
-from app.domain.user import Role, User
-from app.infrastructure.security import PasswordHasher, TokenSigner
+from app.services.auth_service import AuthError, AuthService
+from app.repositories.interfaces import UserRepository
+from app.models.user import Role, User
+from app.utils.security import PasswordHasher, TokenSigner
 
 
 class FakeUsers(UserRepository):

@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="es-PE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#0E1525">
+<title>Inti Tech · Black Friday</title>
+<link rel="icon" type="image/png" href="/static/assets/logo/mark-blue.png">
+<link rel="stylesheet" href="/static/css/inti.css">
+<link rel="stylesheet" href="/static/css/tienda.css">
+</head>
+<body class="lock">
+<div class="loader" id="loader" aria-hidden="true">
+  <span class="logo inv"><img src="/static/assets/logo/mark-white.svg" alt=""><span class="wordmark"><span>inti</span><b>tech</b></span></span>
+  <div class="load-bar"><i></i></div>
+</div>
+
+<header class="site-head">
+  <div class="topbar"><div class="wrap topbar-in">
+    <a class="tb-bf" href="#flash"><span class="tb-tag">Black Friday</span>Termina en <span class="tb-cd" data-cd="inline">00:00:00</span></a>
+    <span class="tb-mid tb-ship"><svg class="i s" aria-hidden="true"><use href="/static/icons.svg#i-truck"/></svg>Envío gratis a todo el Perú desde <span class="js-free">S/ 199</span></span>
+    <span class="tb-right"><svg class="i s" aria-hidden="true"><use href="/static/icons.svg#i-lock"/></svg>Compra protegida · demo sin cobros reales</span>
+  </div></div>
+  <div class="mainbar"><div class="wrap mainbar-in">
+    <a href="#/" class="logo" aria-label="Inti Tech, inicio"><img src="/static/assets/logo/mark-blue.svg" alt=""><span class="wordmark"><span>inti</span><b>tech</b></span></a>
+    <div class="search" role="search"><label class="inp"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-search"/></svg>
+      <span class="sr">Buscar</span><input class="js-q" type="search" placeholder="Busca celulares, laptops, televisores…" autocomplete="off"></label></div>
+    <nav class="head-actions" aria-label="Cuenta y carrito">
+      <button class="ha-link orders" onclick="openOrders()"><svg class="i m" aria-hidden="true"><use href="/static/icons.svg#i-package"/></svg><span><small>Sigue tu compra</small>Mis pedidos</span></button>
+      <a class="ha-link" id="accBtn" href="/login?next=/"><svg class="i m" aria-hidden="true"><use href="/static/icons.svg#i-circle-user-round"/></svg><span><small id="accSm">Hola, ingresa</small><span id="accLbl">Mi cuenta</span></span></a>
+      <button class="ibtn" id="cartBtn" onclick="openCart()" aria-label="Carrito"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-shopping-cart"/></svg><span class="count num" id="cartCount" data-n="0">0</span></button>
+    </nav>
+  </div></div>
+  <div class="catbar"><nav class="wrap catbar-in" id="catbar" aria-label="Categorías"></nav></div>
+</header>
+
+<main>
+  <div id="home">
+  <section class="wrap hero-wrap">
+    <div class="carousel" id="carousel" aria-roledescription="carrusel">
+      <div class="car-track" id="carTrack">
+        <div class="car-slide on"><div class="hero">
+          <div class="hero-copy">
+            <span class="ov">Black Friday Inti · Solo por hoy</span>
+            <h1>Hasta <span class="hl js-maxoff">-50%</span> en tecnología que se siente cerca</h1>
+            <p>Celulares, laptops, televisores, audio y electrohogar. Las ofertas terminan en:</p>
+            <div class="hero-cd"><div class="cd cd-hero" role="timer" aria-label="Tiempo restante">
+              <div class="cd-box"><span class="cd-val" data-cd="h">00</span><span class="cd-lbl">horas</span></div><span class="cd-sep">:</span>
+              <div class="cd-box"><span class="cd-val" data-cd="m">00</span><span class="cd-lbl">min</span></div><span class="cd-sep">:</span>
+              <div class="cd-box"><span class="cd-val" data-cd="s">00</span><span class="cd-lbl">seg</span></div>
+            </div></div>
+            <div class="hero-ctas">
+              <a class="btn btn-pop btn-l" href="#/c/todo">Ver ofertas<svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-arrow-right"/></svg></a>
+              <a class="btn btn-secondary btn-l" href="#flash"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-zap"/></svg>Ofertas flash</a>
+            </div>
+          </div>
+          <div class="hero-art"><div class="rays"></div><img class="hero-mascot" src="/static/assets/logo/mark-yellow.svg" alt=""><div class="hero-sticker"><small>hasta</small><span class="js-maxoff">-50%</span></div></div>
+        </div></div>
+      </div>
+      <button class="car-arrow l" aria-label="Anterior" onclick="carGo(carI - 1)"><svg class="i m" aria-hidden="true"><use href="/static/icons.svg#i-chevron-left"/></svg></button>
+      <button class="car-arrow r" aria-label="Siguiente" onclick="carGo(carI + 1)"><svg class="i m" aria-hidden="true"><use href="/static/icons.svg#i-chevron-right"/></svg></button>
+      <div class="car-dots" id="carDots"></div>
+    </div>
+    <div class="trust">
+      <div class="trust-it"><span class="trust-ic g"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-truck"/></svg></span><div><b>Envío gratis</b><span>en compras desde <span class="js-free">S/ 199</span></span></div></div>
+      <div class="trust-it"><span class="trust-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-shield-check"/></svg></span><div><b>Pago seguro</b><span>tus datos protegidos</span></div></div>
+      <div class="trust-it"><span class="trust-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-rotate-ccw"/></svg></span><div><b>30 días</b><span>para devoluciones</span></div></div>
+      <div class="trust-it"><span class="trust-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-route"/></svg></span><div><b>Seguimiento en vivo</b><span>de tu pedido</span></div></div>
+    </div>
+  </section>
+
+  <section class="wrap sec">
+    <div class="sec-head"><div><span class="ov">Explora</span><h2>Categorías destacadas</h2></div></div>
+    <div class="cat-grid" id="catGrid"></div>
+  </section>
+
+  <section class="flash-sec" id="flash"><div class="wrap">
+    <div class="flash-head">
+      <div class="flash-title"><span class="flash-ic"><svg class="i l" aria-hidden="true"><use href="/static/icons.svg#i-zap"/></svg></span><h2>Ofertas flash</h2>
+        <div class="flash-ends"><span>Terminan en</span><div class="cd cd-chip" role="timer" aria-label="Tiempo restante">
+          <div class="cd-box"><span class="cd-val" data-cd="h">00</span></div><span class="cd-sep">:</span>
+          <div class="cd-box"><span class="cd-val" data-cd="m">00</span></div><span class="cd-sep">:</span>
+          <div class="cd-box"><span class="cd-val" data-cd="s">00</span></div></div></div></div>
+      <a class="sec-link" href="#/c/todo">Ver todas<svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-chevron-right"/></svg></a>
+    </div>
+    <div class="grid5" id="flashGrid"></div>
+  </div></section>
+
+  <section class="wrap sec banners2">
+    <div class="promo-b"><div class="pb-c"><span class="ov">Combos</span><h2>Arma tu setup en un clic</h2><p>Productos que se llevan juntos, listos para agregar al carrito.</p><div><a class="btn btn-accent" href="#combos">Ver combos</a></div></div>
+      <div class="pb-art"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-gamepad-2"/></svg></div></div>
+    <div class="promo-b yellow"><div class="pb-c"><span class="ov">Envío gratis</span><h2>Gratis a todo el Perú desde <span class="js-free">S/ 199</span></h2><p>Y sigues tu pedido en vivo desde que pagas hasta que se confirma.</p><div><a class="btn btn-dark" href="#/c/todo">Ver ofertas</a></div></div>
+      <div class="pb-art"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-truck"/></svg></div></div>
+  </section>
+
+  <section class="wrap sec" id="combos">
+    <div class="sec-head"><div><span class="ov">Ahorra comprando junto</span><h2>Combos que se llevan juntos</h2><p>Lo que otros clientes compran en conjunto</p></div></div>
+    <div class="grid" id="combosGrid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr))"></div>
+  </section>
+  </div>
+
+  <!-- página de categoría o búsqueda: #/c/<categoria> y #/buscar/<texto> -->
+  <div class="wrap cat-page" id="catPage" hidden>
+    <div class="page-top">
+      <nav class="crumbs" id="crumbs" aria-label="Ruta de navegación"></nav>
+      <div class="cat-title"><h1 id="catTitle">Ofertas</h1><span id="count"></span></div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="cat-layout">
+      <aside class="filters" id="filters" aria-label="Filtros">
+        <div class="f-head"><h2>Filtros</h2><button class="x" onclick="closeAll()" aria-label="Cerrar">×</button></div>
+        <div class="f-body" id="fBody"></div>
+        <div class="f-foot"><button class="btn btn-block" id="fSee" onclick="closeAll()">Ver productos</button></div>
+      </aside>
+      <div>
+        <div class="toolbar">
+          <div class="chips" id="activeF"></div>
+          <div class="toolbar-r">
+            <button class="btn btn-secondary btn-s f-open" id="fOpen" onclick="openLayer('filters')"><svg class="i s" aria-hidden="true"><use href="/static/icons.svg#i-sliders-horizontal"/></svg><span id="fOpenTx">Filtros</span></button>
+            <span>Ordenar por</span>
+            <label class="sel"><span class="sr">Ordenar</span><select id="sort">
+              <option value="feat">Destacados</option><option value="off">Mayor descuento</option>
+              <option value="asc">Menor precio</option><option value="desc">Mayor precio</option>
+            </select><svg class="i s" aria-hidden="true"><use href="/static/icons.svg#i-chevron-down"/></svg></label></div>
+        </div>
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="foot"><div class="wrap">
+  <div class="foot-top">
+    <div class="foot-brand"><span class="logo inv"><img src="/static/assets/logo/mark-white.svg" alt="" style="height:48px"><span class="wordmark" style="font-size:30px"><span>inti</span><b>tech</b></span></span>
+      <p>Tecnología que se siente cerca. Tienda online peruana con envíos a todo el país.</p>
+      <div class="pay-chips" aria-label="Medios de pago"><span class="pay-chip yape"><img src="/static/assets/pay/yape.png" alt="Yape"></span><span class="pay-chip plin"><img src="/static/assets/pay/plin.png" alt="Plin"></span><span class="pay-chip visa"><img src="/static/assets/pay/visa.png" alt="Visa"></span><span class="pay-chip"><img src="/static/assets/pay/mastercard.png" alt="Mastercard"></span></div></div>
+    <div><h4>Categorías</h4><ul id="footCats"></ul></div>
+    <div><h4>Tu cuenta</h4><ul><li><button onclick="openOrders()">Mis pedidos</button></li><li><button onclick="openCart()">Carrito</button></li><li><a href="/login?next=/">Ingresar o crear cuenta</a></li></ul></div>
+    <div class="demo-card"><b><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-flask-conical"/></svg>Proyecto académico</b><p>Demo de colas de mensajería con RabbitMQ. No se realizan cobros reales.</p></div>
+  </div>
+  <div class="foot-bottom"><span>© 2026 <span class="js-store">Inti Tech</span></span><span>Imágenes referenciales de los fabricantes.</span></div>
+</div></footer>
+
+<!-- capas -->
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+
+<div class="modal" id="pModal" role="dialog" aria-modal="true" aria-label="Detalle del producto"><button class="x" onclick="closeAll()" aria-label="Cerrar">×</button><div id="pBody"></div></div>
+
+<aside class="drawer" id="cart" aria-label="Carrito">
+  <div class="dhead"><h3>Tu carrito</h3><button class="x" onclick="closeAll()" aria-label="Cerrar">×</button></div>
+  <div class="dbody" id="cartBody"></div>
+  <div class="dfoot" id="cartFoot"></div>
+</aside>
+
+<aside class="drawer" id="orders" aria-label="Mis pedidos">
+  <div class="dhead"><h3>Mi cuenta</h3><button class="x" onclick="closeAll()" aria-label="Cerrar">×</button></div>
+  <div class="dbody" id="ordersBody"></div>
+</aside>
+
+<div class="modal sm" id="coModal" role="dialog" aria-modal="true" aria-label="Finalizar compra"><button class="x" onclick="closeAll()" aria-label="Cerrar">×</button>
+  <form class="co" id="coForm" onsubmit="return submitCheckout(event)">
+    <h2>Finalizar compra</h2>
+    <div class="buyer" id="coBuyer"></div>
+    <div><span class="fld-l">Método de pago</span>
+      <div class="pay-opts">
+        <label class="pay-opt"><input type="radio" name="pay" checked><span class="pay-chips"><span class="pay-chip yape"><img src="/static/assets/pay/yape.png" alt=""></span><span class="pay-chip plin"><img src="/static/assets/pay/plin.png" alt=""></span></span><b>Yape o Plin</b></label>
+        <label class="pay-opt"><input type="radio" name="pay"><span class="pay-chips"><span class="pay-chip visa"><img src="/static/assets/pay/visa.png" alt=""></span><span class="pay-chip"><img src="/static/assets/pay/mastercard.png" alt=""></span></span><b>Tarjeta</b></label>
+        <label class="pay-opt"><input type="radio" name="pay"><span class="po-ic"><svg class="i m" aria-hidden="true"><use href="/static/icons.svg#i-hand-coins"/></svg></span><b>Contra entrega</b></label>
+      </div></div>
+    <div class="note"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-info"/></svg>Demo académica: no se solicitan datos de pago ni se realiza ningún cobro. Tu pedido viajará por la cola de mensajería en tiempo real.</div>
+    <div id="coSummary" style="display:flex;flex-direction:column;gap:10px"></div>
+    <p class="err" id="coErr" role="alert"></p>
+    <button class="btn btn-success btn-l btn-block" id="coBtn" type="submit">Confirmar pedido</button>
+    <span class="secure"><svg class="i s" aria-hidden="true"><use href="/static/icons.svg#i-shield-check"/></svg>Tus datos viajan cifrados y protegidos</span>
+  </form>
+</div>
+
+<div class="modal sm" id="trkModal" role="dialog" aria-modal="true" aria-label="Seguimiento del pedido"><button class="x" onclick="closeAll()" aria-label="Cerrar">×</button><div class="trk" id="trkBody"></div></div>
+
+<div class="added" id="added" role="status"></div>
+
+<script>
+/* ================== configuración ================== */
+const STORE_NAME = "Inti Tech";   // ← nombre de la empresa
+const FREE_SHIP = 199, SHIP_COST = 15, MAX_QTY = 10;
+const COMBOS = [
+  { name: "Setup gamer", sub: "Laptop RTX + mouse + audífonos 7.1", skus: ["ACER-NITRO", "MOUSE-GAMER", "HEADSET-GAMER"] },
+  { name: "Cine en casa", sub: "TV QLED 55\" + barra de sonido + rack", skus: ["TV-SAM-55Q", "SOUNDBAR-KAL", "RACK-TV"] },
+  { name: "Celular protegido", sub: "Galaxy A25 5G + case + mica", skus: ["GALAXY-A25", "CASE-CLEAR", "MICA-MATE"] },
+  { name: "Cocina práctica", sub: "Freidora de aire + microondas + hervidor", skus: ["FREIDORA", "MICROONDAS", "HERVIDOR"] },
+];
+/* íconos por categoría del catálogo y diapositivas del carrusel (imágenes en /static/assets/hero) */
+const CAT_ICON = { "Celulares": "smartphone", "Televisores": "tv", "Cómputo": "laptop", "Audio": "headphones", "Cocina": "cooking-pot", "Electrohogar": "washing-machine", "Hogar": "house" };
+const SLIDES = [
+  { img: "gamer", t: "blue", ov: "Semana gamer", cat: "Cómputo", pre: "Laptops y cómputo hasta", sub: "Laptops gamer, monitores y periféricos con envío a todo el Perú.", cta: "Ver cómputo", alt: "Laptop gamer con audífonos y mouse" },
+  { img: "cel", t: "light", ov: "Smartphones 5G", cat: "Celulares", pre: "Celulares hasta", sub: "Samsung, Xiaomi, Motorola y más, con seguimiento en vivo de tu pedido.", cta: "Ver celulares", alt: "Tres smartphones 5G" },
+  { img: "hogar", t: "yellow", ov: "Hogar inteligente", cat: "Televisores", pre: "Smart TV hasta", sub: "Televisores 4K y QLED para ver el partido como en el estadio.", cta: "Ver televisores", alt: "Smart TV, freidora de aire y robot aspiradora" },
+];
+
+/* ================== estado ================== */
+const $ = id => document.getElementById(id);
+const icon = (n, c = "") => `<svg class="i ${c}" aria-hidden="true"><use href="/static/icons.svg#i-${n}"/></svg>`;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const money = v => "S/ " + v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: "always" });
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+let P = [], BY = {};
+let cart = store.get("cart", {});          // { sku: cantidad }
+let me = null;                             // usuario con sesión (o null)
+const view = { cat: "Todo", q: "", sort: "feat" };
+
+document.querySelectorAll(".js-store").forEach(e => e.textContent = STORE_NAME);
+document.querySelectorAll(".js-free").forEach(e => e.textContent = "S/ " + FREE_SHIP);
+document.title = STORE_NAME + " · Black Friday";
+
+/* ================== render: catálogo ================== */
+const stars = r => `<span class="stars" aria-label="${r} de 5"><i style="width:${r / 5 * 100}%"></i></span>`;
+const catIcon = c => CAT_ICON[c] || "package";
+const maxOff = list => list.reduce((a, p) => Math.max(a, p.discount_pct), 0);
+function priceTag(p, size = "") {
+  const [ent, dec] = money(p.price).split(".");
+  return `<div class="price ${size}"><div class="was"><s class="num">${money(p.list_price)}</s><b>-${p.discount_pct}%</b></div>
+    <div class="now num">${size ? `${ent}<small>.${dec}</small>` : money(p.price)}</div></div>`;
+}
+function card(p, compact, tone = "dark") {
+  return `<article class="pcard ${compact ? "compact" : ""}" onclick="openProduct('${p.sku}')">
+    <div class="pimg"><img src="${p.image}" alt="${esc(p.name)}" loading="lazy">
+      <span class="badge s ${tone}">-${p.discount_pct}%</span>${p.stock < 10 && !compact ? `<span class="flag">${icon("flame", "s")} Quedan ${p.stock}</span>` : ""}</div>
+    <div class="pbody">
+      ${compact ? "" : `<span class="brand">${esc(view.cat !== "Todo" && brandOf(p) !== "Otras marcas" ? brandOf(p) : p.category)}</span>`}
+      <span class="pname">${esc(p.name)}</span>
+      <span class="rate">${stars(p.rating)} ${p.rating} <span>(${p.reviews.toLocaleString("es")})</span></span>
+      ${priceTag(p)}
+      ${p.price >= FREE_SHIP && !compact ? `<span class="free">Envío gratis</span>` : ""}
+      <button class="btn btn-s btn-block add" data-sku="${p.sku}" onclick="event.stopPropagation(); add('${p.sku}', 1, this)">${icon("shopping-cart", "s")} Agregar</button>
+    </div></article>`;
+}
+/* ================== página de categoría: facetas derivadas del nombre del producto ================== */
+const fold = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const slug = c => fold(c).replace(/\s+/g, "-");
+const catUrl = c => "#/c/" + (c === "Todo" ? "todo" : slug(c));
+const BRANDS = ["Samsung", "Xiaomi", "Motorola", "Realme", "Infinix", "Honor", "Lenovo", "Unnec", "LG", "Hisense", "TCL", "Master-G", "Kenwood", "Konstar",
+  "Acer", "HP", "Dell", "ASUS", "MSI", "Micronics", "SanDisk", "Kalley", "PreSonus", "Suono", "STF", "Noblex", "Linkon", "Steren", "Royqueen", "Blik", "Panasonic",
+  "Midea", "Briket", "Mertec", "Consumer", "Peabody", "RCA", "Black+Decker", "Imaco", "Gadnic", "Atvio", "Home Elements"];
+const BRAND_RE = BRANDS.map(b => [b, new RegExp("(^|[^\\w])" + b.replace(/[+]/g, "\\+") + "(?![\\w])")]);
+const brandOf = p => (BRAND_RE.find(([, re]) => re.test(p.name)) || ["Otras marcas"])[0];
+const gb = (n, re) => { const m = n.match(re); return m ? m[1] + " GB" : null; };
+const SPECS = {   // por categoría: faceta → valor leído del nombre (null = no aplica)
+  "Celulares": {
+    "Tipo": n => /tablet/i.test(n) ? "Tablets" : /cargador|cable|protector|case|power bank/i.test(n) ? "Accesorios" : "Celulares",
+    "Almacenamiento": n => gb(n, /\b(\d+)\s*GB\b(?!\s*RAM)/),
+    "RAM": n => gb(n, /\b(\d+)\s*GB RAM/),
+  },
+  "Televisores": {
+    "Tipo": n => /proyector/i.test(n) ? "Proyectores" : /cable|rack|soporte|antena/i.test(n) ? "Accesorios" : "Televisores",
+    "Tamaño": n => { if (/cable|rack|soporte|antena|proyector/i.test(n)) return null; const m = n.match(/(\d+)"/); if (!m) return null;
+      const s = +m[1]; return s <= 43 ? "Hasta 43 pulgadas" : s <= 58 ? "50 a 58 pulgadas" : s <= 75 ? "65 a 75 pulgadas" : "85 pulgadas o más"; },
+    "Resolución": n => /cable|rack|soporte|antena/i.test(n) ? null : /4K|UHD/.test(n) ? "4K UHD" : /Full HD/.test(n) ? "Full HD" : /\bHD\b/.test(n) ? "HD" : null,
+  },
+  "Cómputo": {
+    "Tipo": n => /laptop|chromebook/i.test(n) ? "Laptops" : /monitor/i.test(n) ? "Monitores" : /mouse|teclado|aud[ií]fonos|hub|mochila/i.test(n) ? "Accesorios" : "Impresoras y almacenamiento",
+    "Procesador": n => (n.match(/Core i\d|Ryzen \d/) || [null])[0],
+    "RAM": n => /laptop/i.test(n) ? gb(n, /\b(8|16|32)\s*GB\b/) : null,
+  },
+  "Audio": {
+    "Tipo": n => /aud[ií]fonos/i.test(n) ? "Audífonos" : /parlante|torre|barra|home theater|equipo|tocadiscos|radio/i.test(n) ? "Parlantes y equipos" : /micr[oó]fono/i.test(n) ? "Micrófonos" : "Accesorios",
+  },
+};
+const facetKeys = () => view.cat === "Todo" ? ["Categoría"] : Object.keys(SPECS[view.cat] || {});
+const facetVal = (p, k) => k === "Categoría" ? p.category : SPECS[p.category]?.[k]?.(p.name) ?? null;
+const numKey = v => { const m = String(v).match(/\d+/); return m ? +m[0] * (/TB/.test(v) ? 1024 : 1) : Infinity; };
+const PRICES = [["all", "Todos los precios"], ["0-500", "Hasta S/ 500"], ["500-1500", "S/ 500 a S/ 1,500"], ["1500-3000", "S/ 1,500 a S/ 3,000"], ["3000-1e9", "Más de S/ 3,000"]];
+const DISCS = [[0, "Cualquier descuento"], [20, "20% o más"], [30, "30% o más"], [40, "40% o más"]];
+const SORTS = { off: (a, b) => b.discount_pct - a.discount_pct, asc: (a, b) => a.price - b.price, desc: (a, b) => b.price - a.price };
+const newFilters = () => ({ brands: [], price: "all", disc: 0, specs: {}, free: false, low: false });
+let F = newFilters(), pageKey = "", fgClosed = new Set();
+
+function baseList() {
+  const q = fold(view.q);
+  return P.filter(p => (view.cat === "Todo" || p.category === view.cat) &&
+    (!q || fold(p.name + " " + p.category + " " + brandOf(p)).includes(q)));
+}
+function filtered(base) {
+  const [lo, hi] = F.price === "all" ? [0, Infinity] : F.price.split("-").map(Number);
+  return base.filter(p => (!F.brands.length || F.brands.includes(brandOf(p))) && p.price >= lo && p.price <= hi &&
+    p.discount_pct >= F.disc && (!F.free || p.price >= FREE_SHIP) && (!F.low || p.stock < 10) &&
+    Object.entries(F.specs).every(([k, vs]) => !vs.length || vs.includes(facetVal(p, k))));
+}
+function renderFilters() {
+  const base = baseList();
+  const tally = fn => { const m = new Map(); base.forEach(p => { const v = fn(p); if (v != null) m.set(v, (m.get(v) || 0) + 1); }); return m; };
+  const grp = (key, body) => `<details class="fg" ${fgClosed.has(key) ? "" : "open"} ontoggle="fgToggle(this)" data-k="${esc(key)}"><summary>${esc(key)}${icon("chevron-down", "s")}</summary><div class="fg-b">${body}</div></details>`;
+  const chk = (f, v, n, on, k = "") => `<label class="chk"><input type="checkbox" data-f="${f}" data-k="${esc(k)}" value="${esc(v)}" ${on ? "checked" : ""}><span class="chk-b">${icon("check", "s")}</span><span class="chk-l">${esc(v)}</span><small class="num">${n}</small></label>`;
+  const rad = (f, v, l, on) => `<label class="rad"><input type="radio" name="${f}" data-f="${f}" value="${v}" ${on ? "checked" : ""}><span class="rad-b"></span>${esc(l)}</label>`;
+  const sw = (f, l, on) => `<label class="sw"><input type="checkbox" role="switch" data-f="${f}" ${on ? "checked" : ""}><span class="sw-b"></span>${esc(l)}</label>`;
+  const brands = [...tally(brandOf)].sort((a, b) => (a[0] === "Otras marcas") - (b[0] === "Otras marcas") || b[1] - a[1] || a[0].localeCompare(b[0]));
+  let html = grp("Ofertas", sw("low", "Últimas unidades", F.low) + sw("free", "Envío gratis", F.free));
+  if (brands.length > 1) html += grp("Marca", brands.map(([v, n]) => chk("brand", v, n, F.brands.includes(v))).join(""));
+  html += grp("Precio", PRICES.map(([v, l]) => rad("price", v, l, F.price === v)).join(""));
+  html += grp("Descuento", DISCS.map(([v, l]) => rad("disc", v, l, F.disc === v)).join(""));
+  facetKeys().forEach(k => {
+    const vals = [...tally(p => facetVal(p, k))].sort((a, b) => numKey(a[0]) - numKey(b[0]) || a[0].localeCompare(b[0]));
+    if (vals.length > 1) html += grp(k, vals.map(([v, n]) => chk("spec", v, n, (F.specs[k] || []).includes(v), k)).join(""));
+  });
+  $("fBody").innerHTML = html;
+}
+function fgToggle(d) { d.open ? fgClosed.delete(d.dataset.k) : fgClosed.add(d.dataset.k); }
+$("fBody").addEventListener("change", e => {
+  const t = e.target, f = t.dataset.f;
+  const tog = (arr, v) => t.checked ? [...arr, v] : arr.filter(x => x !== v);
+  if (f === "brand") F.brands = tog(F.brands, t.value);
+  else if (f === "spec") F.specs[t.dataset.k] = tog(F.specs[t.dataset.k] || [], t.value);
+  else if (f === "price") F.price = t.value;
+  else if (f === "disc") F.disc = +t.value;
+  else if (f === "free" || f === "low") F[f] = t.checked;
+  renderGrid();
+});
+let ACTIVE = [];
+function activeFilters() {
+  return [...F.brands.map(b => [b, () => F.brands = F.brands.filter(x => x !== b)]),
+    ...(F.price !== "all" ? [[PRICES.find(x => x[0] === F.price)[1], () => F.price = "all"]] : []),
+    ...(F.disc ? [["-" + F.disc + "% o más", () => F.disc = 0]] : []),
+    ...Object.entries(F.specs).flatMap(([k, vs]) => vs.map(v => [v, () => F.specs[k] = vs.filter(x => x !== v)])),
+    ...(F.free ? [["Envío gratis", () => F.free = false]] : []),
+    ...(F.low ? [["Últimas unidades", () => F.low = false]] : [])];
+}
+function rmFilter(i) { ACTIVE[i]?.[1](); renderFilters(); renderGrid(); }
+function clearFilters() { F = newFilters(); renderFilters(); renderGrid(); }
+function renderGrid() {
+  let list = filtered(baseList());
+  if (SORTS[view.sort]) list = [...list].sort(SORTS[view.sort]);
+  ACTIVE = activeFilters();
+  $("count").textContent = list.length + (list.length === 1 ? " producto" : " productos");
+  $("activeF").innerHTML = ACTIVE.map(([l], i) => `<button class="tag on" onclick="rmFilter(${i})" aria-label="Quitar filtro ${esc(l)}">${esc(l)}${icon("x", "s")}</button>`).join("") +
+    (ACTIVE.length ? `<button class="linkbtn" onclick="clearFilters()">Limpiar filtros</button>` : "");
+  $("fOpenTx").textContent = "Filtros" + (ACTIVE.length ? ` (${ACTIVE.length})` : "");
+  $("fSee").textContent = `Ver ${list.length} producto${list.length === 1 ? "" : "s"}`;
+  $("grid").innerHTML = list.length ? list.map(p => card(p)).join("") :
+    `<div class="empty"><img src="/static/assets/logo/mark-blue.svg" alt=""><h2>No encontramos resultados</h2>` + (ACTIVE.length
+      ? `<p>Ningún producto coincide con estos filtros. Quita alguno para ver más opciones.</p><button class="btn btn-secondary" onclick="clearFilters()">Limpiar filtros</button>`
+      : `<p>No hay productos para "${esc(view.q)}". Prueba con otra palabra o revisa la ortografía.</p><a class="btn" href="#/c/todo">Ver todas las ofertas</a>`) + `</div>`;
+}
+function renderChips() {
+  const cats = ["Todo", ...new Set(P.map(p => p.category))];
+  const onPage = !$("catPage").hidden && !view.q;
+  $("chips").innerHTML = view.q ? "" : cats.map(c => `<a class="tag ${c === view.cat ? "on" : ""}" href="${catUrl(c)}">${c === "Todo" ? icon("zap", "s") + "Todas las ofertas" : icon(catIcon(c), "s") + esc(c)}</a>`).join("");
+  $("catbar").innerHTML = `<a href="#flash" class="cb-link cb-bf">${icon("zap", "s")}Black Friday</a>` +
+    cats.slice(1).map(c => `<a class="cb-link ${onPage && c === view.cat ? "on" : ""}" href="${catUrl(c)}">${icon(catIcon(c), "s")}${esc(c)}</a>`).join("") +
+    `<a href="#combos" class="cb-link">${icon("package", "s")}Combos</a>`;
+}
+$("sort").onchange = e => { view.sort = e.target.value; renderGrid(); };
+
+/* ================== rutas: #/ (inicio) · #/c/<categoria> · #/buscar/<texto> · #flash y #combos (anclas del inicio) ================== */
+function route() {
+  const h = location.hash, m = h.match(/^#\/(c|buscar)\/(.*)$/);
+  const onCat = !!m;
+  $("home").hidden = onCat; $("catPage").hidden = !onCat;
+  if (!onCat) {
+    view.cat = "Todo"; view.q = ""; pageKey = "";
+    document.title = STORE_NAME + " · Black Friday";
+    renderChips();
+    const anchor = /^#[a-z]/i.test(h) && document.querySelector(h);
+    anchor ? anchor.scrollIntoView() : scrollTo(0, 0);
+    return;
+  }
+  const arg = decodeURIComponent(m[2]);
+  const cats = [...new Set(P.map(p => p.category))];
+  if (m[1] === "c") { view.cat = cats.find(c => slug(c) === arg) || "Todo"; view.q = ""; }
+  else { view.cat = "Todo"; view.q = arg.trim(); }
+  document.querySelectorAll(".js-q").forEach(o => o !== document.activeElement && (o.value = view.q));
+  const key = m[1] === "c" ? "c:" + view.cat : "s:" + fold(view.q);
+  if (key !== pageKey) {
+    const typing = key.startsWith("s:") && pageKey.startsWith("s:");   // escribiendo en el buscador: no saltar
+    pageKey = key; F = newFilters();
+    if (!typing) scrollTo(0, 0);
+  }
+  const title = view.q ? `Resultados para “${view.q}”` : view.cat === "Todo" ? (m[1] === "c" ? "Todas las ofertas" : "Buscar productos") : view.cat;
+  $("catTitle").textContent = title;
+  document.title = title + " · " + STORE_NAME;
+  $("crumbs").innerHTML = `<a href="#/">Inicio</a><span>/</span>` + (m[1] === "buscar" ? `<b>Búsqueda</b>`
+    : view.cat === "Todo" ? `<b>Black Friday</b>` : `<a href="#/c/todo">Black Friday</a><span>/</span><b>${esc(view.cat)}</b>`);
+  renderChips(); renderFilters(); renderGrid();
+}
+addEventListener("hashchange", () => { if (P.length) { closeAll(); route(); } });
+/* altura del encabezado fijo: tope de la barra de filtros y margen de las anclas */
+new ResizeObserver(([e]) => document.documentElement.style.setProperty("--head-h", e.target.offsetHeight + "px")).observe(document.querySelector(".site-head"));
+document.querySelectorAll(".js-q").forEach(inp => inp.addEventListener("input", e => {
+  document.querySelectorAll(".js-q").forEach(o => o !== e.target && (o.value = e.target.value));
+  const target = "#/buscar/" + encodeURIComponent(e.target.value.trim());
+  if (location.hash.startsWith("#/buscar/")) { history.replaceState(null, "", target); route(); }
+  else location.hash = target;
+}));
+
+function renderHome() {
+  const cats = [...new Set(P.map(p => p.category))];
+  document.querySelectorAll(".js-maxoff").forEach(e => e.textContent = "-" + maxOff(P) + "%");
+  $("catGrid").innerHTML = cats.map(c => { const l = P.filter(p => p.category === c);
+    return `<a class="cat-tile" href="${catUrl(c)}"><span class="cat-ic">${icon(catIcon(c), "l")}</span><div><h3>${esc(c)}</h3><p>${l.length} productos</p></div><span class="upto">Hasta -${maxOff(l)}%</span></a>`; }).join("") +
+    `<a class="cat-tile dark" href="#combos"><span class="cat-ic">${icon("package", "l")}</span><div><h3>Combos</h3><p>Arma tu setup y ahorra más</p></div><span class="upto">${COMBOS.length} combos listos</span></a>`;
+  $("flashGrid").innerHTML = [...P].sort((a, b) => b.discount_pct - a.discount_pct).slice(0, 5).map(p => card(p, false, "")).join("");
+  $("footCats").innerHTML = cats.map(c => `<li><a href="${catUrl(c)}">${esc(c)}</a></li>`).join("");
+}
+function renderCombos() {
+  $("combosGrid").innerHTML = COMBOS.map(c => {
+    const ps = c.skus.map(s => BY[s]).filter(Boolean);
+    const tot = ps.reduce((a, p) => a + p.price, 0), was = ps.reduce((a, p) => a + p.list_price, 0);
+    return `<div class="box"><div class="pack"><div><h3>${c.name}</h3><p class="muted" style="margin:4px 0 0;font-size:14px">${c.sub}</p></div>
+      <div class="pack-items">${ps.map(p => `<button class="pi" onclick="openProduct('${p.sku}')" title="${esc(p.name)}"><img src="${p.image}" alt="${esc(p.name)}" loading="lazy"></button>`).join('<span class="plus">+</span>')}</div>
+      <div><div class="num" style="font-size:14px;color:var(--fg-3);text-decoration:line-through">${money(was)}</div><div class="total num">${money(tot)}</div><div class="saving">Ahorras ${money(was - tot)}${tot >= FREE_SHIP ? " · Envío gratis" : ""}</div></div>
+      <button class="btn btn-block" onclick="addMany(${JSON.stringify(c.skus).replace(/"/g, "'")})">${icon("shopping-cart")} Agregar combo</button></div></div>`;
+  }).join("");
+}
+
+/* ================== carrusel ================== */
+let carI = 0, carT = null, carPaused = false;
+function renderCarousel() {
+  $("carTrack").insertAdjacentHTML("beforeend", SLIDES.map(s => { const l = P.filter(p => p.category === s.cat);
+    return `<div class="car-slide" aria-hidden="true"><div class="hero t-${s.t}">
+      <div class="hero-copy"><span class="ov">${s.ov}</span><h1>${s.pre} <span class="hl">-${maxOff(l)}%</span></h1><p>${s.sub}</p>
+        <div class="hero-ctas"><a class="btn btn-l ${s.t === "yellow" ? "btn-dark" : s.t === "blue" ? "btn-pop" : ""}" href="${catUrl(s.cat)}">${s.cta}${icon("arrow-right")}</a></div>
+        <span class="hero-cd-mini">${icon("clock", "s")}Black Friday termina en <span class="cd-inline" data-cd="inline">00:00:00</span></span></div>
+      <div class="hero-slot"><div class="hero-stage"><img src="/static/assets/hero/${s.img}.webp" alt="${s.alt}" width="577" height="433" loading="lazy" decoding="async"></div></div>
+    </div></div>`; }).join(""));
+  const c = $("carousel");
+  c.onmouseenter = () => { carPaused = true; c.classList.add("paused"); clearTimeout(carT); };
+  c.onmouseleave = () => { carPaused = false; c.classList.remove("paused"); carGo(carI); };
+  carGo(0); tick();
+}
+function carGo(k) {
+  const slides = document.querySelectorAll(".car-slide"), n = slides.length;
+  carI = (k + n) % n;
+  slides.forEach((s, j) => { s.classList.toggle("on", j === carI); s.setAttribute("aria-hidden", j !== carI); });
+  $("carDots").innerHTML = [...slides].map((_, j) => `<button class="car-dot ${j === carI ? "on" : ""}" aria-label="Ir a la diapositiva ${j + 1}" onclick="carGo(${j})"><i></i></button>`).join("");
+  clearTimeout(carT);
+  if (!carPaused) carT = setTimeout(() => carGo(carI + 1), 4000);
+}
+
+/* ================== carrito ================== */
+const cartCount = () => Object.values(cart).reduce((a, b) => a + b, 0);
+function saveCart() { store.set("cart", cart); renderCart(); }
+function add(sku, qty = 1, btn, silent) {
+  cart[sku] = Math.min(MAX_QTY, (cart[sku] || 0) + qty);
+  saveCart();
+  const c = $("cartCount"); c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump");
+  if (btn) { const t = btn.innerHTML; btn.classList.add("done"); btn.innerHTML = icon("check", "s") + " Agregado"; setTimeout(() => { btn.classList.remove("done"); btn.innerHTML = t; }, 1300); }
+  if (!silent) showAdded(sku);
+}
+function addMany(skus) { skus.forEach(s => add(s, 1, null, true)); showAdded(skus[0], skus.length); }
+function setQty(sku, q) { if (q <= 0) delete cart[sku]; else cart[sku] = Math.min(MAX_QTY, q); saveCart(); }
+
+/* cross-selling: relacionados de lo que hay en el carrito, que aún no están en él */
+function suggestionsFor(skus, n) {
+  const seen = new Set(skus), out = [];
+  skus.forEach(s => (BY[s]?.related || []).forEach(r => { if (!seen.has(r) && BY[r]) { seen.add(r); out.push(BY[r]); } }));
+  return out.slice(0, n);
+}
+function totals() {
+  let sub = 0, was = 0;
+  for (const [s, q] of Object.entries(cart)) if (BY[s]) { sub += BY[s].price * q; was += BY[s].list_price * q; }
+  const ship = sub === 0 || sub >= FREE_SHIP ? 0 : SHIP_COST;
+  return { sub, was, ship, total: sub + ship };
+}
+function renderCart() {
+  const n = cartCount(); $("cartCount").textContent = n; $("cartCount").dataset.n = n;
+  if (!P.length) return;
+  const lines = Object.entries(cart).filter(([s]) => BY[s]);
+  const t = totals();
+  if (!lines.length) {
+    $("cartBody").innerHTML = `<div class="empty flat"><img src="/static/assets/logo/mark-blue.svg" alt=""><h3>Tu carrito está vacío</h3><p>Aprovecha Black Friday: hay ofertas con hasta ${maxOff(P)}% de descuento esperándote.</p></div>` +
+      `<div class="sugg"><h4>Lo más vendido hoy</h4>${["GALAXY-A25", "FREIDORA", "TV-MI-55"].filter(s => BY[s]).map(s => srow(BY[s])).join("")}</div>`;
+    $("cartFoot").innerHTML = ""; return;
+  }
+  const missing = FREE_SHIP - t.sub;
+  $("cartBody").innerHTML = `<div class="ship-prog"><span>${missing > 0
+      ? `${icon("truck", "s")}Te faltan ${money(missing)} para envío gratis`
+      : `${icon("circle-check", "s")}¡Tu pedido tiene envío gratis a todo el Perú!`}</span><div class="bar"><i style="width:${Math.min(100, t.sub / FREE_SHIP * 100)}%"></i></div></div>` +
+    lines.map(([s, q]) => { const p = BY[s]; return `<div class="cart-item">
+      <span class="ci-thumb"><img src="${p.image}" alt=""></span>
+      <div><div class="ci-name">${esc(p.name)}</div><div class="ci-unit num">${money(p.price)} <s>${money(p.list_price)}</s></div>
+        <div class="ci-meta"><div class="stepper s"><button onclick="setQty('${s}', ${q - 1})" aria-label="Menos">−</button><span class="num">${q}</span><button onclick="setQty('${s}', ${q + 1})" ${q >= MAX_QTY ? "disabled" : ""} aria-label="Más">+</button></div>
+        <button class="linkbtn" onclick="setQty('${s}', 0)">${icon("trash-2", "s")}Quitar</button></div></div>
+      <div class="ci-price num">${money(p.price * q)}</div></div>`; }).join("") +
+    (() => { const sg = suggestionsFor(lines.map(l => l[0]), 4); return sg.length ? `<div class="sugg"><h4>Completa tu compra</h4>${sg.map(srow).join("")}</div>` : ""; })();
+  $("cartFoot").innerHTML = `
+    <div class="sum-row"><span>Precio regular</span><span class="num"><s>${money(t.was)}</s></span></div>
+    <div class="sum-row save-r"><span>Descuento Black Friday</span><span class="num">−${money(t.was - t.sub)}</span></div>
+    <div class="sum-row"><span>Envío</span><span class="num">${t.ship ? money(t.ship) : '<b style="color:var(--green-700)">Gratis</b>'}</span></div>
+    <div class="sum-total"><span style="font-weight:800">Total</span><b class="num">${money(t.total)}</b></div>
+    <button class="btn btn-l btn-block" onclick="openCheckout()">Ir a pagar${icon("arrow-right")}</button>
+    ${me ? "" : `<span class="muted" style="font-size:13px;text-align:center">Te pediremos ingresar o crear tu cuenta para pagar.</span>`}`;
+}
+function srow(p) {
+  return `<div class="srow"><span class="ci-thumb"><img src="${p.image}" alt=""></span><div><div class="n">${esc(p.name)}</div>
+    <div class="p num"><b>${money(p.price)}</b><s>${money(p.list_price)}</s></div></div>
+    <button class="btn btn-secondary btn-s" onclick="add('${p.sku}', 1, this, true)">+ Agregar</button></div>`;
+}
+
+/* toast "agregado" + sugerencias */
+let addedT;
+function showAdded(sku, many) {
+  const p = BY[sku]; if (!p) return;
+  const sg = suggestionsFor(Object.keys(cart), 2);
+  $("added").innerHTML = `<div class="ok"><span class="tic">${icon(many ? "package" : "shopping-cart", "s")}</span><div><b>${many ? many + " productos agregados" : "Agregado al carrito"}</b><span>${esc(many ? "Combo listo" : p.name)}</span></div></div>
+    ${sg.length ? `<h5>Los clientes también se llevaron</h5><div>${sg.map(srow).join("")}</div>` : ""}
+    <div class="go"><button class="btn btn-ghost btn-s" onclick="hideAdded()">Seguir comprando</button><button class="btn btn-accent btn-s" onclick="hideAdded();openCart()">Ver carrito (${cartCount()})</button></div>`;
+  $("added").classList.add("show");
+  clearTimeout(addedT); addedT = setTimeout(hideAdded, 6000);
+}
+function hideAdded() { $("added").classList.remove("show"); }
+$("added").addEventListener("mouseenter", () => clearTimeout(addedT));
+$("added").addEventListener("mouseleave", () => { addedT = setTimeout(hideAdded, 2500); });
+
+/* ================== detalle de producto ================== */
+let pdQty = 1;
+function openProduct(sku) {
+  const p = BY[sku]; if (!p) return;
+  pdQty = 1; hideAdded();
+  const fbt = [p, ...p.related.slice(0, 2).map(s => BY[s]).filter(Boolean)];
+  const also = [...p.related.slice(2).map(s => BY[s]), ...P.filter(x => x.category === p.category && x.sku !== sku && !p.related.includes(x.sku))]
+    .filter(Boolean).slice(0, 6);
+  const free = p.price >= FREE_SHIP;
+  $("pBody").innerHTML = `<div class="pdp">
+      <div class="main-img"><div class="bdg"><span class="badge dark">-${p.discount_pct}%</span>${p.stock < 10 ? `<span class="badge">${icon("flame", "s")} Últimas unidades</span>` : ""}</div><img src="${p.image}" alt="${esc(p.name)}"></div>
+      <div class="info">
+        <div><span class="ov">${esc(p.category)}</span><h2>${esc(p.name)}</h2>
+          <span class="rate" style="margin-top:8px">${stars(p.rating)} <b>${p.rating}</b> · ${p.reviews.toLocaleString("es")} opiniones</span></div>
+        <div class="buybox">
+          ${priceTag(p, "xl")}
+          <span class="save">Ahorras ${money(p.list_price - p.price)} con Black Friday</span>
+          ${p.stock < 10 ? `<span class="flag" style="align-self:flex-start">${icon("flame", "s")} ¡Solo quedan ${p.stock} unidades!</span>` : `<span class="stock-ok">${icon("circle-check", "s")} En stock</span>`}
+          <div class="buy-row"><span style="font-weight:700;font-size:14px">Cantidad</span>
+            <div class="stepper"><button onclick="pdSet(-1)" aria-label="Menos">−</button><span class="num" id="pdQ">1</span><button onclick="pdSet(1)" aria-label="Más">+</button></div>
+            <span class="muted" style="font-size:13px">Máx. ${MAX_QTY} por cliente</span></div>
+          <div class="buy-btns">
+            <button class="btn btn-l add" onclick="add('${p.sku}', pdQty, this)">${icon("shopping-cart")} Agregar al carrito</button>
+            <button class="btn btn-l btn-secondary" onclick="add('${p.sku}', pdQty, null, true); openCheckout()">${icon("zap")} Comprar ahora</button></div>
+          <div class="ship-list">
+            <div class="shipnote">${icon("truck")}<div><b>${free ? "Este producto tiene envío gratis" : "Envío a todo el Perú"}</b><span>${free ? "Por Black Friday" : money(SHIP_COST) + " · gratis desde S/ " + FREE_SHIP}</span></div></div>
+            <div class="shipnote blue">${icon("rotate-ccw")}<div><b>30 días de devolución</b><span>Si no te convence, lo cambias</span></div></div>
+            <div class="shipnote plain">${icon("lock")}<div><b>Compra protegida</b><span>Tus datos viajan cifrados</span></div></div>
+          </div>
+        </div>
+        <p class="desc">${esc(p.description)}</p>
+      </div></div>
+    ${fbt.length > 1 ? `<div class="xsell box"><h3>Comprados juntos frecuentemente</h3>
+      <div class="fbt">${fbt.map((x, i) => `${i ? '<span class="combo-plus">+</span>' : ""}<label class="combo-it"><span class="ci-img"><img src="${x.image}" alt=""></span><span class="nm">${esc(x.name)}</span>
+        <span class="ck"><input type="checkbox" checked data-sku="${x.sku}" onchange="fbtUpdate()"><b class="num">${money(x.price)}</b></span></label>`).join("")}
+        <div class="combo-sum"><span class="muted" style="font-size:14px;font-weight:700">Total por <span id="fbtCnt">${fbt.length}</span> seleccionados</span>
+          <div class="price l"><div class="now num" id="fbtTot"></div></div>
+          <button class="btn" onclick="fbtAdd()">${icon("shopping-cart")} Agregar seleccionados</button></div></div></div>` : ""}
+    ${also.length ? `<div class="xsell"><h3>Quienes vieron esto también compraron</h3><div class="hscroll">${also.map(x => card(x, true)).join("")}</div></div>` : ""}`;
+  fbtUpdate();
+  openLayer("pModal");
+  $("pModal").scrollTop = 0;
+}
+function pdSet(d) { pdQty = Math.max(1, Math.min(MAX_QTY, pdQty + d)); $("pdQ").textContent = pdQty; }
+const fbtChecked = () => [...document.querySelectorAll(".fbt input")].filter(i => i.checked).map(i => i.dataset.sku);
+function fbtUpdate() {
+  const all = [...document.querySelectorAll(".fbt input")]; if (!all.length) return;
+  all.forEach(i => i.closest(".combo-it").classList.toggle("off", !i.checked));
+  const on = fbtChecked();
+  $("fbtCnt").textContent = on.length;
+  $("fbtTot").textContent = money(on.reduce((a, s) => a + BY[s].price, 0));
+}
+function fbtAdd() { const s = fbtChecked(); if (s.length) { closeAll(); addMany(s); } }
+
+/* ================== capas ================== */
+function openLayer(id) {
+  document.querySelectorAll(".modal.open,.drawer.open,.filters.open").forEach(e => e.classList.remove("open"));
+  $(id).classList.add("open"); $("overlay").classList.add("open"); document.body.classList.add("lock");
+}
+function closeAll() {
+  document.querySelectorAll(".modal.open,.drawer.open,.filters.open").forEach(e => e.classList.remove("open"));
+  $("overlay").classList.remove("open"); document.body.classList.remove("lock");
+  trackingId = null;
+}
+addEventListener("keydown", e => e.key === "Escape" && closeAll());
+function openCart() { hideAdded(); renderCart(); openLayer("cart"); }
+
+/* ================== checkout ================== */
+function openCheckout() {
+  if (!me) { location.href = "/login?next=" + encodeURIComponent("/?pagar=1"); return; }
+  const t = totals();
+  $("coBuyer").innerHTML = `<span class="av">${esc(me.name[0].toUpperCase())}</span><span>Comprando como <b>${esc(me.name)}</b><br><span class="muted">${esc(me.email)}</span></span>`;
+  $("coSummary").innerHTML = `<div class="sum-row"><span>${cartCount()} producto(s)</span><span class="num">${money(t.sub)}</span></div>
+    <div class="sum-row"><span>Envío</span><span class="num">${t.ship ? money(t.ship) : '<b style="color:var(--green-700)">Gratis</b>'}</span></div>
+    <div class="sum-total"><span style="font-weight:800">Total</span><b class="num">${money(t.total)}</b></div>`;
+  $("coErr").textContent = ""; $("coBtn").disabled = false; $("coBtn").textContent = "Confirmar pedido · " + money(t.total);
+  openLayer("coModal");
+}
+async function submitCheckout(e) {
+  e.preventDefault();
+  $("coBtn").disabled = true; $("coBtn").textContent = "Enviando pedido…";
+  try {
+    const r = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items: Object.entries(cart).map(([sku, quantity]) => ({ sku, quantity })) }) });
+    if (r.status === 401) { location.href = "/login?next=" + encodeURIComponent("/?pagar=1"); return false; }
+    const d = await r.json();
+    if (!r.ok) throw new Error(typeof d.detail === "string" ? d.detail : "No se pudo crear el pedido");
+    cart = {}; saveCart();
+    openTracking(d.id, me.name);
+  } catch (err) {
+    $("coErr").textContent = err.message === "Failed to fetch" ? "Sin conexión con la tienda. Intenta de nuevo." : err.message;
+    $("coBtn").disabled = false; $("coBtn").textContent = "Reintentar";
+  }
+  return false;
+}
+
+/* ================== seguimiento en vivo ================== */
+let trackingId = null, celebrated = new Set();
+function openTracking(id, name) {
+  trackingId = id; renderTracking({ id, status: "PENDING", position: 0 }, name);
+  openLayer("trkModal"); pollTracking(name);
+}
+async function pollTracking(name) {
+  const id = trackingId; if (!id) return;
+  try { const r = await fetch(`/api/orders/${id}/track`); if (r.ok) renderTracking(await r.json(), name); } catch {}
+  if (trackingId === id) setTimeout(() => pollTracking(name), 1000);
+}
+function renderTracking(t, name) {
+  const st = t.status, pos = t.position;
+  const lvl = { PENDING: 1, PUBLISHED: pos > 1 ? 2 : 3, PROCESSED: 5, FAILED: 3 }[st];
+  const cls = n => st === "FAILED" && n === 3 ? "bad" : n < lvl ? "done" : n === lvl ? "active" : "";
+  const head = st === "PROCESSED" ? ["party", `¡Listo${name ? ", " + esc(name) : ""}! Pedido confirmado`]
+    : st === "FAILED" ? ["alert", "No pudimos procesar tu pedido"] : ["hourglass", "Estamos procesando tu pedido"];
+  $("trkBody").innerHTML = `<div class="big s-${st}">${icon(head[0])}</div><h2>${head[1]}</h2>
+    <div class="oid num">Pedido #${esc(t.id.slice(0, 8).toUpperCase())}${t.total ? " · " + money(t.total) : ""}</div>
+    <div class="steps">
+      <div class="step ${cls(1)}"><div class="dot">1</div><div><b>Pedido recibido</b><span>Guardado de forma segura en la base de datos</span></div></div>
+      <div class="step ${cls(2)}"><div class="dot">2</div><div><b>En la fila de pedidos</b><span>Esperando turno en la cola de mensajería (RabbitMQ)</span>
+        ${st === "PUBLISHED" && pos > 1 ? `<br><span class="qpos num">Hay ${pos - 1} pedido${pos - 1 === 1 ? "" : "s"} antes que el tuyo</span>` : ""}</div></div>
+      <div class="step ${cls(3)}"><div class="dot">3</div><div><b>Verificando pago y stock</b><span>${st === "FAILED" ? "Hubo un problema con este pedido" : "Un worker está procesando tu pedido"}</span></div></div>
+      <div class="step ${cls(4)} ${st === "PROCESSED" ? "done" : ""}"><div class="dot">${icon("check")}</div><div><b>¡Confirmado!</b><span>Recibirás un correo con los detalles</span></div></div>
+    </div>
+    ${st === "PENDING" ? `<div class="alert">${icon("warn")}<span><b>Alta demanda.</b> Tu pedido ya está guardado y no se perderá: entrará a la fila en cuanto el sistema se recupere.</span></div>` : ""}
+    <button class="btn btn-l btn-block" onclick="closeAll()">${st === "PROCESSED" ? "Seguir comprando" : "Seguir comprando mientras tanto"}</button>`;
+  if (st === "PROCESSED" && !celebrated.has(t.id)) { celebrated.add(t.id); confetti(); }
+}
+function confetti() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const box = document.createElement("div"); box.className = "confetti";
+  const cols = ["#FFC93C", "#2357F5", "#12B76A", "#E5484D", "#0E1525"];
+  for (let i = 0; i < 90; i++) {
+    const c = document.createElement("i");
+    c.style.left = Math.random() * 100 + "vw"; c.style.background = cols[i % cols.length];
+    c.style.animationDuration = 1.6 + Math.random() * 1.6 + "s"; c.style.animationDelay = Math.random() * .4 + "s";
+    box.appendChild(c);
+  }
+  document.body.appendChild(box); setTimeout(() => box.remove(), 4000);
+}
+
+/* ================== mis pedidos ================== */
+const LBL = { PENDING: "Guardado", PUBLISHED: "En cola", PROCESSED: "Confirmado", FAILED: "Con problema" };
+async function openOrders() {
+  if (!me) { location.href = "/login?next=/"; return; }
+  openLayer("orders");
+  const head = `<div class="acct"><span class="av">${esc(me.name[0].toUpperCase())}</span>
+      <div><b>${esc(me.name)}</b><small>${esc(me.email)}${me.role === "admin" ? " · Administrador" : ""}</small></div></div>
+    <div class="linkrow">${me.role === "admin" ? `<a class="btn btn-secondary btn-s" href="/panel">${icon("gear", "s")} Panel de control</a>` : ""}<button class="btn btn-ghost btn-s" onclick="logout()">${icon("log-out", "s")} Cerrar sesión</button></div>
+    <h4 style="font-size:18px">Mis pedidos</h4>`;
+  $("ordersBody").innerHTML = head + `<div class="empty flat">Cargando…</div>`;
+  let list = null;
+  try { const r = await fetch("/api/my/orders"); if (r.ok) list = await r.json(); } catch {}
+  $("ordersBody").innerHTML = head + (list === null ? `<div class="empty flat"><p>No pudimos cargar tus pedidos. Intenta en unos segundos.</p></div>`
+    : !list.length ? `<div class="empty flat"><img src="/static/assets/logo/mark-blue.svg" alt=""><h3>Aún no tienes pedidos</h3><p>Cuando compres, aquí podrás seguir cada pedido en vivo.</p></div>`
+    : list.map(o => `<button class="ord" onclick="openTracking('${o.id}')"><div><span class="oid num">#${o.id.slice(0, 8).toUpperCase()}</span><br>
+      <small>${new Date(o.created_at).toLocaleString("es")} · ${o.items} producto(s)</small></div>
+      <div class="r"><b class="num">${money(o.total)}</b><span class="badge s ${o.status}">${LBL[o.status]}</span></div></button>`).join(""));
+}
+async function logout() {
+  await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+  location.href = "/";
+}
+async function loadMe() {
+  try { const r = await fetch("/api/auth/me"); me = r.ok ? await r.json() : null; } catch { me = null; }
+  if (me) {
+    $("accSm").textContent = "Hola, " + me.name.split(" ")[0];
+    $("accBtn").href = "#"; $("accBtn").onclick = e => { e.preventDefault(); openOrders(); };
+  }
+}
+
+/* ================== cuenta regresiva ================== */
+function tick() {
+  const now = new Date(), end = new Date(now); end.setHours(24, 0, 0, 0);
+  let s = Math.max(0, Math.floor((end - now) / 1000));
+  const p = n => String(n).padStart(2, "0");
+  const v = { h: p(Math.floor(s / 3600)), m: p(Math.floor(s % 3600 / 60)), s: p(s % 60) };
+  v.inline = v.h + ":" + v.m + ":" + v.s;
+  document.querySelectorAll("[data-cd]").forEach(e => e.textContent = v[e.dataset.cd]);
+}
+
+/* ================== inicio ================== */
+(async function init() {
+  tick(); setInterval(tick, 1000);
+  $("grid").innerHTML = Array.from({ length: 8 }, () => `<div class="sk"><i style="aspect-ratio:1"></i><i style="height:12px;width:40%"></i><i style="height:14px"></i><i style="height:24px;width:50%"></i><i style="height:36px"></i></div>`).join("");
+  const hideLoader = () => { $("loader").classList.add("out"); document.body.classList.remove("lock"); };
+  const loaderT = setTimeout(hideLoader, 2500);
+  try {
+    P = await (await fetch("/api/products")).json();
+  } catch { clearTimeout(loaderT); hideLoader(); $("grid").innerHTML = $("flashGrid").innerHTML = `<div class="empty"><h3>No se pudo cargar el catálogo</h3><p>Recarga la página en unos segundos.</p></div>`; return; }
+  clearTimeout(loaderT); hideLoader();
+  BY = Object.fromEntries(P.map(p => [p.sku, p]));
+  for (const s in cart) if (!BY[s]) delete cart[s];
+  renderHome(); route(); renderCarousel(); renderCombos(); renderCart();
+  await loadMe();
+  renderCart();
+  if (new URLSearchParams(location.search).has("pagar")) {   // vuelve del login para pagar
+    history.replaceState(null, "", "/");
+    if (me && cartCount()) openCheckout();
+  }
+})();
+</script>
+</body>
+</html>

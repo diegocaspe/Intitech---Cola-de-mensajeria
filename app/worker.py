@@ -3,10 +3,11 @@ import threading
 import time
 
 from app import config
-from app.application.order_service import OrderService
-from app.infrastructure.control import ControlStore
-from app.infrastructure.messaging.rabbitmq import OrderConsumer, RabbitOrderPublisher
-from app.infrastructure.persistence.postgres import PostgresOrderRepository, PostgresOutbox, create_pool, init_schema
+from app.services.order_service import OrderService
+from app.utils.control import ControlStore
+from app.messaging.rabbitmq import OrderConsumer, RabbitOrderPublisher
+from app.database.connection import create_pool, init_schema
+from app.repositories.postgres_repository import PostgresOrderRepository, PostgresOutbox
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(threadName)s] %(message)s")
 logging.getLogger("psycopg.pool").setLevel(logging.ERROR)

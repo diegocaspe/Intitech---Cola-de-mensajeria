@@ -46,6 +46,7 @@ services:
     volumes:
       - app_data:/data
       - /var/run/docker.sock:/var/run/docker.sock   # permite los botones de sabotaje reales
+      - ./app/static:/srv/app/static:ro   # cambios del frontend al instante: solo recarga el navegador
     depends_on:
       postgres:
         condition: service_healthy

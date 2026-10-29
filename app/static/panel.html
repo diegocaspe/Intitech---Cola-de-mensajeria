@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="es-PE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Panel en vivo · Inti Tech</title>
+<link rel="icon" type="image/png" href="/static/assets/logo/mark-yellow.png">
+<link rel="stylesheet" href="/static/css/inti.css">
+<style>
+  /* colores que también lee el JS (gráficos y partículas) */
+  :root {
+    color-scheme: dark;
+    --blue:#5480F8; --aqua:#12B76A; --good:#5FD39C; --warn:#FFC93C; --bad:#E5484D;
+    --line:#30384C; --muted:#8E98AF; --card:#1C2334; --text:#FFFFFF; --text2:#B8C0D2; --n-850:#161C2B;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; }
+  body { font-family:var(--font-body); font-size:16px; line-height:1.45; color:#fff; background:var(--inti-night); min-height:100vh; }
+  a { color:var(--blue-300); } a:hover { color:#fff; }
+  button { font:inherit; color:inherit; cursor:pointer; }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  .num { font-variant-numeric:tabular-nums; }
+  .i { width:1.15em; height:1.15em; vertical-align:-.2em; flex:none; }
+  .ov { font-weight:800; font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--n-300); }
+  .muted { color:var(--n-300); }
+
+  /* ---------- header ---------- */
+  .top { color:#fff; position:sticky; top:0; z-index:40; min-height:80px; display:flex; align-items:center; gap:24px; padding:10px 32px; background:rgba(14,21,37,.9); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1.5px solid var(--n-800); flex-wrap:wrap; }
+  .logo { display:flex; align-items:center; gap:10px; color:#fff; text-decoration:none; }
+  .logo:hover { color:#fff; text-decoration:none; }
+  .logo img { height:44px; width:auto; }
+  .wordmark { font-family:var(--font-display); font-size:28px; line-height:1; white-space:nowrap; } .wordmark span { font-weight:400; } .wordmark b { font-weight:600; color:var(--inti-yellow); }
+  .top-title { display:flex; flex-direction:column; border-left:1.5px solid var(--n-700); padding-left:24px; }
+  .top-title b { font-family:var(--font-display); font-weight:600; font-size:22px; line-height:1.1; }
+  .live { display:inline-flex; align-items:center; gap:10px; height:40px; padding:0 16px; border-radius:999px; background:rgba(18,183,106,.14); color:var(--green-300); font-weight:800; font-size:14px; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
+  .live i { width:12px; height:12px; border-radius:50%; background:var(--inti-green); animation:ping 1.6s var(--ease-out) infinite; }
+  .live.off { background:rgba(229,72,77,.14); color:#F08A8D; } .live.off i { background:var(--red-500); animation:none; }
+  @keyframes ping { 0% { box-shadow:0 0 0 0 rgba(18,183,106,.6); } 80%,100% { box-shadow:0 0 0 12px rgba(18,183,106,0); } }
+  .top-r { margin-left:auto; display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  .clock { text-align:right; }
+  .clock .t { font-family:var(--font-display); font-weight:600; font-size:28px; line-height:1; color:var(--inti-yellow); }
+  .clock .s { font-size:12px; font-weight:700; color:var(--n-400); }
+  .daybar { height:6px; width:160px; background:var(--n-700); border-radius:999px; margin-top:6px; margin-left:auto; overflow:hidden; }
+  .daybar i { display:block; height:100%; width:0; background:var(--inti-yellow); border-radius:999px; transition:width .9s linear; }
+  .admin { display:flex; align-items:center; gap:10px; font-weight:700; font-size:14px; color:var(--n-200); }
+  .avatar { width:40px; height:40px; border-radius:50%; background:var(--inti-yellow); display:flex; align-items:center; justify-content:center; overflow:hidden; flex:none; }
+  .avatar img { height:28px; width:auto; display:block; }
+
+  /* ---------- botones ---------- */
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:48px; padding:0 20px; border-radius:14px; border:1.5px solid transparent; font-family:var(--font-display); font-weight:600; font-size:17px; color:#fff; background:var(--action-primary); text-decoration:none; white-space:nowrap; transition:background var(--dur-fast) var(--ease-out),transform var(--dur-instant) var(--ease-out),border-color var(--dur-fast); }
+  .btn:hover:not(:disabled) { background:var(--action-primary-hover); color:#fff; text-decoration:none; }
+  .btn:active:not(:disabled) { transform:scale(var(--press-scale)); }
+  .btn.s { height:38px; padding:0 14px; font-size:15px; border-radius:10px; }
+  .btn.ghost { background:transparent; border-color:var(--n-700); } .btn.ghost:hover:not(:disabled) { background:var(--n-800); }
+  /* botón de acción con subtítulo */
+  .abtn { width:100%; text-align:left; padding:12px 14px; border-radius:14px; border:1.5px solid var(--n-700); background:var(--n-850); display:flex; flex-direction:column; gap:2px; transition:transform var(--dur-instant) var(--ease-out), border-color var(--dur-fast), background var(--dur-fast), box-shadow var(--dur-fast); }
+  .abtn:hover:not(:disabled) { border-color:var(--n-500); background:var(--n-700); }
+  .abtn:active:not(:disabled) { transform:scale(var(--press-scale)); }
+  .abtn b { display:flex; align-items:center; gap:8px; font-family:var(--font-display); font-weight:600; font-size:17px; }
+  .abtn span { font-size:13px; color:var(--n-300); font-weight:600; }
+  .abtn.pop { background:var(--inti-yellow); color:var(--inti-night); border:2px solid var(--inti-night); box-shadow:4px 4px 0 #000; }
+  .abtn.pop span { color:var(--n-700); } .abtn.pop:hover:not(:disabled) { background:var(--yellow-300); border-color:var(--inti-night); }
+  .abtn.pop:active:not(:disabled) { transform:translate(4px,4px); box-shadow:0 0 0 #000; }
+  .abtn.stop { background:var(--red-600); border-color:var(--red-600); } .abtn.stop span { color:#FFE1E2; } .abtn.stop:hover:not(:disabled) { background:var(--red-600); border-color:var(--red-600); }
+  .abtn.big { padding:16px 18px; } .abtn.big b { font-size:21px; }
+  .abtn.danger { background:rgba(229,72,77,.08); border-color:rgba(229,72,77,.45); }
+  .abtn.danger:hover:not(:disabled) { background:rgba(229,72,77,.2); border-color:var(--red-500); }
+  .abtn.danger.on { background:var(--red-600); border-color:var(--red-600); } .abtn.danger.on span { color:#FFE1E2; }
+  .abtn.heal { background:var(--green-700); border-color:var(--green-700); align-items:center; text-align:center; } .abtn.heal span { color:#E6FFF2; }
+  .abtn.heal:hover:not(:disabled) { background:#085C35; border-color:#085C35; }
+  .mini { display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 12px; border-radius:10px; border:1.5px solid var(--n-700); background:var(--n-800); font-family:var(--font-display); font-weight:600; font-size:14px; color:#fff; white-space:nowrap; }
+  .mini:hover { background:var(--n-700); }
+  .mini.warn { border-color:rgba(255,201,60,.5); color:var(--inti-yellow); } .mini.warn:hover { background:rgba(255,201,60,.12); }
+  .mini.bad { border-color:rgba(229,72,77,.5); color:#F08A8D; background:rgba(229,72,77,.08); } .mini.bad:hover { background:rgba(229,72,77,.2); }
+  .linkbtn { background:none; border:0; padding:0; color:var(--n-400); font-size:14px; font-weight:700; text-decoration:underline; text-underline-offset:3px; }
+  .linkbtn:hover { color:#F08A8D; }
+
+  /* ---------- narrador ---------- */
+  .banners { padding:20px 32px 0; }
+  .narrator { display:flex; align-items:center; gap:16px; padding:16px 20px; border-radius:18px; font-weight:700; font-size:18px; min-height:72px; background:var(--n-800); border:1.5px solid var(--n-700); transition:background var(--dur-base),border-color var(--dur-base); }
+  .narrator .ic { line-height:0; color:var(--green-300); } .narrator .ic .i { width:30px; height:30px; }
+  .narrator small { display:block; font-size:14px; font-weight:600; margin-top:2px; opacity:.85; }
+  .narrator.ok { border-color:rgba(18,183,106,.45); }
+  .narrator.info { border-color:var(--blue-400); } .narrator.info .ic { color:var(--inti-yellow); }
+  .narrator.warn { background:var(--inti-yellow); border-color:var(--inti-yellow); color:var(--inti-night); } .narrator.warn .ic { color:var(--inti-night); }
+  .narrator.bad { background:var(--red-600); border-color:var(--red-600); color:#fff; } .narrator.bad .ic { color:#fff; }
+
+  /* ---------- layout ---------- */
+  .layout { padding:24px 32px 32px; }
+  .main { display:flex; flex-direction:column; gap:24px; min-width:0; }
+  .flow-row { display:grid; grid-template-columns:minmax(0,1fr) 420px; gap:24px; align-items:stretch; }
+  .flow-row > .card:first-child { display:flex; flex-direction:column; justify-content:space-between; }
+  .card { color:#fff; background:var(--n-800); border:1.5px solid var(--n-700); border-radius:24px; padding:24px; min-width:0; }
+  .card h2 { margin:0 0 18px; font-family:var(--font-display); font-weight:600; font-size:22px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .card h2 > .i { color:var(--blue-300); }
+  .card h2 small { margin-left:auto; font-family:var(--font-body); font-weight:700; font-size:14px; color:var(--n-400); }
+  .two { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:24px; }
+  .stack { display:flex; flex-direction:column; gap:10px; }
+  .pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  /* ---------- KPIs ---------- */
+  .kpis { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:16px; }
+  .kpi { color:#fff; background:var(--n-800); border:1.5px solid var(--n-700); border-radius:20px; padding:18px 18px 16px; display:flex; flex-direction:column; gap:8px; min-width:0; transition:background var(--dur-base),border-color var(--dur-base); }
+  .kpi .k { display:flex; align-items:center; gap:8px; font-weight:800; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--n-300); }
+  .kpi .v { font-family:var(--font-display); font-weight:600; font-size:46px; line-height:1; white-space:nowrap; }
+  .kpi .d { font-size:13px; color:var(--n-400); font-weight:700; min-height:18px; }
+  .kpi.blue .k .i { color:var(--blue-300); } .kpi.green .k .i, .kpi.green .v { color:var(--green-300); } .kpi.yellow .k .i { color:var(--inti-yellow); } .kpi.red .k .i { color:#F08A8D; }
+  .kpi.rev { background:var(--inti-blue); border-color:var(--inti-blue); } .kpi.rev .k, .kpi.rev .d { color:#fff; }
+  #kRev { font-size:clamp(24px, 2vw, 36px); padding-top:8px; }
+  .kpi.warn { border-color:var(--inti-yellow); } .kpi.warn .v { color:var(--inti-yellow); }
+  .kpi.bad { background:var(--red-600); border-color:var(--red-600); animation:alarm 1.2s var(--ease-out) infinite; }
+  .kpi.bad .k, .kpi.bad .d, .kpi.bad .k .i { color:#fff; }
+  @keyframes alarm { 0%,100% { box-shadow:0 0 0 0 rgba(229,72,77,.6); } 50% { box-shadow:0 0 0 8px rgba(229,72,77,0); } }
+
+  /* ---------- recorrido del pedido ---------- */
+  #pipe { width:100%; height:auto; display:block; }
+  .node rect.box { fill:var(--n-850); stroke:var(--n-600); stroke-width:2; }
+  .node text { fill:#fff; font-family:var(--font-body); }
+  .node .t1 { font-family:var(--font-display); font-size:18px; font-weight:600; } .node .t2 { font-size:13.5px; font-weight:700; fill:var(--n-300); }
+  .node .big { font-family:var(--font-display); font-size:30px; font-weight:600; }
+  .node.down rect.box { stroke:var(--red-500); fill:rgba(229,72,77,.12); }
+  .node .light { fill:var(--inti-green); } .node.down .light { fill:var(--red-500); } .node.idle .light { fill:var(--n-400); }
+  .node .tag { display:none; } .node.down .tag { display:block; fill:#F08A8D; font-size:13px; font-weight:800; letter-spacing:.05em; }
+  .dg-i { color:var(--blue-300); }
+  .pipe { fill:none; stroke:var(--n-700); stroke-width:3; stroke-linecap:round; } .pipe.dash { stroke-dasharray:2 8; }
+  .pipelbl { fill:var(--n-400); font-size:13px; font-weight:700; font-family:var(--font-body); }
+  .pipe.retry { stroke:rgba(255,201,60,.35); } .pipe.bad { stroke:rgba(229,72,77,.45); }
+  /* el circuito de reintento solo se dibuja mientras hay pedidos reintentándose */
+  #pipe .pipe.retry, #pipe .rlbl-fail { opacity:0; transition:opacity 400ms var(--ease-out); }
+  #pipe.retrying .pipe.retry, #pipe.retrying .rlbl-fail { opacity:1; }
+  .retry-node .rlbl { fill:var(--n-400); font-size:11.5px; font-weight:700; }
+  .rslot rect { fill:rgba(0,0,0,.22); stroke:var(--n-700); stroke-width:1.5; transition:fill 300ms, stroke 300ms; }
+  .rslot text { font-size:13px; font-weight:700; fill:var(--n-400); }
+  .rslot .rs-d { font-size:12px; }
+  .rslot .rs-n { font-family:var(--font-display); font-weight:600; font-size:16px; fill:var(--n-300); }
+  .rslot.on rect { fill:rgba(255,201,60,.18); stroke:var(--inti-yellow); }
+  .rslot.on text, .rslot.on .rs-n { fill:var(--inti-yellow); }
+  .retry-node.on rect.box { stroke:rgba(255,201,60,.7); }
+  .rlbl-fail { fill:#F5C451; }
+  .legend i.r { color:var(--inti-yellow); border-color:rgba(255,201,60,.6); }
+  .legend { display:flex; flex-wrap:wrap; gap:8px 20px; font-size:14px; font-weight:700; color:var(--n-300); margin-top:10px; }
+  .legend i { font-style:normal; display:inline-grid; place-items:center; width:24px; height:24px; border-radius:50%; background:var(--n-850); border:1.5px solid var(--n-600); font-family:var(--font-display); font-size:13px; margin-right:8px; color:var(--inti-yellow); font-weight:600; }
+
+  /* ---------- gráficos ---------- */
+  .charts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; }
+  .chartwrap { position:relative; height:200px; }
+  canvas { width:100%; height:100%; display:block; }
+  .tip { position:absolute; pointer-events:none; background:rgba(14,21,37,.95); border:1.5px solid var(--n-700); border-radius:10px; padding:8px 12px; font-size:13px; display:none; white-space:nowrap; z-index:5; }
+  .tip div { display:flex; gap:6px; align-items:center; } .tip i { width:10px; height:10px; border-radius:3px; display:inline-block; }
+  .key { display:flex; gap:16px; font-size:13px; font-weight:700; color:var(--n-300); margin:-6px 0 8px; }
+  .key i { display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:6px; vertical-align:-1px; }
+
+  /* ---------- laboratorio ---------- */
+  .lead { color:var(--n-300); font-size:15px; margin:-6px 0 14px; }
+  .exp-row { display:grid; grid-template-columns:150px 1fr; gap:12px; align-items:center; padding:12px 0; border-top:1.5px solid var(--n-700); }
+  .exp-row:first-child { border-top:0; }
+  .exp-bar { display:flex; gap:2px; height:22px; border-radius:999px; overflow:hidden; background:var(--n-700); }
+  .exp-bar i { display:block; min-width:0; } .exp-bar .s { background:var(--inti-green); } .exp-bar .l { background:var(--red-500); }
+  .exp-meta { font-size:13px; color:var(--n-300); margin-top:4px; font-weight:600; }
+  .exp-meta .g { color:var(--green-300); font-weight:800; } .exp-meta .r { color:#F08A8D; font-weight:800; }
+  .exp-conc { margin-top:12px; padding:12px 14px; border-radius:14px; background:var(--n-850); font-size:14px; font-weight:600; }
+  .exp-err { color:#F08A8D; font-size:14px; font-weight:700; margin-top:12px; }
+
+  /* ---------- tablas, DLQ y bitácora ---------- */
+  table { width:100%; border-collapse:collapse; font-size:15px; }
+  th { text-align:left; font-weight:800; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--n-400); padding:0 8px 10px; }
+  td { padding:10px 8px; border-top:1.5px solid var(--n-700); vertical-align:top; }
+  .dlq-head { display:flex; gap:8px; justify-content:flex-end; margin:-6px 0 12px; flex-wrap:wrap; }
+  .dlq td.err { color:#F08A8D; font-size:13px; font-weight:700; max-width:220px; }
+  .dlq td.act { white-space:nowrap; text-align:right; } .dlq td.act .mini + .mini { margin-left:6px; }
+  .kpi .d .mini { margin-top:4px; }
+  .badge { display:inline-flex; gap:6px; align-items:center; height:28px; padding:0 12px; border-radius:999px; font-size:13px; font-weight:800; letter-spacing:.02em; white-space:nowrap; }
+  .b-PENDING { background:rgba(142,152,175,.18); color:var(--n-200); } .b-PUBLISHED { background:rgba(35,87,245,.22); color:var(--blue-300); }
+  .b-PROCESSED { background:rgba(18,183,106,.18); color:var(--green-300); } .b-FAILED { background:rgba(229,72,77,.2); color:#F08A8D; }
+  #log { list-style:none; margin:0; padding:0; max-height:360px; overflow:auto; font-size:15px; }
+  #log li { display:grid; grid-template-columns:72px 28px minmax(0,1fr); gap:10px; align-items:start; padding:10px 0; border-top:1.5px solid var(--n-700); }
+  #log li:first-child { border-top:0; }
+  #log time { font-family:var(--font-display); font-weight:500; color:var(--n-400); padding-top:3px; }
+  #log .dot { width:10px; height:10px; border-radius:50%; margin:8px 9px 0; background:var(--n-400); }
+  #log .ok .dot { background:var(--green-300); } #log .warn .dot { background:var(--inti-yellow); } #log .bad .dot { background:var(--red-500); }
+  #log .li { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(35,87,245,.2); color:var(--blue-300); }
+  #log .li .i { width:16px; height:16px; }
+  #log .ok .li { background:rgba(18,183,106,.18); color:var(--green-300); } #log .warn .li { background:rgba(255,201,60,.16); color:var(--inti-yellow); } #log .bad .li { background:rgba(229,72,77,.2); color:#F08A8D; }
+  #log .bad span:last-child { color:#FFD5D6; }
+  .empty { color:var(--n-300); padding:24px 8px; text-align:center; font-weight:600; }
+
+  /* ---------- columna lateral ---------- */
+  .ctl-row { display:flex; flex-direction:column; gap:10px; }
+  .ctl-row label { display:flex; justify-content:space-between; align-items:baseline; font-weight:700; }
+  .ctl-row label b { font-family:var(--font-display); font-weight:600; font-size:24px; color:var(--inti-yellow); }
+  input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:10px; border-radius:999px; background:linear-gradient(to right,var(--inti-yellow) var(--p,30%),var(--n-700) var(--p,30%)); outline:none; cursor:pointer; margin:8px 0; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:28px; height:28px; border-radius:50%; background:#fff; border:3px solid var(--inti-yellow); box-shadow:0 2px 6px rgba(0,0,0,.4); }
+  input[type=range]::-moz-range-thumb { width:24px; height:24px; border-radius:50%; background:#fff; border:3px solid var(--inti-yellow); }
+  input[type=range]:focus-visible { box-shadow:var(--ring-focus); }
+  .stepper { display:flex; align-items:center; gap:16px; padding-top:18px; margin-top:6px; border-top:1.5px solid var(--n-700); }
+  .stepper .lbl { flex:1; text-align:center; font-weight:700; color:var(--n-300); font-size:14px; }
+  .stepper .lbl .v { display:block; font-family:var(--font-display); font-weight:600; font-size:52px; line-height:1; color:#fff; }
+  .stepper button { width:56px; height:56px; border-radius:16px; border:1.5px solid var(--n-700); background:var(--n-850); font-family:var(--font-display); font-size:28px; font-weight:600; transition:background var(--dur-fast), transform var(--dur-instant); }
+  .stepper button:hover { background:var(--n-700); } .stepper button:active { transform:scale(.94); }
+  .sabotage { background:#1F1620; border:2px dashed rgba(229,72,77,.6); }
+  .sabotage h2 > .i { color:#F08A8D; }
+  .danger-tag { margin-left:auto; font-family:var(--font-body); font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; background:var(--red-600); color:#fff; padding:4px 10px; border-radius:999px; }
+  .toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; text-align:left; padding:12px 14px; border-radius:14px; background:rgba(255,255,255,.04); border:1.5px solid var(--n-700); font-weight:700; }
+  .toggle b { display:block; font-family:var(--font-display); font-weight:600; font-size:17px; }
+  .toggle small { display:block; font-weight:600; color:var(--n-300); font-size:13px; }
+  .sw { position:relative; width:56px; height:32px; border-radius:999px; background:var(--n-600); flex:none; transition:background 200ms; }
+  .sw::after { content:""; position:absolute; top:4px; left:4px; width:24px; height:24px; border-radius:50%; background:#fff; transition:transform 300ms var(--ease-bounce); }
+  .toggle[aria-checked="true"] .sw { background:var(--inti-green); } .toggle[aria-checked="true"] .sw::after { transform:translateX(24px); }
+  .toggle[aria-checked="false"] { border-color:var(--red-500); background:rgba(229,72,77,.12); }
+  .foot { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:4px; color:var(--n-500); font-size:14px; }
+  #toast { position:fixed; left:50%; bottom:28px; transform:translateX(-50%); z-index:90; display:none; align-items:center; gap:12px; padding:14px 20px; border-radius:16px; background:#fff; color:var(--inti-night); font-weight:700; box-shadow:0 20px 48px rgba(0,0,0,.4); animation:inti-rise var(--dur-base) var(--ease-out); }
+
+  /* ---------- autosabotaje: mosaico junto al recorrido ---------- */
+  .sabotage { display:flex; flex-direction:column; }
+  .sab-grid { display:flex; flex-direction:column; gap:8px; }
+  .sab-foot { display:flex; flex-direction:column; gap:10px; margin-top:auto; padding-top:14px; }
+  .abtn.sab { display:grid; grid-template-columns:36px minmax(0,1fr); column-gap:12px; row-gap:2px; align-content:center; padding:12px 14px; transition:transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out), background 200ms, border-color 200ms; }
+  .abtn.sab b { font-size:16px; line-height:1.2; }
+  .abtn.sab > span:last-child { line-height:1.3; }
+  .abtn.sab:hover:not(:disabled) { transform:translateX(4px); box-shadow:0 12px 24px -14px rgba(229,72,77,.9); }
+  .abtn.sab:active:not(:disabled) { transform:translateY(0) scale(var(--press-scale)); box-shadow:none; }
+  .sab-ic { grid-row:span 2; width:36px; height:36px; border-radius:12px; background:rgba(229,72,77,.16); color:#F08A8D !important; display:flex; align-items:center; justify-content:center; transition:transform 300ms var(--ease-bounce), background 200ms; }
+  .abtn.sab:hover .sab-ic { transform:rotate(-8deg) scale(1.1); background:rgba(229,72,77,.3); }
+  .abtn.sab.on .sab-ic { background:rgba(255,255,255,.2); color:#fff !important; }
+  /* ---------- calentamiento (tráfico bajo) ---------- */
+  .pipe-foot { display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .pipe-foot .legend { justify-content:center; }
+  .warm { display:flex; align-items:center; gap:12px; flex-wrap:wrap; max-width:100%; padding:10px 12px 10px 14px; border-radius:18px; background:var(--n-850); border:1.5px solid var(--n-700); }
+  .warm-t { display:flex; align-items:center; gap:10px; margin-right:4px; }
+  .warm-ic { width:36px; height:36px; flex:none; border-radius:12px; background:rgba(255,201,60,.14); color:var(--inti-yellow); display:flex; align-items:center; justify-content:center; }
+  .warm-t b { display:block; font-family:var(--font-display); font-weight:600; font-size:16px; line-height:1.1; }
+  .warm-t small { display:block; font-size:12px; font-weight:600; color:var(--n-300); }
+  .seg { display:inline-flex; gap:2px; padding:3px; border-radius:12px; background:rgba(0,0,0,.25); border:1.5px solid var(--n-700); }
+  .seg button { height:34px; padding:0 12px; border:0; border-radius:9px; background:none; color:var(--n-300); font-weight:700; font-size:13px; cursor:pointer; transition:background 150ms, color 150ms; }
+  .seg button:hover { color:#fff; }
+  .seg button[aria-checked="true"] { background:var(--n-700); color:#fff; }
+  .warm .abtn { width:auto; height:42px; padding:0 16px; flex-direction:row; align-items:center; }
+  .warm .abtn b { font-size:15px; }
+  .warm .abtn.on { background:var(--red-600); border-color:var(--red-600); }
+  /* 1 pedido + flecha de velocidad (como el menú de velocidad de un reproductor) */
+  .split { position:relative; display:inline-flex; }
+  .warm .split .split-main { border-radius:14px 0 0 14px; }
+  .warm .split .split-chev { border-radius:0 14px 14px 0; border-left-width:0; padding:0 11px; }
+  .split-chev .chev { transition:transform var(--dur-fast) var(--ease-out); }
+  .split-chev[aria-expanded="true"] .chev { transform:rotate(180deg); }
+  .abtn .spd-tag { margin-left:2px; padding:5px 10px; line-height:1; border-radius:999px; background:rgba(255,201,60,.16); color:var(--inti-yellow); font-size:12px; font-weight:800; }
+  .spd-pop { position:absolute; right:0; bottom:calc(100% + 8px); z-index:20; min-width:220px; padding:6px; border-radius:14px; background:var(--n-850); border:1.5px solid var(--n-700); box-shadow:0 16px 40px rgba(0,0,0,.45); }
+  .spd-h { padding:8px 10px 6px; font-size:12px; font-weight:700; color:var(--n-300); }
+  .spd-pop button { display:flex; align-items:center; gap:10px; width:100%; height:38px; padding:0 10px; border:0; border-radius:9px; background:none; color:#fff; font-weight:700; font-size:14px; text-align:left; cursor:pointer; }
+  .spd-pop button:hover { background:var(--n-700); }
+  .spd-pop button .i { visibility:hidden; color:var(--inti-yellow); }
+  .spd-pop button[aria-checked="true"] .i { visibility:visible; }
+  .spd-pop button small { margin-left:auto; font-size:12px; font-weight:600; color:var(--n-300); }
+  .abtn.busy { cursor:progress; opacity:.8; }
+  .abtn.busy .sab-ic svg, .abtn.heal.busy b svg { animation:spin 900ms linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  /* ---------- desplegable Black Friday ---------- */
+  .bf { position:relative; }
+  .bf-btn { display:inline-flex; align-items:center; gap:8px; height:42px; padding:0 14px 0 16px; border-radius:12px; border:2px solid var(--inti-yellow); background:transparent; color:var(--inti-yellow); font-family:var(--font-display); font-weight:600; font-size:17px; cursor:pointer; transition:background 150ms, color 150ms, box-shadow 150ms; }
+  .bf-btn:hover { background:rgba(255,201,60,.12); }
+  .bf-btn.on { background:var(--inti-yellow); color:var(--inti-night); box-shadow:3px 3px 0 #000; }
+  .bf-btn b { font-weight:600; }
+  .bf-btn .chev { transition:transform 200ms var(--ease-out); }
+  .bf-btn[aria-expanded="true"] .chev { transform:rotate(180deg); }
+  .bf-pop { position:absolute; top:calc(100% + 12px); right:0; z-index:60; width:400px; max-width:calc(100vw - 32px); padding:22px; color:#fff; background:var(--n-800); border:1.5px solid var(--n-700); border-radius:24px; box-shadow:0 24px 60px -12px rgba(0,0,0,.7); transform-origin:top right; animation:bfin 180ms var(--ease-out); }
+  .bf-pop h2 { margin:0 0 16px; font-family:var(--font-display); font-weight:600; font-size:20px; display:flex; align-items:center; gap:10px; }
+  .bf-pop h2 > .i { color:var(--inti-yellow); }
+  @keyframes bfin { from { opacity:0; transform:translateY(-6px) scale(.98); } }
+  @media (max-width:1680px) { .top-title, .admin span:last-child { display:none; } }
+  @media (max-width:1500px) { .kpis { grid-template-columns:repeat(4,minmax(0,1fr)); } .kpi.rev { grid-column:span 2; } .flow-row { grid-template-columns:minmax(0,1fr) 380px; } .warm-t small { display:none; } }
+  @media (max-width:1180px) { .flow-row { grid-template-columns:1fr; } .two, .charts { grid-template-columns:1fr; } .top-title { display:none; } }
+  @media (max-width:760px) { .kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } .kpi .v { font-size:36px; } .top { padding:10px 16px; gap:12px; } .wordmark { display:none; }
+    .layout, .banners { padding-left:16px; padding-right:16px; } .admin span:last-child { display:none; } .exp-row { grid-template-columns:1fr; } }
+  @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="/" target="_blank" aria-label="Inti Tech, abrir la tienda"><img src="/static/assets/logo/mark-white.svg" alt=""><span class="wordmark"><span>inti</span><b>tech</b></span></a>
+  <div class="top-title"><span class="ov">Panel de control</span><b>Black Friday en vivo</b></div>
+  <span class="live" id="apiPill"><i></i><span id="apiTx">En vivo</span></span>
+  <div class="top-r">
+    <div class="bf">
+      <button class="bf-btn" id="bfBtn" aria-expanded="false" aria-controls="bfPop" onclick="toggleBf()"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-zap"/></svg><span id="bfTx">Black Friday</span><svg class="i chev" aria-hidden="true"><use href="/static/icons.svg#i-chevron-down"/></svg></button>
+      <div class="bf-pop" id="bfPop" role="dialog" aria-label="Simulación de tráfico" hidden>
+        <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-zap"/></svg>Simulación de tráfico</h2>
+          <div class="stack">
+            <button class="abtn pop big" id="btnDay" onclick="toggleDay()"><b><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg> Iniciar Black Friday</b><span>Un día completo (24 h) comprimido en 2,5 min</span></button>
+            <div class="ctl-row">
+              <label for="rate"><span id="rateLbl">Pico: 30 pedidos/s</span></label>
+              <input type="range" id="rate" min="1" max="100" value="30">
+            </div>
+            <div class="pair">
+              <button class="abtn" id="btnConst" onclick="toggleConst()"><b><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg> Constante</b><span>ritmo fijo</span></button>
+              <button class="abtn" onclick="post('/api/sim/burst',{count:300})"><b><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-bolt"/></svg> Oleada</b><span>300 de golpe</span></button>
+            </div>
+            <div class="stepper">
+              <button onclick="chaos('workers-down')" aria-label="Menos workers">−</button>
+              <div class="lbl"><span class="v num" id="wcount">1</span>workers activos · escalar en caliente</div>
+              <button onclick="chaos('workers-up')" aria-label="Más workers">+</button>
+            </div>
+          </div>
+      </div>
+    </div>
+    <div class="clock" id="clock" hidden>
+      <div class="t num" id="clockT">--:--</div><div class="s" id="clockS"></div>
+      <div class="daybar"><i id="dayfill"></i></div>
+    </div>
+    <span class="admin"><span class="avatar"><img src="/static/assets/logo/mark-night.svg" alt=""></span><span id="whoName">Administrador</span></span>
+    <a class="btn ghost s" href="/" target="_blank"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-external-link"/></svg>Ver tienda</a>
+    <button class="btn ghost s" onclick="logout()"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-log-out"/></svg>Cerrar sesión</button>
+  </div>
+</header>
+
+<div class="banners">
+  <div class="narrator" id="narr" role="status"><div class="ic" id="narrIc"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-check-circle"/></svg></div><div id="narrTx"></div></div>
+</div>
+
+<div class="layout">
+  <main class="main">
+    <section class="kpis" aria-label="Indicadores">
+      <div class="kpi blue"><div class="k"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-shopping-bag"/></svg>Pedidos recibidos</div><div class="v num" id="kTotal">0</div><div class="d num" id="kTotalD"></div></div>
+      <div class="kpi yellow"><div class="k"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-layers"/></svg>En cola</div><div class="v num" id="kQueue">0</div><div class="d num" id="kQueueD"></div></div>
+      <div class="kpi green"><div class="k"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-circle-check-big"/></svg>Procesados</div><div class="v num" id="kProc">0</div><div class="d num" id="kProcD"></div></div>
+      <div class="kpi blue" id="kcPend"><div class="k"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-database"/></svg>En outbox</div><div class="v num" id="kPend">0</div><div class="d">eventos guardados sin publicar</div></div>
+      <div class="kpi yellow" id="kcDlq"><div class="k"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-inbox"/></svg>Fallidos / DLQ</div><div class="v num" id="kDlq">0</div><div class="d" id="kDlqD">tras 3 reintentos con espera</div></div>
+      <div class="kpi red" id="kcLost"><div class="k"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-circle-x"/></svg>Mensajes perdidos</div><div class="v num" id="kLost">0</div><div class="d" id="kLostD">ninguno</div></div>
+      <div class="kpi rev"><div class="k"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-banknote"/></svg>Ingresos</div><div class="v num" id="kRev">S/ 0</div><div class="d">de pedidos procesados</div></div>
+    </section>
+
+    <div class="flow-row">
+    <section class="card">
+      <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-route"/></svg>Recorrido de un pedido <small id="dotScale">cada punto es un pedido real</small></h2>
+      <svg id="pipe" viewBox="0 0 1000 310" role="img" aria-label="Flujo del pedido: clientes, API, cola RabbitMQ, workers y base de datos">
+        <defs><clipPath id="vclip"><rect x="400" y="70" width="160" height="140" rx="16"/></clipPath></defs>
+        <path id="p-cust" class="pipe" d="M130,150 L190,150"/>
+        <path id="p-queue" class="pipe" d="M320,150 L400,150"/>
+        <path id="p-work" class="pipe" d="M560,150 L640,150"/>
+        <path id="p-db" class="pipe" d="M780,150 L860,150"/>
+        <path id="p-save" class="pipe dash" d="M255,105 C255,8 925,8 925,105"/>
+        <path id="p-pend" class="pipe dash" d="M255,195 L255,240"/>
+        <path id="p-dlq" class="pipe dash" d="M480,210 L480,240"/>
+        <path id="p-fail" class="pipe dash retry" d="M720,195 L720,236"/>
+        <path id="p-back" class="pipe dash retry" d="M620,236 C620,214 596,201 562,199"/>
+        <path id="p-todlq" class="pipe dash bad" d="M596,272 L562,272"/>
+        <text class="pipelbl" x="590" y="40" text-anchor="middle">① guarda el pedido en la BD</text>
+        <text class="pipelbl" x="360" y="140" text-anchor="middle">②</text>
+        <text class="pipelbl" x="600" y="140" text-anchor="middle">③</text>
+        <text class="pipelbl" x="820" y="140" text-anchor="middle">④</text>
+
+        <g class="node" id="nCust"><rect class="box" x="10" y="105" width="120" height="90" rx="20"/>
+          <use href="/static/icons.svg#i-users" class="dg-i" x="20" y="126" width="18" height="18"/><text class="t1" x="80" y="140" text-anchor="middle">Clientes</text>
+          <text class="t2" id="tCust" x="70" y="166" text-anchor="middle">0 pedidos/s</text></g>
+
+        <g class="node" id="nApi"><rect class="box" x="190" y="105" width="130" height="90" rx="20"/>
+          <circle class="light" cx="304" cy="121" r="5"/>
+          <text class="t1" x="255" y="143" text-anchor="middle">API tienda</text>
+          <text class="t2" x="255" y="167" text-anchor="middle">FastAPI</text></g>
+
+        <g class="node" id="nPend"><rect class="box" x="190" y="240" width="130" height="56" rx="16"/>
+          <text class="t2" x="255" y="261" text-anchor="middle">Outbox (BD)</text>
+          <text class="big num" id="tPend" x="255" y="288" text-anchor="middle" style="font-size:22px">0</text></g>
+
+        <g class="node" id="nQ">
+          <rect class="box" x="400" y="70" width="160" height="140" rx="16"/>
+          <g clip-path="url(#vclip)">
+            <rect id="fillReady" x="400" y="210" width="160" height="0" fill="#5480F8" opacity=".55"/>
+            <rect id="fillUnack" x="400" y="210" width="160" height="0" fill="#12B76A" opacity=".8"/>
+          </g>
+          <rect x="400" y="70" width="160" height="140" rx="16" fill="none" stroke="var(--n-500)" stroke-width="2.5" id="vrim"/>
+          <circle class="light" cx="544" cy="86" r="5"/>
+          <text class="t1" x="480" y="94" text-anchor="middle">RabbitMQ</text>
+          <text class="big num" id="tDepth" x="480" y="146" text-anchor="middle">0</text>
+          <text class="t2" id="tDepthSub" x="480" y="168" text-anchor="middle">mensajes en cola</text>
+          <g id="gPersist"><use href="/static/icons.svg#i-disk" class="dg-i" x="436" y="181" width="14" height="14"/><text class="t2" id="tPersist" x="455" y="192">0 en disco</text></g>
+          <text class="tag" x="480" y="122" text-anchor="middle">SIN CONEXIÓN</text></g>
+
+        <g class="node" id="nDlq"><rect class="box" x="400" y="240" width="160" height="56" rx="16"/>
+          <use href="/static/icons.svg#i-inbox" class="dg-i" x="424" y="249" width="15" height="15"/><text class="t2" x="488" y="261" text-anchor="middle">DLQ (fallidos)</text>
+          <text class="big num" id="tDlq" x="480" y="288" text-anchor="middle" style="font-size:22px">0</text></g>
+
+        <g class="node" id="nWork"><rect class="box" x="640" y="105" width="140" height="90" rx="20"/>
+          <circle class="light" cx="764" cy="121" r="5"/>
+          <use href="/static/icons.svg#i-cpu" class="dg-i" x="660" y="122" width="18" height="18"/><text class="t1" x="722" y="136" text-anchor="middle">Workers</text>
+          <text class="big num" id="tWork" x="710" y="166" text-anchor="middle" style="font-size:24px">×1</text>
+          <g id="wdots"></g>
+          <text class="tag" x="710" y="214" text-anchor="middle">CAÍDO</text></g>
+
+        <g class="node" id="nDb"><rect class="box" x="860" y="105" width="130" height="90" rx="20"/>
+          <circle class="light" cx="974" cy="121" r="5"/>
+          <use href="/static/icons.svg#i-database" class="dg-i" x="867" y="129" width="18" height="18"/><text class="t1" x="890" y="143">PostgreSQL</text>
+          <text class="t2" id="tDb" x="925" y="168" text-anchor="middle">0 procesados</text>
+          <text class="tag" x="925" y="214" text-anchor="middle">CAÍDA</text></g>
+
+        <g class="node retry-node" id="nRetry"><rect class="box" x="596" y="236" width="248" height="66" rx="16"/>
+          <use href="/static/icons.svg#i-rotate-ccw" class="dg-i" x="612" y="245" width="15" height="15"/><text class="t2" x="633" y="257">Reintentos</text>
+          <text class="rlbl" x="828" y="257" text-anchor="end">espera creciente</text>
+          <g class="rslot" id="rs0"><rect x="610" y="266" width="70" height="28" rx="9"/><text class="rs-d" x="619" y="285">2 s</text><text class="rs-n num" id="rsN0" x="671" y="285.5" text-anchor="end">0</text></g>
+          <g class="rslot" id="rs1"><rect x="685" y="266" width="70" height="28" rx="9"/><text class="rs-d" x="694" y="285">5 s</text><text class="rs-n num" id="rsN1" x="746" y="285.5" text-anchor="end">0</text></g>
+          <g class="rslot" id="rs2"><rect x="760" y="266" width="70" height="28" rx="9"/><text class="rs-d" x="769" y="285">10 s</text><text class="rs-n num" id="rsN2" x="821" y="285.5" text-anchor="end">0</text></g></g>
+        <text class="pipelbl rlbl-fail" x="730" y="222">falla</text>
+
+        <g id="particles"></g>
+      </svg>
+      <div class="pipe-foot">
+      <div class="warm" role="group" aria-label="Calentamiento: tráfico bajo">
+        <div class="warm-t"><span class="warm-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-flame"/></svg></span><div><b>Calentamiento</b><small>Pocos pedidos para explicar el recorrido</small></div></div>
+        <div class="seg" id="warmSeg" role="radiogroup" aria-label="Ritmo del goteo">
+          <button role="radio" aria-checked="false" data-r="0.5" onclick="setWarm(0.5)">1 cada 2 s</button><button role="radio" aria-checked="true" data-r="1" onclick="setWarm(1)">1 por s</button><button role="radio" aria-checked="false" data-r="2" onclick="setWarm(2)">2 por s</button>
+        </div>
+        <button class="abtn warm-go" id="btnWarm" onclick="toggleWarm()"><b><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg> Iniciar goteo</b></button>
+        <div class="split" id="spdWrap">
+          <button class="abtn split-main" onclick="busy(this, post('/api/sim/burst',{count:1}))"><b><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-shopping-cart"/></svg> 1 pedido <span class="spd-tag" id="spdTag" hidden></span></b></button>
+          <button class="abtn split-chev" id="spdBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="spdPop" aria-label="Velocidad de la animación" onclick="toggleSpd()"><b><svg class="i chev" aria-hidden="true"><use href="/static/icons.svg#i-chevron-down"/></svg></b></button>
+          <div class="spd-pop" id="spdPop" role="menu" aria-label="Velocidad de la animación" hidden>
+            <div class="spd-h">Velocidad de la animación</div>
+            <button role="menuitemradio" data-v="0.25" onclick="setSpeed(0.25)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-check"/></svg>0.25×<small>muy lenta</small></button>
+            <button role="menuitemradio" data-v="0.5" onclick="setSpeed(0.5)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-check"/></svg>0.5×<small>lenta</small></button>
+            <button role="menuitemradio" data-v="0.75" onclick="setSpeed(0.75)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-check"/></svg>0.75×</button>
+            <button role="menuitemradio" data-v="1" onclick="setSpeed(1)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-check"/></svg>Normal</button>
+          </div>
+        </div>
+        <button class="abtn" onclick="post('/api/sim/burst',{count:5})"><b><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-plus"/></svg> 5 pedidos</b></button>
+      </div>
+      <div class="legend">
+        <span><i>1</i>La API guarda el pedido en la BD</span>
+        <span><i>2</i>Lo publica en RabbitMQ y espera la confirmación</span>
+        <span><i>3</i>Un worker lo procesa</span>
+        <span><i>4</i>Confirma (ACK) y actualiza la BD</span>
+        <span><i class="r">5</i>Si falla, reintenta tras esperar 2 s, 5 s y 10 s; si sigue fallando, va a la DLQ</span>
+      </div>
+      </div>
+    </section>
+
+      <section class="card sabotage">
+        <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-bomb"/></svg>Autosabotaje <span class="danger-tag">Zona de peligro</span></h2>
+        <div class="sab-grid">
+          <button class="abtn danger sab" id="bKillW" onclick="sab(this, 'kill-worker', 'revive-worker')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-user-x"/></svg></span><b>Matar al worker</b><span id="killSub">Contenedor eliminado a mitad de un pedido</span></button>
+          <button class="abtn danger sab" id="bCrash" onclick="sab(this, 'crash-broker', 'revive-broker')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-unplug"/></svg></span><b>Tirar RabbitMQ</b><span id="crashSub">Caída brusca (SIGKILL)</span></button>
+          <button class="abtn danger sab" id="bCrashDb" onclick="sab(this, 'crash-db', 'revive-db')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-database-zap"/></svg></span><b>Tirar PostgreSQL</b><span id="crashDbSub">La BD cae en plena venta</span></button>
+          <button class="abtn danger sab" id="bSlow" onclick="sab(this, 'slow-on', 'slow-off')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-snail"/></svg></span><b>Workers lentos</b><span id="slowSub">Un servicio externo se degrada</span></button>
+          <button class="abtn danger sab" id="bPoison" onclick="sab(this, 'poison-on', 'poison-off')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-skull"/></svg></span><b>Pedidos venenosos</b><span id="poisonSub">1 de cada 5 pedidos falla: reintentos → DLQ</span></button>
+        </div>
+        <div class="sab-foot">
+          <button class="toggle" id="bPersist" role="switch" aria-checked="true" onclick="chaos(state.control.persistent ? 'persist-off' : 'persist-on')"><span><b id="persistLbl">Persistencia encendida</b><small id="persistSub">Mensajes y colas durables en disco</small></span><span class="sw"></span></button>
+          <button class="abtn heal big" onclick="busy(this, chaos('recover'))"><b><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-life-buoy"/></svg> Recuperar todo</b><span>Levanta lo caído y normaliza la velocidad</span></button>
+        </div>
+      </section>
+    </div>
+    <div class="charts">
+      <section class="card">
+        <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-layers"/></svg>Mensajes esperando en la cola <small>últimos 90 s</small></h2>
+        <div class="chartwrap"><canvas id="chDepth"></canvas><div class="tip" id="tipDepth"></div></div>
+      </section>
+      <section class="card">
+        <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-activity"/></svg>Pedidos por segundo <small>últimos 90 s</small></h2>
+        <div class="key"><span><i style="background:var(--blue)"></i>Llegan</span><span><i style="background:var(--aqua)"></i>Se procesan</span></div>
+        <div class="chartwrap" style="height:176px"><canvas id="chRate"></canvas><div class="tip" id="tipRate"></div></div>
+      </section>
+    </div>
+
+    <div class="two">
+      <section class="card">
+        <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-flask-conical"/></svg>Experimento de persistencia <small>RabbitMQ cae de verdad</small></h2>
+        <p class="lead">Publica 500 mensajes con persistencia y 500 sin ella, tira RabbitMQ (SIGKILL), lo vuelve a levantar y cuenta cuántos sobrevivieron.</p>
+        <button class="abtn" id="bLab" onclick="post('/api/lab/run')"></button>
+        <div id="labOut"></div>
+      </section>
+      <section class="card">
+        <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-inbox"/></svg>Mensajes fallidos (DLQ) <small id="dlqCount"></small></h2>
+        <div id="dlqList"><div class="empty">Cargando…</div></div>
+      </section>
+    </div>
+
+    <div class="two">
+      <section class="card"><h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-receipt"/></svg>Últimos pedidos</h2><div id="orders"><div class="empty">Aún no hay pedidos. Inicia la simulación desde Black Friday o compra desde la tienda.</div></div></section>
+      <section class="card"><h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-scroll-text"/></svg>Bitácora del sistema</h2><ul id="log"></ul></section>
+    </div>
+
+    <div class="foot"><span>Inti Tech · Demo de colas de mensajería y persistencia con RabbitMQ</span><button class="linkbtn" onclick="resetDemo()">Reiniciar demo (vaciar BD y colas)</button></div>
+  </main>
+
+</div>
+<div id="toast" role="alert"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const icon = (n, c = "") => `<svg class="i ${c}" aria-hidden="true"><use href="/static/icons.svg#i-${n}"/></svg>`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt = n => Math.round(n).toLocaleString("es-PE", { useGrouping: "always" });
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const state = { m: null, control: {}, apiDown: false, maxDepth: 0, lastDepth: 0 };
+
+/* ================= acciones ================= */
+function toast(msg) { const t = $("toast"); t.innerHTML = icon("circle-alert") + esc(msg); t.style.display = "flex"; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = "none", 4000); }
+async function post(url, body) {
+  try {
+    const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+    if (r.status === 401 || r.status === 403) { location.href = "/login?next=/panel&admin=1"; return; }
+    if (!r.ok) { const e = await r.json().catch(() => ({})); toast(e.detail || "Error " + r.status); }
+    poll();
+  } catch { toast("No se pudo contactar a la API"); }
+}
+const chaos = a => post("/api/chaos/" + a);
+/* el botón muestra que trabaja hasta que la API responde */
+async function busy(btn, p) { btn.classList.add("busy"); btn.setAttribute("aria-busy", "true"); try { await p; } finally { btn.classList.remove("busy"); btn.removeAttribute("aria-busy"); } }
+/* sabotaje como interruptor: si está activo, el mismo botón lo deshace */
+const sab = (btn, on, off) => { if (!btn.classList.contains("busy")) busy(btn, chaos(btn.classList.contains("on") ? off : on)); };
+const rateVal = () => +$("rate").value;
+/* desplegable Black Friday (simulación de tráfico) en la cabecera */
+function toggleBf(open = $("bfPop").hidden) { $("bfPop").hidden = !open; $("bfBtn").setAttribute("aria-expanded", open); }
+document.addEventListener("click", e => { if (!$("bfPop").hidden && !e.target.closest(".bf")) toggleBf(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("bfPop").hidden) { toggleBf(false); $("bfBtn").focus(); } });
+/* velocidad de las bolitas (cámara lenta para explicar el recorrido); se recuerda en este navegador */
+let animSpeed = 1;
+try { animSpeed = [0.25, 0.5, 0.75, 1].includes(+localStorage.getItem("animSpeed")) ? +localStorage.getItem("animSpeed") : 1; } catch {}
+function toggleSpd(open = $("spdPop").hidden) { $("spdPop").hidden = !open; $("spdBtn").setAttribute("aria-expanded", open); }
+function setSpeed(v) {
+  animSpeed = v;
+  try { localStorage.setItem("animSpeed", v); } catch {}
+  document.querySelectorAll("#spdPop [data-v]").forEach(b => b.setAttribute("aria-checked", +b.dataset.v === v));
+  $("spdTag").hidden = v === 1; $("spdTag").textContent = v + "×";
+  toggleSpd(false);
+}
+setSpeed(animSpeed);
+document.addEventListener("click", e => { if (!$("spdPop").hidden && !e.target.closest("#spdWrap")) toggleSpd(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("spdPop").hidden) { toggleSpd(false); $("spdBtn").focus(); } });
+/* calentamiento: goteo de pocos pedidos (modo constante a 0.5–2 pedidos/s) */
+let warmRate = 1;
+const warmOn = sim => sim.running && sim.mode === "manual" && sim.rate <= 2;
+function setWarm(r) {
+  warmRate = r;
+  document.querySelectorAll("#warmSeg button").forEach(b => b.setAttribute("aria-checked", +b.dataset.r === r));
+  if (state.m && warmOn(state.m.sim)) post("/api/sim/rate", { rate: r });
+}
+function toggleWarm() { state.m && warmOn(state.m.sim) ? post("/api/sim/stop") : post("/api/sim/start", { mode: "manual", rate: warmRate }); }
+function toggleDay() { state.m?.sim.running && state.m.sim.mode === "day" ? post("/api/sim/stop") : post("/api/sim/start", { mode: "day", rate: rateVal() }); }
+function toggleConst() { state.m?.sim.running && state.m.sim.mode === "manual" ? post("/api/sim/stop") : post("/api/sim/start", { mode: "manual", rate: rateVal() }); }
+function resetDemo() { if (confirm("¿Vaciar la base de datos y las colas?")) { hist.depth.length = hist.recv.length = hist.proc.length = 0; state.maxDepth = 0; post("/api/reset"); } }
+let rateTimer;
+$("rate").addEventListener("input", () => {
+  updateRateLabel();
+  clearTimeout(rateTimer);
+  rateTimer = setTimeout(() => state.m?.sim.running && post("/api/sim/rate", { rate: rateVal() }), 250);
+});
+function updateRateLabel() {
+  const day = state.m?.sim.running && state.m.sim.mode === "day", r = $("rate");
+  $("rateLbl").innerHTML = (day || !state.m?.sim.running ? "Pico" : "Ritmo") + ` <span><b class="num">${rateVal()}</b> <span class="muted">pedidos/s</span></span>`;
+  r.style.setProperty("--p", (r.value - r.min) / (r.max - r.min) * 100 + "%");
+}
+
+/* ================= números animados ================= */
+const nums = {};
+function setNum(id, target, f = fmt) { (nums[id] ||= { el: $(id), v: 0, t: 0, f }).t = target; }
+function tickNums(dt) {
+  for (const n of Object.values(nums)) {
+    n.v += (n.t - n.v) * Math.min(1, dt * 9);
+    if (Math.abs(n.t - n.v) < 0.5) n.v = n.t;
+    n.el.textContent = n.f(n.v);
+  }
+}
+
+/* ================= historial y velocidades ================= */
+const hist = { depth: [], recv: [], proc: [] }, MAXH = 90;
+let last = null, recvRate = 0, procRate = 0, failRate = 0;
+function push(a, v) { a.push(v); if (a.length > MAXH) a.shift(); }
+function sample(m) {
+  const now = performance.now(), o = m.orders;
+  if (last) {
+    const dt = (now - last.t) / 1000;
+    if (dt > 0.3) {
+      const k = 0.5; // suavizado
+      recvRate += (Math.max(0, (o.total - last.total) / dt) - recvRate) * k;
+      procRate += (Math.max(0, (o.PROCESSED - last.proc) / dt) - procRate) * k;
+      failRate += (Math.max(0, (o.FAILED - last.fail) / dt) - failRate) * k;
+      last = { t: now, total: o.total, proc: o.PROCESSED, fail: o.FAILED };
+      push(hist.recv, recvRate); push(hist.proc, procRate);
+      push(hist.depth, m.queue ? m.queue.ready + m.queue.unacked : state.lastDepth);
+    }
+  } else last = { t: now, total: o.total, proc: o.PROCESSED, fail: o.FAILED };
+}
+
+/* ================= render ================= */
+function svcState(name, m) {
+  const s = m.services?.[name];
+  if (s) return s === "running" ? "up" : "down";
+  if (name === "rabbitmq") return m.broker_up ? "up" : "down";
+  if (name === "worker") return m.queue && m.queue.consumers > 0 ? "up" : "down";
+  if (name === "postgres") return m.db_up ? "up" : "down";
+  return "up";
+}
+function setNode(id, st) { const n = $(id).classList; n.toggle("down", st === "down"); n.toggle("idle", st === "idle"); }
+
+function render(m) {
+  state.m = m; state.control = m.control;
+  sample(m);
+  const o = m.orders, q = m.queue, sim = m.sim;
+  const depth = q ? q.ready + q.unacked : state.lastDepth;
+  if (q) { state.lastDepth = depth; state.maxDepth = Math.max(state.maxDepth, depth); }
+
+  // header
+  $("apiPill").className = "live"; $("apiTx").textContent = "En vivo";
+  const day = sim.running && sim.mode === "day" && sim.virtual_hour != null;
+  $("clock").hidden = !day;
+  if (day) {
+    const h = sim.virtual_hour, hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
+    $("clockT").textContent = String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+    $("clockS").textContent = "Hora simulada · " + sim.current_rate + " pedidos/s ahora";
+    $("dayfill").style.width = ((((h - 23 + 24) % 24) / 24) * 100) + "%";
+  }
+
+  // KPIs
+  setNum("kTotal", o.total); setNum("kQueue", depth); setNum("kProc", o.PROCESSED);
+  setNum("kPend", m.outbox_pending); setNum("kDlq", Math.max(o.FAILED, q?.dlq || 0)); setNum("kLost", m.lost);
+  $("kDlqD").textContent = q && q.retrying ? `${fmt(q.retrying)} esperando reintento` : "tras 3 reintentos con espera";
+  $("kcLost").className = "kpi red" + (m.lost > 0 ? " bad" : "");
+  $("kLostD").innerHTML = m.lost > 0 ? `<button class="mini" onclick="post('/api/reconcile')">${icon("wrench")} Reconciliar desde la BD</button>`
+    : m.control.persistent ? "ninguno: todo en disco" : "ninguno… por ahora";
+  setNum("kRev", m.revenue, v => "S/ " + fmt(v));
+  $("kTotalD").textContent = "+" + recvRate.toFixed(1) + " /s";
+  $("kProcD").textContent = "+" + procRate.toFixed(1) + " /s";
+  $("kQueueD").textContent = q ? `${fmt(q.unacked)} en proceso ahora` : "broker sin conexión";
+  $("kcPend").className = "kpi blue" + (m.outbox_pending > 0 ? " warn" : "");
+  $("kcDlq").className = "kpi yellow" + (o.FAILED > 0 ? " warn" : "");
+
+  // pipeline
+  const brokerSt = svcState("rabbitmq", m), workSt = svcState("worker", m), apiSt = "up";
+  const dbSt = m.db_up ? "up" : "down";
+  setNode("nQ", brokerSt); setNode("nWork", workSt); setNode("nApi", apiSt); setNode("nDb", dbSt);
+  $("nQ").classList.toggle("idle", false);
+  $("tCust").textContent = (sim.running ? sim.current_rate : 0) + " pedidos/s";
+  setNum("tPend", m.outbox_pending); setNum("tDlq", Math.max(o.FAILED, q?.dlq || 0));
+  renderRetries(q); spawnOrders(m);
+  state.depth = depth;   // los contadores del diagrama se fijan en syncVisNums, al ritmo de las bolitas
+  const nW = m.control.workers;
+  $("tWork").textContent = "×" + nW; $("wcount").textContent = nW;
+  $("wdots").innerHTML = Array.from({ length: nW }, (_, i) =>
+    `<rect x="${640 + 13 + i * 12.3}" y="178" width="10" height="9" rx="2" fill="${workSt === "up" ? css("--aqua") : css("--bad")}"/>`).join("");
+  const cap = Math.max(150, state.maxDepth * 1.25);
+  const hReady = q ? 140 * Math.min(1, q.ready / cap) : 0, hUn = q ? 140 * Math.min(1, q.unacked / cap) : 0;
+  $("fillUnack").setAttribute("y", 210 - hUn); $("fillUnack").setAttribute("height", hUn);
+  $("fillReady").setAttribute("y", 210 - hUn - hReady); $("fillReady").setAttribute("height", hReady);
+  $("tDepthSub").textContent = q ? "mensajes en cola" : "último valor conocido";
+  $("tDepth").style.opacity = q ? 1 : .45;
+  setNum("tPersist", q ? q.persistent : 0, v => fmt(v) + " en disco" + (q && q.volatile ? ` · ${fmt(q.volatile)} en memoria` : ""));
+  $("fillReady").setAttribute("fill", m.control.persistent ? "#5480F8" : "#FFC93C");
+  $("gPersist").style.display = q ? "" : "none";
+
+  // botones
+  const dayRun = sim.running && sim.mode === "day", constRun = sim.running && sim.mode === "manual";
+  const warm = warmOn(sim);   // el goteo usa el mismo simulador: no encender el botón Black Friday por él
+  $("btnWarm").innerHTML = warm ? `<b>${icon("stop")} Detener goteo</b>` : `<b>${icon("play")} Iniciar goteo</b>`;
+  $("btnWarm").classList.toggle("on", warm);
+  $("bfBtn").classList.toggle("on", sim.running && !warm);
+  $("bfTx").innerHTML = sim.running && !warm ? `Black Friday · <b class="num">${sim.current_rate}</b> ped/s` : "Black Friday";
+  $("btnDay").innerHTML = dayRun ? `<b>${icon("stop")} Detener el día</b><span>Corta el tráfico</span>` : `<b>${icon("play")} Iniciar Black Friday</b><span>Un día completo (24 h) comprimido en 2,5 min</span>`;
+  $("btnDay").classList.toggle("pop", !dayRun); $("btnDay").classList.toggle("stop", dayRun);
+  $("btnConst").innerHTML = constRun ? `<b>${icon("stop")} Detener</b><span>corta el tráfico</span>` : `<b>${icon("play")} Constante</b><span>ritmo fijo</span>`;
+  $("btnConst").classList.toggle("stop", constRun);
+  $("bKillW").classList.toggle("on", workSt === "down");
+  $("bCrash").classList.toggle("on", brokerSt === "down");
+  $("bCrashDb").classList.toggle("on", dbSt === "down");
+  $("bSlow").classList.toggle("on", m.control.slow);
+  $("bPersist").setAttribute("aria-checked", m.control.persistent);
+  $("persistLbl").textContent = m.control.persistent ? "Persistencia encendida" : "Persistencia APAGADA";
+  $("persistSub").textContent = m.control.persistent ? "Pulsa para dejar los mensajes solo en memoria" : "ACTIVO · pulsa para volver a escribir en disco";
+  $("slowSub").textContent = m.control.slow ? "ACTIVO · pulsa para normalizar" : "Un servicio externo se degrada";
+  const retrying = q ? q.retrying : 0;
+  $("bPoison").classList.toggle("on", sim.poison);
+  $("poisonSub").textContent = !sim.poison ? "1 de cada 5 pedidos falla: reintentos → DLQ"
+    : retrying > 0 ? `ACTIVO · ${retrying} en reintento · pulsa para apagar`
+    : sim.running ? "ACTIVO · 1 de cada 5 pedidos fallará" : "ACTIVO · envía pedidos para verlo";
+  $("killSub").textContent = workSt === "down" ? "CAÍDO · pulsa para levantarlo" : "Contenedor eliminado a mitad de un pedido";
+  $("crashSub").textContent = brokerSt === "down" ? "CAÍDO · pulsa para levantarlo" : "Caída brusca (SIGKILL)";
+  $("crashDbSub").textContent = dbSt === "down" ? "CAÍDA · pulsa para levantarla" : "La BD cae en plena venta";
+  updateRateLabel();
+
+  renderNarrator(m, depth);
+  renderLab(m.lab);
+  renderOrders(m.recent);
+  renderLog(m.events);
+  drawAll();
+}
+
+function renderNarrator(m, depth) {
+  const o = m.orders, q = m.queue, sim = m.sim;
+  let k = "ok", ic = "check-circle", tx = "Todo en orden: cada pedido se guarda, se publica con confirmación, se procesa y se confirma (ACK).", sub = "";
+  const workerDown = svcState("worker", m) === "down";
+  if (!m.db_up) {
+    k = "bad"; ic = "database";
+    tx = depth > 0 ? `PostgreSQL está caído. Los ${fmt(depth)} pedidos que ya estaban en la cola esperan en RabbitMQ sin perderse.`
+      : "PostgreSQL está caído. Los pedidos ya guardados están a salvo en su disco y la tienda pide a los clientes reintentar.";
+    sub = "Los workers devuelven los mensajes a la cola en vez de descartarlos. Al volver la BD, todo lo guardado sigue ahí y se retoma el procesamiento.";
+  } else if (!m.broker_up) {
+    k = "bad"; ic = "octagon";
+    tx = `RabbitMQ está caído, pero los clientes siguen comprando: ${fmt(m.outbox_pending)} eventos esperan en el outbox de PostgreSQL.`;
+    sub = m.control.persistent ? "Cuando el broker vuelva, el relay los publica solo. Los mensajes que ya estaban en la cola siguen en disco."
+      : "Ojo: la persistencia está apagada, así que los mensajes que estaban en la cola en memoria se acaban de perder.";
+  } else if (m.lost > 0) {
+    k = "bad"; ic = "alert";
+    tx = `Se perdieron ${fmt(m.lost)} mensajes: RabbitMQ cayó mientras viajaban sin persistencia.`;
+    sub = "Los pedidos siguen en PostgreSQL, por eso se pueden recuperar con «Reconciliar desde la BD». Sin la base de datos, se habrían perdido para siempre.";
+  } else if (!m.control.persistent) {
+    k = "warn"; ic = "disk";
+    tx = "Persistencia APAGADA: los mensajes nuevos viven solo en la memoria de RabbitMQ.";
+    sub = "Si el broker cae ahora, se pierden. Prueba «Tirar RabbitMQ» para comprobarlo.";
+  } else if (workerDown && depth > 0) {
+    k = "warn"; ic = "pause";
+    tx = `Sin workers: ${fmt(depth)} mensajes esperando en la cola, guardados en disco.`;
+    sub = "Nada se pierde. En cuanto un worker vuelva, procesará la acumulación.";
+  } else if (m.control.slow) {
+    k = "warn"; ic = "snail"; tx = "Los workers están lentos: la cola crece porque entra más de lo que sale.";
+    sub = "La cola absorbe la diferencia. Escala con ＋ workers para drenarla más rápido.";
+  } else if (q && q.retrying > 0) {
+    k = "warn"; ic = "clock"; tx = `Reintentando ${fmt(q.retrying)} pedido(s) con espera creciente: 2 s, luego 5 s, luego 10 s.`;
+    sub = "Esperan en colas con TTL; al vencer, RabbitMQ los devuelve solo a la cola principal. Si fallan 3 veces, van a la DLQ.";
+  } else if (o.FAILED > 0 || (q && q.dlq > 0)) {
+    k = "warn"; ic = "inbox"; tx = `${fmt(Math.max(o.FAILED, q?.dlq || 0))} pedidos fallaron 3 veces y se aislaron en la DLQ.`;
+    sub = "No bloquean al resto de la cola. Se pueden revisar y reprocesar después.";
+  } else if (q && q.ready > 120) {
+    k = "warn"; ic = "trend"; tx = `Pico de tráfico: ${fmt(q.ready)} pedidos esperando turno en la cola.`;
+    sub = "La cola amortigua el golpe y la tienda no se cae. Escala workers para vaciarla.";
+  } else if (sim.running && sim.mode === "day") {
+    k = "info"; ic = "bag"; const h = sim.virtual_hour;
+    tx = `Black Friday en marcha: ${sim.current_rate} pedidos/s a las ${String(Math.floor(h)).padStart(2, "0")}:00 simuladas.`;
+  }
+  $("narr").className = "narrator " + k; $("narrIc").innerHTML = icon(ic);
+  $("narrTx").innerHTML = esc(tx) + (sub ? `<small>${esc(sub)}</small>` : "");
+}
+
+const ST = { PENDING: ["clock", "Pendiente"], PUBLISHED: ["arrow", "En cola"], PROCESSED: ["check", "Procesado"], FAILED: ["x", "Fallido"] };
+function renderLab(lab) {
+  if (!lab) return;
+  $("bLab").disabled = lab.running;
+  $("bLab").innerHTML = lab.running ? `<b>${icon("hourglass")} ${esc(lab.step)}…</b><span>el experimento tarda unos 20 segundos</span>`
+    : `<b>${icon("play")} ${lab.results ? "Repetir" : "Ejecutar"} experimento</b><span>tira RabbitMQ de verdad · ≈ 20 s</span>`;
+  if (lab.error) { $("labOut").innerHTML = `<div class="exp-err">${icon("alert")} ${esc(lab.error)}</div>`; return; }
+  if (!lab.results) { $("labOut").innerHTML = ""; return; }
+  const [d, v] = lab.results;
+  const rows = lab.results.map(r => `<div class="exp-row"><div><b>${r.mode}</b><div class="exp-meta">${fmt(r.rate)} msg/s al publicar</div></div>
+    <div><div class="exp-bar" role="img" aria-label="${r.survived} sobrevivieron, ${r.lost} perdidos"><i class="s" style="flex:${r.survived}"></i><i class="l" style="flex:${r.lost}"></i></div>
+    <div class="exp-meta"><span class="g">${fmt(r.survived)} sobrevivieron</span> · <span class="r">${fmt(r.lost)} perdidos</span> de ${fmt(r.sent)}</div></div></div>`).join("");
+  const cost = Math.round((1 - d.rate / v.rate) * 100);
+  const conc = `Conclusión: ${cost > 0 ? `escribir en disco hizo la publicación un ${cost}% más lenta (${fmt(d.rate)} vs ${fmt(v.rate)} msg/s)` : "en esta prueba la persistencia no restó velocidad"}, `
+    + `pero evitó perder ${fmt(v.lost)} de ${fmt(v.sent)} mensajes.`;
+  $("labOut").innerHTML = `<div style="margin-top:12px">${rows}</div><div class="exp-conc">${conc}</div>`;
+}
+
+async function loadDlq() {
+  try {
+    const r = await fetch("/api/dlq");
+    if (r.status === 401 || r.status === 403) return;
+    if (!r.ok) { $("dlqList").innerHTML = `<div class="empty">RabbitMQ no disponible en este momento</div>`; return; }
+    const items = await r.json();
+    $("dlqCount").textContent = items.length ? `${items.length} mensaje(s)` : "";
+    $("dlqList").innerHTML = !items.length
+      ? `<div class="empty">Sin mensajes fallidos. Prueba «Venenosos ×5»: se reintentan 3 veces y llegan aquí.</div>`
+      : `<div class="dlq-head"><button class="mini warn" onclick="dlqAct('reprocess')">${icon("rotate-ccw")} Reprocesar todos</button><button class="mini bad" onclick="dlqAct('discard')">${icon("trash-2")} Descartar todos</button></div>
+        <table class="dlq"><tr><th>Pedido</th><th>Error</th><th>Intentos</th><th>Llegó</th><th></th></tr>` +
+        items.map(it => `<tr><td class="num">${esc((it.order_id || "").slice(0, 8))}<br><span style="color:var(--muted);font-size:12px">${it.total != null ? "S/ " + fmt(it.total) : ""}</span></td>
+          <td class="err">${esc(it.error)}</td><td class="num">${it.retries}</td>
+          <td class="num">${it.dead_at ? new Date(it.dead_at).toLocaleTimeString("es", { hour12: false }) : "—"}</td>
+          <td class="act"><button class="mini warn" onclick="dlqAct('reprocess','${esc(it.order_id)}')">Reprocesar</button><button class="mini bad" onclick="dlqAct('discard','${esc(it.order_id)}')">Descartar</button></td></tr>`).join("") + `</table>`;
+  } catch { }
+}
+async function dlqAct(action, id) {
+  if (!id && action === "discard" && !confirm("¿Descartar definitivamente todos los mensajes de la DLQ?")) return;
+  await post("/api/dlq/" + action, { order_ids: id ? [id] : null });
+  loadDlq();
+}
+
+function renderOrders(list) {
+  if (!list.length) return;
+  $("orders").innerHTML = `<table><tr><th>Pedido</th><th>Productos</th><th>Total</th><th>Estado</th></tr>` +
+    list.map(o => `<tr><td class="num" style="font-family:var(--font-mono);color:var(--blue-300)">${esc(o.id.slice(0, 8))}</td><td>${o.items.map(esc).join("<br>")}</td>
+      <td class="num">S/ ${fmt(o.total)}</td><td><span class="badge b-${o.status}">${icon(ST[o.status][0])} ${ST[o.status][1]}</span></td></tr>`).join("") + `</table>`;
+}
+function renderLog(ev) {
+  $("log").innerHTML = ev.map(e => {
+    const t = new Date(e.t * 1000).toLocaleTimeString("es", { hour12: false });
+    return `<li class="${e.kind}"><time class="num">${t}</time>${e.icon ? `<span class="li">${icon(e.icon)}</span>` : `<i class="dot"></i>`}<span>${esc(e.text)}</span></li>`;
+  }).join("");
+}
+
+/* ================= gráficos ================= */
+function niceMax(v) { if (v <= 5) return 5; const p = Math.pow(10, Math.floor(Math.log10(v))); for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p; return v; }
+
+function lineChart(cv, tip, series, opt = {}) {
+  const dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  if (cv.width !== W * dpr || cv.height !== H * dpr) { cv.width = W * dpr; cv.height = H * dpr; }
+  const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  const L = 38, R = 78, T = 8, B = 22, pw = W - L - R, ph = H - T - B;
+  const n = MAXH, all = series.flatMap(s => s.data);
+  const ymax = niceMax(Math.max(1, ...all) * 1.05);
+  const X = i => L + pw * (i + (n - series[0].data.length)) / (n - 1), Y = v => T + ph * (1 - v / ymax);
+  const font = css("--font-body");
+  g.font = "600 12px " + font; g.textBaseline = "middle";
+  // rejilla discreta + eje Y
+  for (let i = 0; i <= 4; i++) {
+    const y = T + ph * i / 4; g.strokeStyle = css("--line"); g.lineWidth = 1; g.beginPath(); g.moveTo(L, y); g.lineTo(L + pw, y); g.stroke();
+    g.fillStyle = css("--muted"); g.textAlign = "right"; g.fillText(fmt(ymax * (1 - i / 4)), L - 6, y);
+  }
+  g.textAlign = "center"; g.fillStyle = css("--muted");
+  [["-90 s", 0], ["-45 s", .5], ["ahora", 1]].forEach(([t, f]) => g.fillText(t, L + pw * f, H - 8));
+  const len = series[0].data.length;
+  let lastLblY = -99;
+  if (len < 2) { g.fillStyle = css("--muted"); g.textAlign = "center"; g.fillText("Esperando datos…", L + pw / 2, T + ph / 2); return; }
+  // series
+  series.forEach((s, si) => {
+    const col = css(s.color);
+    if (opt.fill && si === 0) {
+      const gr = g.createLinearGradient(0, T, 0, T + ph); gr.addColorStop(0, col + "55"); gr.addColorStop(1, col + "05");
+      g.beginPath(); s.data.forEach((v, i) => i ? g.lineTo(X(i), Y(v)) : g.moveTo(X(i), Y(v)));
+      g.lineTo(X(len - 1), T + ph); g.lineTo(X(0), T + ph); g.closePath(); g.fillStyle = gr; g.fill();
+    }
+    g.beginPath(); g.lineWidth = 3; g.lineJoin = "round"; g.strokeStyle = col;
+    s.data.forEach((v, i) => i ? g.lineTo(X(i), Y(v)) : g.moveTo(X(i), Y(v))); g.stroke();
+    // marcador final con anillo de superficie + etiqueta directa en tinta de texto
+    const ex = X(len - 1), ey = Y(s.data[len - 1]);
+    g.beginPath(); g.arc(ex, ey, 6, 0, 7); g.fillStyle = css("--card"); g.fill();
+    g.beginPath(); g.arc(ex, ey, 4.5, 0, 7); g.fillStyle = col; g.fill();
+    g.textAlign = "left"; g.fillStyle = css("--text"); g.font = "700 13px " + font;
+    let ly = Math.abs(ey - lastLblY) < 14 ? lastLblY + 14 : ey;
+    if (ly > T + ph - 6) ly = Math.min(ey, lastLblY) - 14;   // no invadir el eje inferior
+    lastLblY = ly;   // evita que dos etiquetas se pisen
+    g.fillText((opt.fmt || (v => v.toFixed(1)))(s.data[len - 1]), ex + 9, ly); g.font = "600 12px " + font;
+  });
+  // hover
+  const hi = cv._hover;
+  if (hi != null && hi >= 0 && hi < len) {
+    const hx = X(hi); g.strokeStyle = css("--text2"); g.lineWidth = 1; g.beginPath(); g.moveTo(hx, T); g.lineTo(hx, T + ph); g.stroke();
+    series.forEach(s => { g.beginPath(); g.arc(hx, Y(s.data[hi]), 4.5, 0, 7); g.fillStyle = css(s.color); g.fill(); g.lineWidth = 2; g.strokeStyle = css("--card"); g.stroke(); });
+    tip.innerHTML = `<div style="color:var(--muted)">hace ${len - 1 - hi} s</div>` +
+      series.map(s => `<div><i style="background:${css(s.color)}"></i>${s.name}: <b>${(opt.fmt || (v => v.toFixed(1)))(s.data[hi])}</b></div>`).join("");
+    tip.style.display = "block";
+    const tx = Math.min(hx + 14, W - tip.offsetWidth - 4); tip.style.left = (hx + 14 + tip.offsetWidth > W ? hx - tip.offsetWidth - 14 : tx) + "px"; tip.style.top = "8px";
+  } else tip.style.display = "none";
+  cv._geom = { L, pw, len, n };
+}
+function hookHover(cv) {
+  cv.addEventListener("mousemove", e => {
+    const g = cv._geom; if (!g) return;
+    const x = e.offsetX, start = g.n - g.len;
+    const idx = Math.round((x - g.L) / g.pw * (g.n - 1)) - start;
+    cv._hover = Math.max(0, Math.min(g.len - 1, idx)); drawAll();
+  });
+  cv.addEventListener("mouseleave", () => { cv._hover = null; drawAll(); });
+}
+const chDepth = $("chDepth"), chRate = $("chRate");
+hookHover(chDepth); hookHover(chRate);
+function drawAll() {
+  lineChart(chDepth, $("tipDepth"), [{ name: "En cola", data: hist.depth, color: "--warn" }], { fill: true, fmt: v => fmt(v) });
+  lineChart(chRate, $("tipRate"), [{ name: "Llegan", data: hist.recv, color: "--blue" }, { name: "Se procesan", data: hist.proc, color: "--aqua" }], { fmt: v => v.toFixed(1) });
+}
+addEventListener("resize", drawAll);
+
+/* ================= partículas ================= */
+const NS = "http://www.w3.org/2000/svg";
+const flows = {
+  cust:  { path: $("p-cust"),  color: "#5480F8" },
+  queue: { path: $("p-queue"), color: "#5480F8" },
+  work:  { path: $("p-work"),  color: "#12B76A" },
+  db:    { path: $("p-db"),    color: "#12B76A" },
+  save:  { path: $("p-save"),  color: "#FFC93C" },
+  pend:  { path: $("p-pend"),  color: "#F2B21B" },
+  dlq:   { path: $("p-todlq"), color: "#E5484D" },
+  fail:  { path: $("p-fail"),  color: "#FFC93C" },   // un worker falla → espera de reintento
+  back:  { path: $("p-back"),  color: "#FFC93C" },   // vence la espera → vuelve a la cola
+};
+Object.values(flows).forEach(f => { f.len = f.path.getTotalLength(); f.acc = 0; });
+const parts = [], DUR = 1.0;
+function spawn(key, color, die = 1, done) {
+  if (parts.length > 110) { done?.(); return; }
+  const c = document.createElementNS(NS, "circle"); c.setAttribute("r", 5); c.setAttribute("fill", color || flows[key].color);
+  $("particles").appendChild(c); parts.push({ key, c, s: 0, die, done });
+}
+/* reintentos: las partículas siguen los cambios reales de cada cola de espera y de la DLQ */
+function burst(key, n) { for (let i = 0; i < Math.min(n, 8); i++) setTimeout(() => spawn(key), i * 140); }
+function renderRetries(q) {
+  const st = q?.retry_stages || [0, 0, 0], dlq = q?.dlq ?? null;
+  st.forEach((n, i) => { $("rsN" + i).textContent = fmt(n); $("rs" + i).classList.toggle("on", n > 0); });
+  $("nRetry").classList.toggle("on", st.some(n => n > 0));
+  if (st.some(n => n > 0)) state.retryShowUntil = Date.now() + 3000;   // margen para que se vea el último punto
+  $("pipe").classList.toggle("retrying", Date.now() < (state.retryShowUntil || 0));
+  const prev = state.prevRetry;
+  if (prev && q) {
+    let fail = 0, back = 0;
+    st.forEach((n, i) => { const d = n - (prev.st[i] || 0); if (d > 0) fail += d; else back -= d; });
+    const toDlq = Math.max(0, dlq - prev.dlq);
+    back = Math.max(0, back - toDlq);   // los que salen del último escalón a la DLQ no vuelven a la cola
+    burst("fail", fail); burst("back", back); burst("dlq", toDlq);
+  }
+  if (q) state.prevRetry = { st, dlq };
+}
+/* un punto por pedido real: en cada consulta se lanzan tantos puntos como pedidos nuevos llegaron o se
+   procesaron, repartidos en el segundo; cada uno encadena sus tramos (primero llega a la API, luego sigue) */
+const DOT_CAP = 12;   // máx. puntos por tramo en cada consulta; por encima, un punto representa varios pedidos
+function spread(key, n, offset = 0, color, die) { for (let i = 0; i < n; i++) setTimeout(() => spawn(key, color, die), offset + i * 900 / n); }
+function spawnOrders(m) {
+  const o = m.orders, prev = state.prevOrd;
+  state.prevOrd = { total: o.total, proc: o.PROCESSED };
+  if (!prev) return;
+  const recv = Math.max(0, o.total - prev.total), proc = Math.max(0, o.PROCESSED - prev.proc);
+  const per = Math.max(1, Math.ceil(Math.max(recv, proc) / DOT_CAP));
+  $("dotScale").textContent = per === 1 ? "cada punto es un pedido real" : `cada punto ≈ ${per} pedidos reales`;
+  const nR = Math.ceil(recv / per), nP = Math.ceil(proc / per), hop = DUR * 1000 / animSpeed, now = performance.now();
+  const slow = animSpeed < 1, qAt = slow ? 2 * hop : hop;   // en cámara lenta, ① guardar en la BD y luego ② publicar, uno tras otro
+  const dwell = slow ? hop * 0.6 : 0;   // en cámara lenta el punto se queda un momento en la cola antes de que lo tome el worker
+  const shareR = recv / (nR || 1), shareP = proc / (nP || 1);
+  spread("cust", nR);
+  spread("save", nR, hop);
+  if (m.broker_up) {
+    for (let i = 0; i < nR; i++) {
+      const a = { t: now + qAt + i * 900 / nR + hop, n: shareR, arrived: false, taken: false };
+      arrivals.push(a); vis.qIn += shareR;
+      setTimeout(() => spawn("queue", null, 1, () => { vis.qIn -= a.n; if (!a.taken) { a.arrived = true; vis.q += a.n; } }), qAt + i * 900 / nR);
+    }
+  } else { spread("queue", nR, qAt, "#E5484D", .55); spread("pend", nR, qAt); }   // broker caído: rebota y queda en el outbox
+  while (arrivals.length && (arrivals[0].t < now - 5000 || arrivals.length > 200)) take(arrivals.shift());
+  // el worker no toma un pedido antes de que su punto llegue a la cola
+  vis.db += proc;
+  for (let i = 0; i < nP; i++) {
+    const a = arrivals.shift(), t = Math.max(now + i * 900 / nP, a ? a.t + dwell : 0);
+    setTimeout(() => { take(a); spawn("work", null, 1, () => spawn("db", null, 1, () => { vis.db -= shareP; })); }, t - now);
+  }
+}
+const arrivals = [];   // puntos en camino a la cola: cuándo llegan y si ya los tomó un worker
+/* ajustes para que los contadores del diagrama esperen a las bolitas: qIn = en camino a la cola,
+   q = ya llegaron y esperan al worker, db = procesados cuyo punto aún no llega a PostgreSQL */
+const vis = { qIn: 0, q: 0, db: 0 };
+function take(a) { if (!a || a.taken) return; a.taken = true; if (a.arrived) vis.q -= a.n; }
+function syncVisNums() {
+  if (!state.m) return;
+  setNum("tDb", Math.max(0, Math.round(state.m.orders.PROCESSED - vis.db)), v => fmt(v) + " procesados");
+  setNum("tDepth", Math.max(0, Math.round(Math.max(vis.q, (state.depth || 0) - vis.qIn))));
+}
+function stepParticles(dt) {
+  if (!state.m) return;
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i], f = flows[p.key];
+    p.s += dt * animSpeed / DUR;
+    if (p.s >= p.die) { p.c.remove(); parts.splice(i, 1); p.done?.(); continue; }
+    const pt = f.path.getPointAtLength(p.s * f.len);
+    p.c.setAttribute("cx", pt.x); p.c.setAttribute("cy", pt.y);
+    p.c.setAttribute("opacity", p.die < 1 ? 1 - p.s / p.die * .6 : 1);
+  }
+}
+
+/* ================= bucle ================= */
+let tPrev = performance.now();
+function frame(t) {
+  const dt = Math.min(.1, (t - tPrev) / 1000); tPrev = t;
+  stepParticles(dt); syncVisNums(); tickNums(dt); requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+let polling = false, pollAgain = false;   // no apilar consultas si la API tarda (cada una ocupa un hilo del servidor)
+async function poll() {
+  if (polling) { pollAgain = true; return; }
+  polling = true;
+  try {
+    const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 5000);
+    const r = await fetch("/api/metrics", { signal: ctl.signal }); clearTimeout(to);
+    if (r.status === 401 || r.status === 403) { location.href = "/login?next=/panel&admin=1"; return; }
+    if (!r.ok) throw 0;
+    render(await r.json());
+  } catch {
+    $("apiPill").className = "live off"; $("apiTx").textContent = "API sin respuesta";
+  } finally { polling = false; if (pollAgain) { pollAgain = false; poll(); } }
+}
+updateRateLabel();
+poll(); setInterval(poll, 1000);
+loadDlq(); setInterval(loadDlq, 3000);
+fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(u => u && ($("whoName").textContent = u.email)).catch(() => {});
+async function logout() { await fetch("/api/auth/logout", { method: "POST" }).catch(() => {}); location.href = "/login?next=/panel&admin=1"; }
+</script>
+</body>
+</html>

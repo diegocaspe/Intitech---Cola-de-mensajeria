@@ -1,0 +1,94 @@
+/* Tokens del sistema de diseño Inti Tech. Fuentes desde Google Fonts, con respaldo del sistema si no hay internet. */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,600;0,6..12,700;0,6..12,800;1,6..12,400&display=swap');
+
+/* --- colors --- */
+:root{
+/* Brand base */
+--inti-blue:#2357F5;--inti-yellow:#FFC93C;--inti-cloud:#F4F6FB;--inti-night:#0E1525;--inti-green:#12B76A;--inti-white:#FFFFFF;
+/* Blue ramp */
+--blue-50:#EEF3FF;--blue-100:#DCE6FE;--blue-200:#B6CAFC;--blue-300:#86A6FA;--blue-400:#5480F8;--blue-500:#2357F5;--blue-600:#1A45D1;--blue-700:#1536A6;--blue-800:#11297C;--blue-900:#0C1C52;
+/* Yellow ramp */
+--yellow-50:#FFF9E6;--yellow-100:#FFF0C2;--yellow-200:#FFE38A;--yellow-300:#FFD65E;--yellow-400:#FFC93C;--yellow-500:#F2B21B;--yellow-600:#C98C0A;--yellow-700:#946506;
+/* Green ramp */
+--green-50:#E8F8F0;--green-100:#C6EFDB;--green-300:#5FD39C;--green-500:#12B76A;--green-600:#0E9456;--green-700:#0A6E40;
+/* Neutrals (night-tinted) */
+--n-0:#FFFFFF;--n-50:#F4F6FB;--n-100:#E9EDF5;--n-200:#D7DDE9;--n-300:#B8C0D2;--n-400:#8E98AF;--n-500:#68728A;--n-600:#4A536A;--n-700:#30384C;--n-800:#1C2334;--n-900:#0E1525;
+/* Feedback */
+--red-50:#FDECEC;--red-500:#E5484D;--red-600:#C8353A;
+/* Semantic */
+--bg-page:var(--n-50);--bg-surface:var(--n-0);--bg-sunken:var(--n-100);--bg-inverse:var(--n-900);--bg-brand:var(--blue-500);--bg-accent:var(--yellow-400);
+--fg-1:var(--n-900);--fg-2:var(--n-600);--fg-3:var(--n-500);--fg-on-brand:#FFFFFF;--fg-on-accent:var(--n-900);--fg-on-inverse:#FFFFFF;--fg-link:var(--blue-500);--fg-link-hover:var(--blue-700);
+--border-1:var(--n-200);--border-2:var(--n-300);--border-strong:var(--n-900);--border-focus:var(--blue-500);
+--action-primary:var(--blue-500);--action-primary-hover:var(--blue-600);--action-primary-press:var(--blue-700);
+--action-accent:var(--yellow-400);--action-accent-hover:var(--yellow-500);
+--success:var(--green-500);--success-bg:var(--green-50);--warning:var(--yellow-600);--warning-bg:var(--yellow-50);--danger:var(--red-500);--danger-bg:var(--red-50);--info:var(--blue-500);--info-bg:var(--blue-50);
+--price-sale:var(--blue-500);--price-old:var(--n-400);--shipping:var(--green-500);
+}
+
+/* --- typography --- */
+:root{
+--font-display:'Fredoka',ui-rounded,system-ui,sans-serif;
+--font-body:'Nunito Sans',system-ui,sans-serif;
+--font-mono:ui-monospace,'SF Mono',Menlo,monospace;
+--fw-regular:400;--fw-medium:500;--fw-semibold:600;--fw-bold:700;--fw-black:800;
+/* Display scale — Fredoka */
+--fs-display-xl:72px;--lh-display-xl:1.0;
+--fs-display-l:56px;--lh-display-l:1.05;
+--fs-h1:40px;--lh-h1:1.1;
+--fs-h2:32px;--lh-h2:1.15;
+--fs-h3:24px;--lh-h3:1.2;
+--fs-h4:20px;--lh-h4:1.25;
+/* Body scale — Nunito Sans */
+--fs-body-l:18px;--lh-body-l:1.55;
+--fs-body:16px;--lh-body:1.5;
+--fs-body-s:14px;--lh-body-s:1.45;
+--fs-caption:12px;--lh-caption:1.4;
+--fs-overline:12px;--ls-overline:0.08em;
+/* Price — Fredoka */
+--fs-price-l:32px;--fs-price:22px;--fs-price-s:16px;
+--ls-display:-0.01em;
+}
+
+/* --- spacing --- */
+:root{
+--space-0:0;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--space-8:32px;--space-10:40px;--space-12:48px;--space-16:64px;--space-20:80px;--space-24:96px;
+--radius-xs:6px;--radius-s:10px;--radius-m:14px;--radius-l:20px;--radius-xl:28px;--radius-pill:999px;
+--container:1240px;--gutter:24px;
+--control-s:36px;--control-m:44px;--control-l:52px;
+}
+
+/* --- effects --- */
+:root{
+--border-w:1.5px;--border-w-strong:2px;
+--shadow-xs:0 1px 2px rgba(14,21,37,.06);
+--shadow-s:0 2px 6px rgba(14,21,37,.06),0 1px 2px rgba(14,21,37,.04);
+--shadow-m:0 8px 24px rgba(14,21,37,.08),0 2px 6px rgba(14,21,37,.04);
+--shadow-l:0 20px 48px rgba(14,21,37,.14),0 4px 12px rgba(14,21,37,.06);
+--shadow-pop:4px 4px 0 var(--inti-night);
+--shadow-pop-s:2px 2px 0 var(--inti-night);
+--ring-focus:0 0 0 3px rgba(35,87,245,.30);
+--overlay:rgba(14,21,37,.55);
+}
+
+/* --- motion --- */
+:root{
+--ease-out:cubic-bezier(.22,1,.36,1);
+--ease-in-out:cubic-bezier(.65,0,.35,1);
+--ease-bounce:cubic-bezier(.34,1.56,.64,1);
+--dur-instant:80ms;--dur-fast:150ms;--dur-base:240ms;--dur-slow:400ms;--dur-hero:800ms;
+--press-scale:.97;--hover-lift:-2px;
+}
+@keyframes inti-pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.06);opacity:1}100%{transform:scale(1)}}
+@keyframes inti-rise{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+@keyframes inti-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes inti-spin{to{transform:rotate(360deg)}}
+@keyframes inti-wave{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+@keyframes inti-sun{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:1ms!important;transition-duration:1ms!important}}
+
+/* --- base --- */
+body{margin:0;font-family:var(--font-body);font-size:var(--fs-body);line-height:var(--lh-body);color:var(--fg-1);background:var(--bg-page);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,h5{font-family:var(--font-display);font-weight:var(--fw-semibold);letter-spacing:var(--ls-display);margin:0;text-wrap:balance}
+p{text-wrap:pretty}
+a{color:var(--fg-link);text-decoration:none;font-weight:700}a:hover{color:var(--fg-link-hover);text-decoration:underline}
+

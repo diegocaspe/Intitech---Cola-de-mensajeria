@@ -37,20 +37,25 @@ Sin el script también funciona (`docker compose up --build`), pero el QR apunta
 
 ```
 app/
-├── presentation/    API REST + tienda, login y panel (FastAPI, static/*.html)
-├── application/     OrderService, CheckoutService, AuthService, simulador, relay, puertos (interfaces)
-├── domain/          Order, Product, User (reglas de negocio, sin dependencias)
-├── infrastructure/
-│   ├── persistence/ PostgresOrderRepository, PostgresUserRepository, catálogo (JSON)
-│   ├── security.py  hash de contraseñas y firma de sesiones
-│   ├── messaging/   RabbitMQ: publisher, consumer, monitor de colas
-│   ├── control.py   configuración en caliente (nº de workers, velocidad)
-│   └── docker_control.py  sabotajes reales vía socket de Docker
-└── worker.py        proceso consumidor (escalable en caliente con hilos)
+├── routes/          Rutas: los endpoints de la API (FastAPI). Reciben la petición y llaman a un service
+├── services/        Servicios: la lógica de negocio (OrderService, CheckoutService, AuthService, simulador, relay)
+├── models/          Modelos: Order, Product, User y sus reglas (sin dependencias de tecnología)
+├── repositories/    Repositorios: acceso a los datos
+│   ├── interfaces.py          contratos que usan los services (OrderRepository, UserRepository, OrderPublisher...)
+│   ├── postgres_repository.py implementación con PostgreSQL
+│   ├── sqlite_repository.py   implementación con SQLite (la usan las pruebas)
+│   └── catalog_repository.py  catálogo de productos (lee database/catalogo.json)
+├── database/        Base de datos: conexión (pool), creación de tablas y catalogo.json
+├── messaging/       Mensajería con RabbitMQ: publisher, consumer, monitor de colas, laboratorio de persistencia
+├── utils/           Utilidades: seguridad (contraseñas y sesiones), configuración en caliente, sabotajes vía Docker
+├── static/          Páginas web: tienda, login y panel (HTML, CSS, imágenes)
+├── config.py        Variables de configuración
+└── worker.py        Proceso que consume la cola (escalable en caliente con hilos)
 ```
-Cada capa solo depende de las inferiores y la aplicación usa interfaces (`ports.py`). Prueba de ello: el proyecto
-empezó con SQLite y se pasó a PostgreSQL cambiando solo la capa de infraestructura. El adaptador de SQLite se conserva
-(`sqlite_order_repository.py`) y lo usan las pruebas unitarias, que corren sin levantar ningún servidor.
+Flujo de una petición: **routes → services → models → repositories → database**. Los services solo conocen las
+interfaces de `repositories/interfaces.py`, no PostgreSQL ni RabbitMQ. Prueba de ello: el proyecto empezó con SQLite
+y se pasó a PostgreSQL cambiando solo el repositorio. El de SQLite se conserva (`sqlite_repository.py`) y lo usan las
+pruebas unitarias, que corren sin levantar ningún servidor.
 
 Contenedores: `api` (API + tienda + panel + simulador), `worker` (consumidores), `rabbitmq` (broker) y `postgres` (BD).
 
@@ -120,7 +125,7 @@ docker compose run --rm --no-deps api pytest -q
 ## La tienda
 
 - Catálogo de 100 productos (celulares, televisores, cómputo, audio, electrohogar, cocina y hogar) con precios en soles.
-  Los datos están en `app/infrastructure/persistence/catalogo.json`: nombre, precios, descripción, stock y
+  Los datos están en `app/database/catalogo.json`: nombre, precios, descripción, stock y
   productos relacionados (cross-selling). Se puede editar a mano; las imágenes están en `static/img/<sku>.jpg`.
 - **Cross-selling**: "Frecuentemente comprados juntos", "Quienes vieron esto también compraron", combos,
   sugerencias al agregar al carrito y "Completa tu compra" dentro del carrito, además de una barra de envío gratis.

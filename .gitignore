@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Datos locales generados al ejecutar (la base de datos real vive en el contenedor de PostgreSQL)
+data/
+
+# Herramientas del editor / asistente
+.impeccable/
+.vscode/
