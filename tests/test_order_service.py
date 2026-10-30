@@ -49,6 +49,40 @@ def test_broker_down_event_waits_in_outbox_then_relay_publishes():
     assert pub.sent == [order.id]
 
 
+class FlakyPublisher(FakePublisher):
+    """Acepta los primeros `ok` mensajes y luego el broker se cae."""
+    def __init__(self, ok):
+        super().__init__()
+        self.ok = ok
+
+    def publish_order_created(self, order_id):
+        if len(self.sent) >= self.ok:
+            raise ConnectionError("broker caído")
+        self.sent.append(order_id)
+
+
+def test_relay_stops_when_broker_falls_midway_and_resumes_in_order():
+    svc, _ = make(fail=True)
+    orders = [svc.create_order("a@b.com", ITEMS) for _ in range(3)]
+    svc.publisher = FlakyPublisher(ok=1)
+    assert svc.relay_outbox(min_age_s=0) == 1                    # se cae tras el primero: no se salta ninguno
+    assert svc.outbox.pending_count() == 2
+    assert [svc.get_order(o.id).status for o in orders] == [OrderStatus.PUBLISHED, OrderStatus.PENDING,
+                                                           OrderStatus.PENDING]
+    svc.publisher = pub = FakePublisher()
+    assert svc.relay_outbox(min_age_s=0) == 2
+    assert pub.sent == [orders[1].id, orders[2].id]              # los pendientes salen en orden
+    assert svc.outbox.pending_count() == 0
+
+
+def test_relay_leaves_fresh_events_to_the_fast_path():
+    svc, pub = make(fail=True)
+    svc.create_order("a@b.com", ITEMS)
+    pub.fail = False
+    assert svc.relay_outbox(min_age_s=60) == 0                    # muy reciente: aún puede publicarlo la API
+    assert svc.outbox.pending_count() == 1
+
+
 def test_outbox_recent_lists_newest_first_with_publish_time():
     svc, pub = make(fail=True)
     first = svc.create_order("a@b.com", ITEMS)                    # broker caído: queda pendiente

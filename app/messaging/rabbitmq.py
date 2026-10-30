@@ -194,6 +194,7 @@ class OrderConsumer:
                 ch = conn.channel()
                 declare_topology(ch)
                 ch.basic_qos(prefetch_count=1)  # un mensaje a la vez por worker
+                ch.confirm_delivery()  # la copia que va a la cola de reintento también debe confirmarla el broker
                 for queue in (config.QUEUE, config.VOLATILE_QUEUE):
                     ch.basic_consume(queue, on_message_callback=self._on_message, auto_ack=False)
                 log.info("Escuchando '%s' y '%s'", config.QUEUE, config.VOLATILE_QUEUE)
@@ -201,6 +202,10 @@ class OrderConsumer:
                     conn.process_data_events(time_limit=0.5)
             except (*_NET_ERRORS, ConnectionError) as exc:
                 log.warning("Conexión con RabbitMQ perdida (%s). Reintentando...", exc)
+                stop.wait(2)
+            except Exception:
+                # red de seguridad: un error inesperado no debe matar el hilo del worker; el mensaje sin ack vuelve a la cola
+                log.exception("Error inesperado en el consumidor. Reconectando...")
                 stop.wait(2)
             finally:
                 try:
@@ -210,36 +215,50 @@ class OrderConsumer:
                     pass
 
     def _on_message(self, ch, method, props, body) -> None:
-        order_id = json.loads(body)["order_id"]
+        try:
+            order_id = json.loads(body)["order_id"]
+        except (ValueError, KeyError, TypeError):
+            log.error("Mensaje ilegible -> DLQ: %r", body[:100])
+            ch.basic_nack(method.delivery_tag, requeue=False)
+            return
         headers = props.headers or {}
         retries = headers.get("retries", 0)
         try:
-            time.sleep(self.control.get()["worker_delay"])  # trabajo simulado (stock, pago, correo...)
-            self.service.process_order(order_id)
-            ch.basic_ack(method.delivery_tag)  # solo se confirma TRAS persistir el resultado
-        except ProcessingError as exc:          # error de negocio: reintento diferido y luego DLQ
-            if retries < config.MAX_RETRIES:
-                wait_queue = config.RETRY_QUEUES[retries]
-                log.error("Pedido %s falló (%s). Reintento %d en %d s", order_id[:8], exc, retries + 1,
-                          config.RETRY_DELAYS[retries])
-                ch.basic_publish("", wait_queue, body, pika.BasicProperties(
-                    delivery_mode=pika.DeliveryMode.Persistent,
-                    content_type="application/json",
-                    headers={**headers, "retries": retries + 1, "x-last-error": str(exc),
-                             "x-first-failure": headers.get("x-first-failure") or datetime.now(timezone.utc).isoformat()},
-                ))
-                ch.basic_ack(method.delivery_tag)
-            else:
-                log.error("Pedido %s agotó sus %d reintentos -> DLQ", order_id[:8], config.MAX_RETRIES)
-                self.service.mark_failed(order_id)
-                ch.basic_nack(method.delivery_tag, requeue=False)  # RabbitMQ lo envía a la DLQ (con cabecera x-death)
+            try:
+                time.sleep(self.control.get()["worker_delay"])  # trabajo simulado (stock, pago, correo...)
+                self.service.process_order(order_id)
+            except ProcessingError as exc:      # error de negocio: reintento diferido y luego DLQ
+                self._retry_or_dead_letter(ch, method, body, headers, retries, order_id, exc)
+                return
+            ch.basic_ack(method.delivery_tag)   # solo se confirma TRAS persistir el resultado
+        except _NET_ERRORS:
+            raise   # el canal murió: run() reconecta y RabbitMQ reentrega el mensaje que quedó sin ack
         except Exception as exc:
-            # error de infraestructura (p. ej. la base de datos está caída): no es culpa del pedido,
-            # así que no gasta reintentos; vuelve a la cola y espera a que el sistema se recupere
+            # error de infraestructura (p. ej. la base de datos está caída, también al marcar el pedido como
+            # FALLIDO): no es culpa del pedido, así que no gasta reintentos; vuelve a la cola y espera
             log.warning("Infraestructura no disponible procesando %s: %s. Mensaje devuelto a la cola.",
                         order_id[:8], exc.__class__.__name__)
             time.sleep(2)
             ch.basic_nack(method.delivery_tag, requeue=True)
+
+    def _retry_or_dead_letter(self, ch, method, body, headers, retries, order_id, exc) -> None:
+        if retries < config.MAX_RETRIES:
+            wait_queue = config.RETRY_QUEUES[retries]
+            log.error("Pedido %s falló (%s). Reintento %d en %d s", order_id[:8], exc, retries + 1,
+                      config.RETRY_DELAYS[retries])
+            # con confirm_delivery, basic_publish espera a que el broker guarde la copia (si no, lanza una
+            # excepción y el original queda sin ack): nunca se confirma el original sin tener la copia a salvo
+            ch.basic_publish("", wait_queue, body, pika.BasicProperties(
+                delivery_mode=pika.DeliveryMode.Persistent,
+                content_type="application/json",
+                headers={**headers, "retries": retries + 1, "x-last-error": str(exc),
+                         "x-first-failure": headers.get("x-first-failure") or datetime.now(timezone.utc).isoformat()},
+            ), mandatory=True)
+            ch.basic_ack(method.delivery_tag)
+        else:
+            log.error("Pedido %s agotó sus %d reintentos -> DLQ", order_id[:8], config.MAX_RETRIES)
+            self.service.mark_failed(order_id)   # si la BD está caída lanza y el mensaje vuelve a la cola
+            ch.basic_nack(method.delivery_tag, requeue=False)  # RabbitMQ lo envía a la DLQ (con cabecera x-death)
 
 
 class DeadLetterInspector:
