@@ -125,6 +125,15 @@ class PostgresOutbox(Outbox):
         with self.pool.connection() as conn:
             return conn.execute("SELECT COUNT(*) FROM outbox WHERE published_at IS NULL").fetchone()[0]
 
+    def recent(self, limit: int) -> list[dict]:
+        with self.pool.connection() as conn:
+            rows = conn.execute("""SELECT id, aggregate_id, event_type, created_at, published_at FROM outbox
+                                   ORDER BY id DESC LIMIT %s""", (limit,)).fetchall()
+        # TIMESTAMPTZ llega como datetime con zona horaria: isoformat() la conserva (p. ej. ...+00:00)
+        return [{"id": id_, "aggregate_id": agg, "event_type": ev, "created_at": created.isoformat(),
+                 "published_at": published.isoformat() if published else None}
+                for id_, agg, ev, created, published in rows]
+
 
 class PostgresUserRepository(UserRepository):
     def __init__(self, pool: ConnectionPool):

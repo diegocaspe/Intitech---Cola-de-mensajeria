@@ -49,6 +49,18 @@ def test_broker_down_event_waits_in_outbox_then_relay_publishes():
     assert pub.sent == [order.id]
 
 
+def test_outbox_recent_lists_newest_first_with_publish_time():
+    svc, pub = make(fail=True)
+    first = svc.create_order("a@b.com", ITEMS)                    # broker caído: queda pendiente
+    pub.fail = False
+    second = svc.create_order("c@d.com", ITEMS)                   # publicado en el camino rápido
+    newest, oldest = svc.outbox.recent(6)
+    assert (newest["aggregate_id"], oldest["aggregate_id"]) == (second.id, first.id)
+    assert newest["event_type"] == "OrderCreated" and newest["published_at"] is not None
+    assert oldest["published_at"] is None
+    assert "+00:00" in newest["created_at"]                       # ISO con zona horaria
+
+
 def test_order_and_event_are_saved_atomically():
     svc, pub = make()
     order = svc.create_order("a@b.com", ITEMS)

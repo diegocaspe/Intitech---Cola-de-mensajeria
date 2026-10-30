@@ -58,6 +58,11 @@ class TrafficSimulator:
     def set_rate(self, rate: float) -> None:
         self.rate = max(0.5, min(150.0, rate))
 
+    def one(self) -> str:
+        """Un solo pedido, al instante: devuelve su id para que el panel lo siga en cámara lenta."""
+        self.events.add("info", "Un cliente hace un pedido")
+        return self._new_order()
+
     def burst(self, count: int) -> None:
         threading.Thread(target=self._burst, args=(min(count, 2000),), daemon=True).start()
 
@@ -98,21 +103,22 @@ class TrafficSimulator:
                 "virtual_hour": None if h is None else round(h, 2)}
 
     # --- internos ---------------------------------------------------------
-    def _new_order(self) -> None:
+    def _new_order(self) -> str:
         if self._next_is_poison():   # producto inexistente: el worker falla siempre → reintentos → DLQ
-            self.service.create_order(f"{random.choice(NAMES)}{random.randint(1, 999)}@mail.com",
-                                      [{"sku": "FAIL", "quantity": 1, "unit_price": 9.9}])
+            order = self.service.create_order(f"{random.choice(NAMES)}{random.randint(1, 999)}@mail.com",
+                                              [{"sku": "FAIL", "quantity": 1, "unit_price": 9.9}])
             with self._lock:
                 self.sent += 1
-            return
+            return order.id
         # los clientes simulados también hacen cross-selling: un producto y a veces sus relacionados
         main = random.choice(self.products.all())
         picks = [main] + [self.products.get(s) for s in random.sample(main.related, random.choice([0, 0, 1, 2]))]
         items = [{"sku": p.sku, "quantity": random.choice([1, 1, 1, 2]), "unit_price": p.price} for p in picks]
         email = f"{random.choice(NAMES)}{random.randint(1, 999)}@mail.com"
-        self.service.create_order(email, items)
+        order = self.service.create_order(email, items)
         with self._lock:
             self.sent += 1
+        return order.id
 
     def _burst(self, n: int) -> None:
         self.events.add("info", "Un cliente hace un pedido" if n == 1 else f"Oleada de {n} clientes comprando a la vez")

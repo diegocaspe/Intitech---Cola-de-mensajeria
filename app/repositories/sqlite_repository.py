@@ -169,3 +169,10 @@ class SqliteOutbox(Outbox):
 
     def pending_count(self) -> int:
         return self.repo._run("SELECT COUNT(*) FROM outbox WHERE published_at IS NULL")[0][0]
+
+    def recent(self, limit: int) -> list[dict]:
+        rows = self.repo._run(f"""SELECT id, aggregate_id, event_type, created_at, published_at FROM outbox
+                                  ORDER BY id DESC LIMIT {int(limit)}""")
+        # las fechas ya se guardan en ISO con zona horaria (ver _now)
+        return [{"id": id_, "aggregate_id": agg, "event_type": ev, "created_at": created, "published_at": published}
+                for id_, agg, ev, created, published in rows]

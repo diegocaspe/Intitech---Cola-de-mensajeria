@@ -1,0 +1,712 @@
+# Contrato de la API (OpenAPI 3) de la tienda Inti Tech.
+# Generado automáticamente por FastAPI desde app/routes/api.py.
+# Versión interactiva con el sistema encendido: http://localhost:8000/docs
+
+openapi: 3.1.0
+info:
+  title: Tienda Inti Tech - Black Friday
+  description: 'API de la tienda: el cliente compra, el pedido se guarda en PostgreSQL y se encola en RabbitMQ, y un worker
+    lo procesa. Las rutas marcadas (admin) requieren iniciar sesión como administrador.'
+  version: '3.0'
+paths:
+  /api/auth/register:
+    post:
+      tags:
+      - Usuarios
+      summary: Registrar un cliente
+      description: Crea la cuenta y deja la sesión iniciada (cookie).
+      operationId: register_api_auth_register_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterIn'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/auth/login:
+    post:
+      tags:
+      - Usuarios
+      summary: Iniciar sesión
+      description: Valida correo y contraseña y entrega la cookie de sesión.
+      operationId: login_api_auth_login_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/auth/logout:
+    post:
+      tags:
+      - Usuarios
+      summary: Cerrar sesión
+      operationId: logout_api_auth_logout_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/auth/me:
+    get:
+      tags:
+      - Usuarios
+      summary: Usuario actual
+      description: Datos del usuario con sesión iniciada, o null si no hay sesión.
+      operationId: me_api_auth_me_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/products:
+    get:
+      tags:
+      - Tienda
+      summary: Catálogo de productos
+      description: Los 100 productos con precio, descuento, stock e imagen.
+      operationId: list_products_api_products_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/checkout:
+    post:
+      tags:
+      - Tienda
+      summary: Comprar (checkout)
+      description: 'Convierte el carrito en un pedido. Solo se envían SKU y cantidad: los precios salen del catálogo del servidor.
+        Requiere sesión.'
+      operationId: checkout_api_checkout_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutIn'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/orders/{order_id}/track:
+    get:
+      tags:
+      - Tienda
+      summary: Seguir un pedido
+      description: Estado del pedido y su posición en la cola. El cliente lo consulta cada segundo.
+      operationId: track_api_orders__order_id__track_get
+      parameters:
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Order Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/my/orders:
+    get:
+      tags:
+      - Tienda
+      summary: Mis pedidos
+      description: Últimos pedidos del cliente con sesión iniciada.
+      operationId: my_orders_api_my_orders_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/store/live:
+    get:
+      tags:
+      - Tienda
+      summary: Estado en vivo de la tienda
+      description: Pedidos del último minuto, mensajes en cola y si RabbitMQ y PostgreSQL están arriba.
+      operationId: store_live_api_store_live_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/store-url:
+    get:
+      tags:
+      - Tienda
+      summary: Dirección pública de la tienda
+      description: URL que el público abre desde el celular (la del código QR).
+      operationId: store_url_api_store_url_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /orders:
+    post:
+      tags:
+      - Pedidos (admin)
+      summary: Crear un pedido directo
+      description: Crea un pedido indicando los productos y precios a mano, sin pasar por el carrito.
+      operationId: create_order_orders_post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderIn'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Pedidos (admin)
+      summary: Listar pedidos
+      description: 'Filtra opcionalmente por estado: PENDING, PUBLISHED, PROCESSED o FAILED.'
+      operationId: list_orders_orders_get
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - $ref: '#/components/schemas/OrderStatus'
+          - type: 'null'
+          title: Status
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /orders/{order_id}:
+    get:
+      tags:
+      - Pedidos (admin)
+      summary: Ver un pedido
+      operationId: get_order_orders__order_id__get
+      parameters:
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Order Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /orders/republish-pending:
+    post:
+      tags:
+      - Pedidos (admin)
+      summary: Reenviar pendientes del outbox
+      description: Publica en RabbitMQ los pedidos que quedaron guardados sin enviar (por ejemplo, con el broker caído).
+      operationId: republish_pending_orders_republish_pending_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/metrics:
+    get:
+      tags:
+      - Panel (admin)
+      summary: Métricas del panel
+      description: 'Todo lo que el panel muestra: pedidos por estado, colas, outbox, DLQ, servicios y simulador.'
+      operationId: metrics_api_metrics_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/dlq:
+    get:
+      tags:
+      - Panel (admin)
+      summary: Ver la DLQ (pedidos fallidos)
+      description: Mensajes que agotaron sus 3 reintentos, con el error y la hora.
+      operationId: dlq_list_api_dlq_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/dlq/reprocess:
+    post:
+      tags:
+      - Panel (admin)
+      summary: Reprocesar desde la DLQ
+      description: Devuelve a la cola principal los pedidos elegidos (o todos).
+      operationId: dlq_reprocess_api_dlq_reprocess_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DlqAction'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/dlq/discard:
+    post:
+      tags:
+      - Panel (admin)
+      summary: Descartar de la DLQ
+      description: Elimina de la DLQ los pedidos elegidos (o todos).
+      operationId: dlq_discard_api_dlq_discard_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DlqAction'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/lab/run:
+    post:
+      tags:
+      - Panel (admin)
+      summary: Experimento de persistencia
+      description: Compara una cola en disco contra una en memoria reiniciando RabbitMQ.
+      operationId: lab_run_api_lab_run_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/reconcile:
+    post:
+      tags:
+      - Panel (admin)
+      summary: Reconciliar desde la BD
+      description: Reenvía los pedidos publicados que nunca se procesaron (mensajes perdidos en el broker).
+      operationId: reconcile_api_reconcile_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/sim/start:
+    post:
+      tags:
+      - Simulador (admin)
+      summary: Iniciar simulación
+      description: Modo manual (ritmo constante) o modo día (Black Friday con pico a medianoche).
+      operationId: sim_start_api_sim_start_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimStart'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/sim/stop:
+    post:
+      tags:
+      - Simulador (admin)
+      summary: Detener simulación
+      operationId: sim_stop_api_sim_stop_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/sim/rate:
+    post:
+      tags:
+      - Simulador (admin)
+      summary: Cambiar el ritmo
+      description: Pedidos por segundo de la simulación en curso.
+      operationId: sim_rate_api_sim_rate_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RateIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/sim/burst:
+    post:
+      tags:
+      - Simulador (admin)
+      summary: Enviar una ráfaga
+      description: Envía de golpe la cantidad de pedidos indicada (los botones 1 pedido y 5 pedidos). Con count=1 el pedido
+        se crea al instante y la respuesta incluye su order_id.
+      operationId: sim_burst_api_sim_burst_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BurstIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/reset:
+    post:
+      tags:
+      - Panel (admin)
+      summary: Reiniciar la demo
+      description: Vacía la base de datos y las colas, y restablece la configuración.
+      operationId: reset_api_reset_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/chaos/{action}:
+    post:
+      tags:
+      - Sabotajes (admin)
+      summary: Sabotear o recuperar
+      description: 'Valores de action. Caídas: kill-worker, crash-broker, crash-db. Recuperar: revive-worker, revive-broker,
+        revive-db, recover (todo). Worker lento: slow-on / slow-off. Pedidos con error: poison (uno), poison-on / poison-off.
+        Persistencia: persist-on / persist-off. Escalar: workers-up / workers-down.'
+      operationId: chaos_api_chaos__action__post
+      parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Action
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    BurstIn:
+      properties:
+        count:
+          type: integer
+          maximum: 2000.0
+          minimum: 1.0
+          title: Count
+          default: 300
+      type: object
+      title: BurstIn
+    CartLine:
+      properties:
+        sku:
+          type: string
+          title: Sku
+        quantity:
+          type: integer
+          title: Quantity
+      type: object
+      required:
+      - sku
+      - quantity
+      title: CartLine
+    CheckoutIn:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/CartLine'
+          type: array
+          maxItems: 30
+          minItems: 1
+          title: Items
+      type: object
+      required:
+      - items
+      title: CheckoutIn
+    DlqAction:
+      properties:
+        order_ids:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Order Ids
+      type: object
+      title: DlqAction
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    ItemIn:
+      properties:
+        sku:
+          type: string
+          title: Sku
+        quantity:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Quantity
+        unit_price:
+          type: number
+          minimum: 0.0
+          title: Unit Price
+      type: object
+      required:
+      - sku
+      - quantity
+      - unit_price
+      title: ItemIn
+    LoginIn:
+      properties:
+        email:
+          type: string
+          maxLength: 120
+          title: Email
+        password:
+          type: string
+          maxLength: 128
+          title: Password
+      type: object
+      required:
+      - email
+      - password
+      title: LoginIn
+    OrderIn:
+      properties:
+        customer_email:
+          type: string
+          title: Customer Email
+        items:
+          items:
+            $ref: '#/components/schemas/ItemIn'
+          type: array
+          minItems: 1
+          title: Items
+      type: object
+      required:
+      - customer_email
+      - items
+      title: OrderIn
+    OrderStatus:
+      type: string
+      enum:
+      - PENDING
+      - PUBLISHED
+      - PROCESSED
+      - FAILED
+      title: OrderStatus
+    RateIn:
+      properties:
+        rate:
+          type: number
+          title: Rate
+      type: object
+      required:
+      - rate
+      title: RateIn
+    RegisterIn:
+      properties:
+        name:
+          type: string
+          maxLength: 60
+          title: Name
+        email:
+          type: string
+          maxLength: 120
+          title: Email
+        password:
+          type: string
+          maxLength: 128
+          title: Password
+      type: object
+      required:
+      - name
+      - email
+      - password
+      title: RegisterIn
+    SimStart:
+      properties:
+        mode:
+          type: string
+          enum:
+          - manual
+          - day
+          title: Mode
+          default: manual
+        rate:
+          type: number
+          title: Rate
+          default: 10
+      type: object
+      title: SimStart
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+tags:
+- name: Usuarios
+  description: Registro, inicio y cierre de sesión.
+- name: Tienda
+  description: 'Lo que usa la tienda del cliente: catálogo, compra y seguimiento del pedido.'
+- name: Pedidos (admin)
+  description: Consulta y gestión directa de pedidos.
+- name: Panel (admin)
+  description: Métricas, pedidos fallidos (DLQ), reconciliación y reinicio de la demo.
+- name: Simulador (admin)
+  description: 'Genera tráfico de prueba: goteo, ráfagas o un Black Friday completo.'
+- name: Sabotajes (admin)
+  description: Apaga o recupera contenedores reales para demostrar la tolerancia a fallos.

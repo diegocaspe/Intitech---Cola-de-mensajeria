@@ -116,6 +116,13 @@ Contenedores: `api` (API + tienda + panel + simulador), `worker` (consumidores),
 
 Al final los **Procesados** deben igualar a los **Recibidos** (menos los fallidos a propósito): cero pérdidas.
 
+## Contrato de la API
+
+El contrato (OpenAPI 3) está en [`docs/openapi.yaml`](docs/openapi.yaml), con los endpoints agrupados en Usuarios,
+Tienda, Pedidos, Panel, Simulador y Sabotajes. Con el sistema encendido también se puede ver y probar en
+http://localhost:8000/docs (Swagger) o http://localhost:8000/redoc. FastAPI lo genera desde `app/routes/api.py`;
+si cambias una ruta, vuelve a exportarlo desde http://localhost:8000/openapi.json.
+
 ## Pruebas
 
 ```bash

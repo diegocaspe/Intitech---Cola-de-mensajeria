@@ -33,7 +33,7 @@
   .wordmark { font-family:var(--font-display); font-size:28px; line-height:1; white-space:nowrap; } .wordmark span { font-weight:400; } .wordmark b { font-weight:600; color:var(--inti-yellow); }
   .top-title { display:flex; flex-direction:column; border-left:1.5px solid var(--n-700); padding-left:24px; }
   .top-title b { font-family:var(--font-display); font-weight:600; font-size:22px; line-height:1.1; }
-  .live { display:inline-flex; align-items:center; gap:10px; height:40px; padding:0 16px; border-radius:999px; background:rgba(18,183,106,.14); color:var(--green-300); font-weight:800; font-size:14px; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
+  .live { display:inline-flex; align-items:center; gap:10px; min-height:40px; padding:8px 16px; border-radius:999px; background:rgba(18,183,106,.14); color:var(--green-300); font-weight:800; font-size:14px; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
   .live i { width:12px; height:12px; border-radius:50%; background:var(--inti-green); animation:ping 1.6s var(--ease-out) infinite; }
   .live.off { background:rgba(229,72,77,.14); color:#F08A8D; } .live.off i { background:var(--red-500); animation:none; }
   @keyframes ping { 0% { box-shadow:0 0 0 0 rgba(18,183,106,.6); } 80%,100% { box-shadow:0 0 0 12px rgba(18,183,106,0); } }
@@ -267,6 +267,61 @@
   .bf-pop h2 { margin:0 0 16px; font-family:var(--font-display); font-weight:600; font-size:20px; display:flex; align-items:center; gap:10px; }
   .bf-pop h2 > .i { color:var(--inti-yellow); }
   @keyframes bfin { from { opacity:0; transform:translateY(-6px) scale(.98); } }
+  /* ---------- detalle de PostgreSQL: tablas orders y outbox en vivo ---------- */
+  #particles { pointer-events:none; }   /* las bolitas no deben "robar" el mouse a la caja */
+  #nDb { cursor:pointer; outline:none; }
+  #nDb:hover rect.box, #nDb:focus-visible rect.box { stroke:var(--n-400); }
+  #nDb.open:not(.down) rect.box { stroke:var(--blue-300); stroke-width:3; filter:drop-shadow(0 0 8px rgba(84,128,248,.55)); }
+  #nDb.open.down rect.box { stroke-width:3.5; }
+  /* ventana: barra de título fija + cuerpo con scroll; las columnas se adaptan al ancho (container queries) */
+  .dbp { position:fixed; z-index:70; display:flex; flex-direction:column; width:560px; max-width:calc(100vw - 16px); max-height:calc(100vh - 16px); color:#fff; background:var(--n-850); border:1.5px solid var(--n-700); border-radius:18px; box-shadow:0 24px 60px -12px rgba(0,0,0,.75); pointer-events:none; animation:bfin 160ms var(--ease-out); container:dbp / inline-size; }
+  .dbp.pinned { pointer-events:auto; border-color:var(--blue-400); }
+  .dbp.pinned::before { content:""; position:absolute; inset:-10px; z-index:-1; }   /* borde invisible: más fácil de agarrar */
+  .dbp-h { flex:none; display:flex; align-items:center; gap:8px; padding:14px 54px 10px 18px; border-radius:18px 18px 0 0; }
+  .dbp-h > .i { color:var(--blue-300); }
+  .dbp-h b { font-family:var(--font-display); font-weight:600; font-size:17px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dbp-body { flex:1; min-height:0; overflow:auto; padding:0 18px 14px; }
+  .dbp-body > :first-child { margin-top:2px; }
+  /* fija = se mueve desde la barra de título y se redimensiona desde bordes y esquinas */
+  .dbp.pinned .dbp-h { cursor:grab; user-select:none; -webkit-user-select:none; touch-action:none; }
+  .dbp.pinned .dbp-h:hover { background:rgba(255,255,255,.03); }
+  .dbp.dragging .dbp-h { cursor:grabbing; }
+  .dbp.dragging, .dbp.resizing { box-shadow:0 32px 80px -12px rgba(0,0,0,.85); user-select:none; -webkit-user-select:none; }
+  .t-ord th:nth-child(1) { width:78px; } .t-ord th:nth-child(3) { width:84px; } .t-ord th:nth-child(4) { width:98px; } .t-ord th:nth-child(5) { width:70px; }
+  .t-out th:nth-child(1) { width:52px; } .t-out th:nth-child(2) { width:84px; } .t-out th:nth-child(4) { width:70px; } .t-out th:nth-child(5) { width:104px; }
+  /* al achicarla se ocultan primero las columnas menos importantes; id, status y publicado siempre quedan */
+  @container dbp (max-width:500px) { .t-ord :is(th,td):nth-child(5), .t-out :is(th,td):nth-child(3) { display:none; } }
+  @container dbp (max-width:410px) { .t-ord :is(th,td):nth-child(2), .t-out :is(th,td):nth-child(4) { display:none; } .dbp-legend { flex-direction:column; } }
+  @container dbp (max-width:330px) { .t-out tr:not(.dbp-empty) > :nth-child(1) { display:none; } .dbp-h b { font-size:15px; } }
+  .dbp-x { display:none; position:absolute; top:10px; right:10px; width:32px; height:32px; border-radius:10px; border:1.5px solid var(--n-700); background:var(--n-800); color:#fff; align-items:center; justify-content:center; padding:0; }
+  .dbp-x:hover { background:var(--n-700); }
+  .dbp-x:focus-visible { box-shadow:var(--ring-focus); outline:none; }
+  .dbp.pinned .dbp-x { display:flex; }
+  .dbp-down { display:flex; align-items:center; gap:8px; margin-bottom:10px; padding:8px 10px; border-radius:10px; background:rgba(229,72,77,.16); border:1.5px solid rgba(229,72,77,.5); color:#FFD5D6; font-size:13px; font-weight:700; }
+  .dbp-down[hidden] { display:none; }
+  .dbp.stale table { opacity:.6; }
+  .dbp-cap { font-size:13px; font-weight:600; color:var(--n-300); margin:12px 0 4px; }
+  .dbp-cap code { font-family:var(--font-mono); font-weight:700; color:var(--blue-300); }
+  .dbp table { font-size:13px; table-layout:fixed; }
+  .dbp th { font-size:11px; padding:0 6px 6px; }
+  .dbp td { padding:5px 6px; border-top:1px solid var(--n-700); vertical-align:middle; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
+  .dbp .mono { font-family:var(--font-mono); color:var(--blue-300); }
+  .dbp .r { text-align:right; }
+  .dbp-empty td { color:var(--n-400); text-align:center; font-weight:600; padding:10px 6px; }
+  .dbp-st { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:800; letter-spacing:.03em; }
+  .st-PENDING { background:rgba(255,201,60,.16); color:var(--inti-yellow); }
+  .st-PUBLISHED { background:rgba(35,87,245,.24); color:var(--blue-300); }
+  .st-PROCESSED { background:rgba(18,183,106,.18); color:var(--green-300); }
+  .st-FAILED { background:rgba(229,72,77,.2); color:#F08A8D; }
+  .dbp-wait { color:var(--inti-yellow); font-weight:700; }
+  .dbp-ok { color:var(--green-300); font-weight:700; } .dbp-ok .i { width:13px; height:13px; vertical-align:-2px; }
+  .dbp-legend { display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:12px; padding-top:10px; border-top:1px solid var(--n-700); font-size:12px; font-weight:600; color:var(--n-300); }
+  .dbp-legend .dbp-st { margin-right:4px; }
+  /* fila nueva: entra deslizándose; celda que cambia: destello breve */
+  .dbp tr.enter td { animation:dbin 300ms var(--ease-out) both; }
+  @keyframes dbin { from { opacity:0; transform:translateY(-8px); } }
+  .dbp td.flash { animation:dbflash 1100ms var(--ease-out); }
+  @keyframes dbflash { 0%, 25% { background:rgba(255,201,60,.32); } 100% { background:transparent; } }
   @media (max-width:1680px) { .top-title, .admin span:last-child { display:none; } }
   @media (max-width:1500px) { .kpis { grid-template-columns:repeat(4,minmax(0,1fr)); } .kpi.rev { grid-column:span 2; } .flow-row { grid-template-columns:minmax(0,1fr) 380px; } .warm-t small { display:none; } }
   @media (max-width:1180px) { .flow-row { grid-template-columns:1fr; } .two, .charts { grid-template-columns:1fr; } .top-title { display:none; } }
@@ -387,7 +442,7 @@
           <g id="wdots"></g>
           <text class="tag" x="710" y="214" text-anchor="middle">CAÍDO</text></g>
 
-        <g class="node" id="nDb"><rect class="box" x="860" y="105" width="130" height="90" rx="20"/>
+        <g class="node" id="nDb" tabindex="0" role="button" aria-expanded="false" aria-controls="dbPop" aria-label="PostgreSQL: ver las tablas orders y outbox en vivo"><rect class="box" x="860" y="105" width="130" height="90" rx="20"/>
           <circle class="light" cx="974" cy="121" r="5"/>
           <use href="/static/icons.svg#i-database" class="dg-i" x="867" y="129" width="18" height="18"/><text class="t1" x="890" y="143">PostgreSQL</text>
           <text class="t2" id="tDb" x="925" y="168" text-anchor="middle">0 procesados</text>
@@ -411,10 +466,10 @@
         </div>
         <button class="abtn warm-go" id="btnWarm" onclick="toggleWarm()"><b><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg> Iniciar goteo</b></button>
         <div class="split" id="spdWrap">
-          <button class="abtn split-main" onclick="busy(this, post('/api/sim/burst',{count:1}))"><b><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-shopping-cart"/></svg> 1 pedido <span class="spd-tag" id="spdTag" hidden></span></b></button>
+          <button class="abtn split-main" onclick="busy(this, onePedido())"><b><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-shopping-cart"/></svg> 1 pedido <span class="spd-tag" id="spdTag" hidden></span></b></button>
           <button class="abtn split-chev" id="spdBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="spdPop" aria-label="Velocidad de la animación" onclick="toggleSpd()"><b><svg class="i chev" aria-hidden="true"><use href="/static/icons.svg#i-chevron-down"/></svg></b></button>
           <div class="spd-pop" id="spdPop" role="menu" aria-label="Velocidad de la animación" hidden>
-            <div class="spd-h">Velocidad de la animación</div>
+            <div class="spd-h">Velocidad de «1 pedido»</div>
             <button role="menuitemradio" data-v="0.25" onclick="setSpeed(0.25)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-check"/></svg>0.25×<small>muy lenta</small></button>
             <button role="menuitemradio" data-v="0.5" onclick="setSpeed(0.5)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-check"/></svg>0.5×<small>lenta</small></button>
             <button role="menuitemradio" data-v="0.75" onclick="setSpeed(0.75)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-check"/></svg>0.75×</button>
@@ -483,6 +538,25 @@
 
 </div>
 <div id="toast" role="alert"></div>
+<div class="dbp" id="dbPop" role="dialog" aria-label="Tablas de PostgreSQL en vivo" hidden>
+  <div class="dbp-h"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-database"/></svg><b>PostgreSQL en vivo</b></div>
+  <button class="dbp-x" id="dbPopX" aria-label="Cerrar las tablas de PostgreSQL" onclick="dbPin(false)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-x"/></svg></button>
+  <div class="dbp-body">
+  <div class="dbp-down" id="dbPopDown" hidden><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-triangle-alert"/></svg>PostgreSQL no responde · se muestran los últimos datos conocidos</div>
+  <div class="dbp-cap"><code>orders</code>: cada pedido y su estado</div>
+  <table class="t-ord">
+    <thead><tr><th>id</th><th>cliente</th><th class="r">total</th><th>status</th><th>hora</th></tr></thead><tbody id="dbpOrders"></tbody></table>
+  <div class="dbp-cap"><code>outbox</code>: eventos pendientes de enviar a RabbitMQ</div>
+  <table class="t-out">
+    <thead><tr><th>id</th><th>pedido</th><th>evento</th><th>creado</th><th>publicado</th></tr></thead><tbody id="dbpOutbox"></tbody></table>
+  <div class="dbp-legend">
+    <span><span class="dbp-st st-PENDING">PENDING</span>guardado, aún no llega a RabbitMQ</span>
+    <span><span class="dbp-st st-PUBLISHED">PUBLISHED</span>en la cola de RabbitMQ</span>
+    <span><span class="dbp-st st-PROCESSED">PROCESSED</span>procesado por el worker</span>
+    <span><span class="dbp-st st-FAILED">FAILED</span>fue a la DLQ</span>
+  </div>
+  </div>
+</div>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -631,7 +705,7 @@ function render(m) {
   $("nQ").classList.toggle("idle", false);
   $("tCust").textContent = (sim.running ? sim.current_rate : 0) + " pedidos/s";
   setNum("tPend", m.outbox_pending); setNum("tDlq", Math.max(o.FAILED, q?.dlq || 0));
-  renderRetries(q); spawnOrders(m);
+  renderRetries(q); trackTracers(m); spawnOrders(m);
   state.depth = depth;   // los contadores del diagrama se fijan en syncVisNums, al ritmo de las bolitas
   const nW = m.control.workers;
   $("tWork").textContent = "×" + nW; $("wcount").textContent = nW;
@@ -680,6 +754,7 @@ function render(m) {
   renderLab(m.lab);
   renderOrders(m.recent);
   renderLog(m.events);
+  if (!$("dbPop").hidden) updateDbPop(m);
   drawAll();
 }
 
@@ -782,6 +857,168 @@ function renderLog(ev) {
     return `<li class="${e.kind}"><time class="num">${t}</time>${e.icon ? `<span class="li">${icon(e.icon)}</span>` : `<i class="dot"></i>`}<span>${esc(e.text)}</span></li>`;
   }).join("");
 }
+
+/* ================= detalle de PostgreSQL (tablas orders y outbox) ================= */
+/* pasar el mouse por la caja PostgreSQL = vista previa; clic = queda fijo hasta la X, Escape u otro clic en la caja */
+const DB_ST = { PENDING: "guardado, aún no llega a RabbitMQ", PUBLISHED: "en la cola de RabbitMQ", PROCESSED: "procesado por el worker", FAILED: "fue a la DLQ" };
+const hms = iso => new Date(iso).toLocaleTimeString("es-PE", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+const soles = n => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const dbp = { pinned: false };
+
+/* reutiliza las filas por id: las nuevas entran animadas, las celdas que cambian destellan y las que salen se quitan */
+function syncRows(tbody, rows, cells, empty, quiet) {
+  const old = new Map([...tbody.rows].filter(tr => tr.dataset.k).map(tr => [tr.dataset.k, tr]));
+  [...tbody.rows].filter(tr => !tr.dataset.k).forEach(tr => tr.remove());
+  const keep = rows.map(r => {
+    const [k, ...html] = cells(r);
+    let tr = old.get(k);
+    if (tr) {
+      old.delete(k);
+      html.forEach((h, i) => {
+        const td = tr.cells[i];
+        if (td._h === h) return;
+        td.innerHTML = h; td._h = h;
+        if (!quiet) { td.classList.remove("flash"); void td.offsetWidth; td.classList.add("flash"); }   // reinicia el destello
+      });
+    } else {
+      tr = document.createElement("tr"); tr.dataset.k = k;
+      html.forEach(h => { const td = tr.insertCell(); td.innerHTML = h; td._h = h; });
+      if (!quiet) tr.classList.add("enter");
+    }
+    return tr;
+  });
+  old.forEach(tr => tr.remove());
+  // solo se insertan las filas que no están en su lugar: mover una fila existente reiniciaría su animación
+  keep.forEach((tr, i) => { if (tbody.rows[i] !== tr) tbody.insertBefore(tr, tbody.rows[i] || null); });
+  if (!rows.length) tbody.innerHTML = `<tr class="dbp-empty"><td colspan="5">${empty}</td></tr>`;
+}
+function updateDbPop(m, quiet = false) {
+  $("dbPopDown").hidden = m.db_up;
+  $("dbPop").classList.toggle("stale", !m.db_up);   // sin BD: últimos datos conocidos, atenuados
+  // lo que muestra la tabla va al ritmo de las bolitas (ver gates); los datos reales no se modifican
+  const orders = (m.recent || []).map(o => ({ ...o, status: shownStatus(o) })).filter(o => o.status);
+  const outbox = (m.outbox_recent || []).filter(e => { const g = gate(e.aggregate_id); return !g || g.saved || g.pub || g.proc; })
+    .map(e => { const g = gate(e.aggregate_id); return g && !(g.pub || g.proc) ? { ...e, published_at: null } : e; });
+  syncRows($("dbpOrders"), orders.slice(0, 6), o => [o.id,
+    `<span class="mono">${esc(o.id.slice(0, 8))}</span>`,
+    `<span title="${esc(o.email)}">${esc(o.email)}</span>`,
+    `<div class="r">${soles(o.total)}</div>`,
+    `<span class="dbp-st st-${o.status}" title="${DB_ST[o.status]}">${o.status}</span>`,
+    o.created_at ? hms(o.created_at) : "—",
+  ], "Aún no hay pedidos guardados", quiet);
+  syncRows($("dbpOutbox"), outbox.slice(0, 6), e => [String(e.id),
+    `<span class="mono">${e.id}</span>`,
+    `<span class="mono">${esc(e.aggregate_id.slice(0, 8))}</span>`,
+    esc(e.event_type),
+    hms(e.created_at),
+    e.published_at ? `<span class="dbp-ok">${icon("check")} ${hms(e.published_at)}</span>` : `<span class="dbp-wait">pendiente</span>`,
+  ], "Aún no hay eventos", quiet);
+  placeDbPop();
+}
+/* ubica el popover junto a la caja sin tapar los controles; si nada cabe limpio, elige donde tape menos */
+function placeDbPop() {
+  const pop = $("dbPop"); if (pop.hidden) return;
+  const M = 8, G = 14, w = pop.offsetWidth, h = pop.offsetHeight, vw = innerWidth, vh = innerHeight;
+  const fit = (x, y) => ({ x: Math.max(M, Math.min(x, vw - w - M)), y: Math.max(M, Math.min(y, vh - h - M)) });
+  if (dbp.moved) {   // el usuario la arrastró: se queda donde la soltó (solo se mantiene dentro de la pantalla)
+    const p = fit(dbp.moved.x, dbp.moved.y); pop.style.left = p.x + "px"; pop.style.top = p.y + "px"; return;
+  }
+  const b = $("nDb").getBoundingClientRect();
+  const avoid = [b, ...[".top", ".warm", ".sabotage", "#bfPop", "#spdPop"].map(s => document.querySelector(s))
+    .filter(el => el && !el.hidden).map(el => el.getBoundingClientRect())];
+  const warm = document.querySelector(".warm").getBoundingClientRect();
+  const cands = [
+    fit(b.left - w - G, b.top),              // a la izquierda, alineado con la caja
+    fit(b.left - w - G, warm.top - h - G),   // a la izquierda, terminando encima de los botones
+    fit(b.right - w, b.top - h - G),         // encima de la caja
+    fit(b.right - w, b.bottom + G),          // debajo
+    fit(b.right + G, b.top),                 // a la derecha
+  ];
+  const cover = c => avoid.reduce((s, r) => s + Math.max(0, Math.min(c.x + w, r.right) - Math.max(c.x, r.left))
+    * Math.max(0, Math.min(c.y + h, r.bottom) - Math.max(c.y, r.top)), 0);
+  const best = cands.reduce((a, c) => cover(c) < cover(a) ? c : a);
+  pop.style.left = best.x + "px"; pop.style.top = best.y + "px";
+}
+function showDbPop() {
+  const pop = $("dbPop");
+  if (pop.hidden) { pop.hidden = false; if (state.m) updateDbPop(state.m, true); }   // al abrir no se anima lo que ya estaba
+  placeDbPop();
+}
+function dbPin(on) {
+  dbp.pinned = on;
+  $("dbPop").classList.toggle("pinned", on);
+  $("nDb").classList.toggle("open", on); $("nDb").setAttribute("aria-expanded", on);
+  if (on) showDbPop();
+  else { if ($("dbPop").contains(document.activeElement)) $("nDb").focus(); $("dbPop").hidden = true; dbp.moved = null; }
+}
+/* arrastrar la ventana fija desde su barra de título (mouse o dedo) */
+const dbHead = $("dbPop").querySelector(".dbp-h");
+dbHead.addEventListener("pointerdown", e => {
+  if (!dbp.pinned || e.button !== 0) return;
+  const r = $("dbPop").getBoundingClientRect();
+  dbp.drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };   // dónde se agarró, para que no "salte"
+  dbHead.setPointerCapture(e.pointerId);
+  $("dbPop").classList.add("dragging"); e.preventDefault();
+});
+dbHead.addEventListener("pointermove", e => {
+  if (!dbp.drag) return;
+  dbp.moved = { x: e.clientX - dbp.drag.dx, y: e.clientY - dbp.drag.dy };
+  placeDbPop();
+});
+const endDrag = () => { dbp.drag = null; $("dbPop").classList.remove("dragging"); };
+dbHead.addEventListener("pointerup", endDrag);
+dbHead.addEventListener("pointercancel", endDrag);
+/* redimensionar la ventana fija desde cualquier borde o esquina, como en Windows */
+// zona para agarrar: 10 px por fuera del borde (ver .dbp.pinned::before) + 6 px por dentro; las esquinas, más grandes
+const EDGE = 6, CORNER = 24, MIN_W = 300, MIN_H = 220;
+const CURSORS = { n: "ns-resize", s: "ns-resize", e: "ew-resize", w: "ew-resize", ne: "nesw-resize", sw: "nesw-resize", nw: "nwse-resize", se: "nwse-resize" };
+function edgeAt(e) {
+  if (e.target.closest(".dbp-x")) return "";
+  const r = $("dbPop").getBoundingClientRect();
+  const t = e.clientY - r.top, b = r.bottom - e.clientY, l = e.clientX - r.left, rt = r.right - e.clientX;   // < 0 = por fuera
+  let v = t < EDGE ? "n" : b < EDGE ? "s" : "", h = l < EDGE ? "w" : rt < EDGE ? "e" : "";
+  if (v && !h) h = l < CORNER ? "w" : rt < CORNER ? "e" : "";   // cerca de una esquina: diagonal
+  if (h && !v) v = t < CORNER ? "n" : b < CORNER ? "s" : "";
+  return v + h;
+}
+const dbPopEl = $("dbPop");
+dbPopEl.addEventListener("pointermove", e => {
+  if (dbp.resize) {
+    const s = dbp.resize, dx = e.clientX - s.x0, dy = e.clientY - s.y0, M = 8;
+    let { left: x, top: y, width: w, height: h } = s.r;
+    if (s.dir.includes("e")) w = Math.min(w + dx, innerWidth - M - x);
+    if (s.dir.includes("s")) h = Math.min(h + dy, innerHeight - M - y);
+    if (s.dir.includes("w")) { const nw = Math.max(MIN_W, Math.min(w - dx, x + w - M)); x += w - nw; w = nw; }
+    if (s.dir.includes("n")) { const nh = Math.max(MIN_H, Math.min(h - dy, y + h - M)); y += h - nh; h = nh; }
+    dbp.size = { w: Math.max(MIN_W, w), h: Math.max(MIN_H, h) };
+    dbPopEl.style.width = dbp.size.w + "px"; dbPopEl.style.height = dbp.size.h + "px";
+    dbp.moved = { x, y }; placeDbPop();
+  } else if (dbp.pinned && !dbp.drag) dbPopEl.style.cursor = CURSORS[edgeAt(e)] || "";
+});
+// en fase de captura: si se agarra un borde, gana el redimensionado (no el arrastre de la barra de título)
+dbPopEl.addEventListener("pointerdown", e => {
+  const dir = dbp.pinned && e.button === 0 && edgeAt(e);
+  if (!dir) return;
+  dbp.resize = { dir, x0: e.clientX, y0: e.clientY, r: dbPopEl.getBoundingClientRect() };
+  dbPopEl.setPointerCapture(e.pointerId); dbPopEl.classList.add("resizing");
+  e.preventDefault(); e.stopPropagation();
+}, true);
+const endResize = () => { if (!dbp.resize) return; dbp.resize = null; dbPopEl.classList.remove("resizing"); };
+dbPopEl.addEventListener("pointerup", endResize);
+dbPopEl.addEventListener("pointercancel", endResize);
+dbPopEl.addEventListener("pointerleave", () => { if (!dbp.resize) dbPopEl.style.cursor = ""; });
+$("nDb").addEventListener("mouseenter", () => { if (!dbp.pinned) showDbPop(); });
+$("nDb").addEventListener("mouseleave", () => { if (!dbp.pinned) $("dbPop").hidden = true; });
+$("nDb").addEventListener("click", () => dbPin(!dbp.pinned));
+$("nDb").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); dbPin(!dbp.pinned); } });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("dbPop").hidden) dbPin(false); });
+/* al terminar, se quitan las clases de animación (si no, la entrada se repetiría después de un destello) */
+$("dbPop").addEventListener("animationend", e => {
+  if (e.animationName === "dbflash") e.target.classList.remove("flash");
+  if (e.animationName === "dbin") e.target.parentElement?.classList.remove("enter");
+});
+addEventListener("scroll", placeDbPop, { passive: true });
+addEventListener("resize", placeDbPop);
 
 /* ================= gráficos ================= */
 function niceMax(v) { if (v <= 5) return 5; const p = Math.pow(10, Math.floor(Math.log10(v))); for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p; return v; }
@@ -896,34 +1133,164 @@ function renderRetries(q) {
 /* un punto por pedido real: en cada consulta se lanzan tantos puntos como pedidos nuevos llegaron o se
    procesaron, repartidos en el segundo; cada uno encadena sus tramos (primero llega a la API, luego sigue) */
 const DOT_CAP = 12;   // máx. puntos por tramo en cada consulta; por encima, un punto representa varios pedidos
-function spread(key, n, offset = 0, color, die) { for (let i = 0; i < n; i++) setTimeout(() => spawn(key, color, die), offset + i * 900 / n); }
 function spawnOrders(m) {
   const o = m.orders, prev = state.prevOrd;
   state.prevOrd = { total: o.total, proc: o.PROCESSED };
+  const fresh = freshIds(m.recent || []);
   if (!prev) return;
-  const recv = Math.max(0, o.total - prev.total), proc = Math.max(0, o.PROCESSED - prev.proc);
+  // el pedido de «1 pedido» tiene su propia bolita en cámara lenta (ver runTracer): aquí no se cuenta
+  const tR = fresh.created.filter(id => traced.has(id)), tP = fresh.processed.filter(id => traced.has(id));
+  fresh.created = fresh.created.filter(id => !traced.has(id)); fresh.processed = fresh.processed.filter(id => !traced.has(id));
+  for (const tr of tracers) if (tP.includes(tr.id)) { tr.dbCounted = true; vis.db += 1; }   // el contador de la BD espera a su bolita
+  const recv = Math.max(0, o.total - prev.total - tR.length), proc = Math.max(0, o.PROCESSED - prev.proc - tP.length);
   const per = Math.max(1, Math.ceil(Math.max(recv, proc) / DOT_CAP));
   $("dotScale").textContent = per === 1 ? "cada punto es un pedido real" : `cada punto ≈ ${per} pedidos reales`;
-  const nR = Math.ceil(recv / per), nP = Math.ceil(proc / per), hop = DUR * 1000 / animSpeed, now = performance.now();
-  const slow = animSpeed < 1, qAt = slow ? 2 * hop : hop;   // en cámara lenta, ① guardar en la BD y luego ② publicar, uno tras otro
-  const dwell = slow ? hop * 0.6 : 0;   // en cámara lenta el punto se queda un momento en la cola antes de que lo tome el worker
+  // el resto del tráfico va siempre a velocidad normal
+  const nR = Math.ceil(recv / per), nP = Math.ceil(proc / per), hop = DUR * 1000, now = performance.now(), qAt = hop, dwell = 0;
   const shareR = recv / (nR || 1), shareP = proc / (nP || 1);
-  spread("cust", nR);
-  spread("save", nR, hop);
-  if (m.broker_up) {
-    for (let i = 0; i < nR; i++) {
-      const a = { t: now + qAt + i * 900 / nR + hop, n: shareR, arrived: false, taken: false };
+  // con poco tráfico cada bolita es un pedido concreto: lleva su id y abre cada estado en la tabla al llegar
+  const tieR = per === 1 && fresh.created.length === nR, tieP = per === 1 && fresh.processed.length === nP;
+  for (let i = 0; i < nR; i++) {
+    const off = i * 900 / nR, id = tieR ? fresh.created[i] : null;
+    if (id) gates.set(id, { saved: false, pub: !m.broker_up, proc: false, until: now + qAt + 2 * hop + 4000 });
+    setTimeout(() => spawn("cust"), off);
+    setTimeout(() => spawn("save", null, 1, () => openGate(id, "saved")), hop + off);   // ① llega a PostgreSQL: fila PENDING
+    if (m.broker_up) {
+      const a = { t: now + qAt + off + hop, n: shareR, arrived: false, taken: false };
       arrivals.push(a); vis.qIn += shareR;
-      setTimeout(() => spawn("queue", null, 1, () => { vis.qIn -= a.n; if (!a.taken) { a.arrived = true; vis.q += a.n; } }), qAt + i * 900 / nR);
-    }
-  } else { spread("queue", nR, qAt, "#E5484D", .55); spread("pend", nR, qAt); }   // broker caído: rebota y queda en el outbox
+      setTimeout(() => spawn("queue", null, 1, () => {   // ② llega a RabbitMQ: PUBLISHED y outbox publicado
+        vis.qIn -= a.n; if (!a.taken) { a.arrived = true; vis.q += a.n; } openGate(id, "pub");
+      }), qAt + off);
+    } else { setTimeout(() => spawn("queue", "#E5484D", .55), qAt + off); setTimeout(() => spawn("pend"), qAt + off); }   // broker caído: rebota y queda en el outbox
+  }
   while (arrivals.length && (arrivals[0].t < now - 5000 || arrivals.length > 200)) take(arrivals.shift());
   // el worker no toma un pedido antes de que su punto llegue a la cola
   vis.db += proc;
   for (let i = 0; i < nP; i++) {
-    const a = arrivals.shift(), t = Math.max(now + i * 900 / nP, a ? a.t + dwell : 0);
-    setTimeout(() => { take(a); spawn("work", null, 1, () => spawn("db", null, 1, () => { vis.db -= shareP; })); }, t - now);
+    const a = arrivals.shift(), t = Math.max(now + i * 900 / nP, a ? a.t + dwell : 0), id = tieP ? fresh.processed[i] : null;
+    const g = gates.get(id); if (g) g.until = Math.max(g.until, t + 2 * hop + 4000);
+    setTimeout(() => { take(a); spawn("work", null, 1, () => spawn("db", null, 1, () => {   // ④ llega a PostgreSQL: PROCESSED
+      vis.db -= shareP; openGate(id, "proc");
+    })); }, t - now);
   }
+}
+/* pedidos nuevos y recién procesados desde la consulta anterior, del más antiguo al más nuevo */
+function freshIds(recent) {
+  const prev = state.lastSt; state.lastSt = new Map(recent.map(o => [o.id, o.status]));
+  const t = performance.now(); for (const [id, g] of gates) if (t > g.until + 5000) gates.delete(id);
+  if (!prev) return { created: [], processed: [] };
+  const byAge = [...recent].sort((a, b) => a.created_at < b.created_at ? -1 : 1);
+  return { created: byAge.filter(o => !prev.has(o.id)).map(o => o.id),
+           processed: byAge.filter(o => o.status === "PROCESSED" && prev.get(o.id) !== "PROCESSED").map(o => o.id) };
+}
+/* "compuertas" por pedido: la tabla de PostgreSQL no muestra un estado hasta que la bolita correspondiente llega.
+   until = plazo máximo: si la bolita no llega (pestaña oculta, mucho tráfico), se muestra el estado real */
+const gates = new Map();
+function openGate(id, k) { const g = id && gates.get(id); if (!g) return; g[k] = true; if (!$("dbPop").hidden && state.m) updateDbPop(state.m); }
+function gate(id) { const g = gates.get(id); return g && performance.now() < g.until ? g : null; }
+function shownStatus(o) {
+  const g = gate(o.id); if (!g) return o.status;
+  if (!(g.saved || g.pub || g.proc)) return null;   // su bolita aún no llega a la BD: la fila todavía no aparece
+  if (o.status === "PROCESSED") return g.proc ? "PROCESSED" : g.pub ? "PUBLISHED" : "PENDING";
+  if (o.status === "FAILED") return (g.fail ?? g.pub) ? "FAILED" : g.pub ? "PUBLISHED" : "PENDING";   // fail: llegó a la DLQ
+  if (o.status === "PUBLISHED") return g.pub || g.proc ? o.status : "PENDING";
+  return o.status;
+}
+
+/* ================= «1 pedido»: un pedido seguido en cámara lenta ================= */
+/* su bolita recorre el diagrama a la velocidad elegida y se detiene donde el pedido real espera (outbox si RabbitMQ
+   está caído, cola si no hay worker, reintentos si es venenoso). La tabla de PostgreSQL muestra cada cambio de
+   ese pedido recién cuando su bolita llega. El resto del tráfico y de la página va a velocidad real. */
+const tracers = new Set(), traced = new Set();
+function newTracer(id) {
+  const c = document.createElementNS(NS, "circle");
+  c.setAttribute("r", 6.5); c.setAttribute("stroke", "#fff"); c.setAttribute("stroke-width", 2); c.setAttribute("cx", -20);
+  $("particles").appendChild(c);
+  const tr = { id, c, real: null, poison: false, anim: null, wait: null, dbCounted: false };
+  tracers.add(tr);
+  if (id) { traced.add(id); gates.set(id, { saved: false, pub: false, proc: false, fail: false, until: Infinity }); }
+  return tr;
+}
+const move = (tr, key, o = {}) => new Promise(res => {
+  tr.c.setAttribute("fill", o.color || flows[key].color);
+  tr.anim = { key, s: 0, rev: !!o.rev, die: o.die || 1, res };
+});
+const until = (tr, cond) => new Promise(res => { tr.wait = { cond, res }; });
+const pause = (tr, ms) => { const t = performance.now() + ms; return until(tr, () => performance.now() >= t); };
+const workerUp = () => state.m && svcState("worker", state.m) === "up";
+async function runTracer(tr) {
+  await move(tr, "cust");
+  if (!tr.id) { await move(tr, "save", { color: "#E5484D", die: .55 }); return endTracer(tr); }   // BD caída: el pedido se rechaza
+  await move(tr, "save"); openGate(tr.id, "saved");                  // ① guardado en PostgreSQL: PENDING
+  await until(tr, () => tr.real);
+  if (tr.real === "PENDING") {                                       // RabbitMQ caído: el evento espera en el outbox
+    await move(tr, "queue", { color: "#E5484D", die: .55 });
+    await move(tr, "pend");
+    await until(tr, () => tr.real !== "PENDING");                    // el relay lo publica cuando RabbitMQ vuelve
+    await move(tr, "pend", { rev: true });
+  }
+  await move(tr, "queue"); openGate(tr.id, "pub");                   // ② en la cola de RabbitMQ: PUBLISHED
+  await pause(tr, 600 / animSpeed);                                  // se ve un momento en la cola
+  if (tr.poison || tr.real === "FAILED") {                           // venenoso: falla, espera 2 s, 5 s y 10 s; al 4.º fallo, DLQ
+    for (const wait of [2000, 5000, 10000]) {
+      await until(tr, workerUp); await move(tr, "work"); await move(tr, "fail");
+      await pause(tr, wait); await move(tr, "back");                 // la espera es la real: ya es lenta de por sí
+    }
+    await until(tr, workerUp); await move(tr, "work"); await move(tr, "fail");
+    await until(tr, () => tr.real === "FAILED");
+    await move(tr, "dlq"); openGate(tr.id, "fail");                  // ⑤ en la DLQ: FAILED
+    return endTracer(tr);
+  }
+  await until(tr, () => tr.real === "PROCESSED");                    // espera a que un worker lo procese (sabotajes incluidos)
+  await move(tr, "work");
+  await move(tr, "db"); openGate(tr.id, "proc");                     // ④ confirmado en PostgreSQL: PROCESSED
+  endTracer(tr);
+}
+function endTracer(tr) {
+  if (tr.dbCounted) { tr.dbCounted = false; vis.db -= 1; }
+  tr.c.remove(); tracers.delete(tr);
+  if (tr.id) { gates.delete(tr.id); if (!$("dbPop").hidden && state.m) updateDbPop(state.m); }
+}
+function stepTracers(dt) {
+  for (const tr of tracers) {
+    if (tr.gone) { endTracer(tr); continue; }   // el pedido ya no existe (p. ej. se reinició la demo)
+    const a = tr.anim;
+    if (a) {
+      a.s = Math.min(a.die, a.s + dt * animSpeed / DUR);
+      const f = flows[a.key], pt = f.path.getPointAtLength((a.rev ? 1 - a.s : a.s) * f.len);
+      tr.c.setAttribute("cx", pt.x); tr.c.setAttribute("cy", pt.y);
+      tr.c.setAttribute("opacity", a.die < 1 ? 1 - a.s / a.die * .6 : 1);
+      if (a.s >= a.die) {
+        tr.anim = null;
+        if (a.key === "db" && tr.dbCounted) { tr.dbCounted = false; vis.db -= 1; }
+        a.res();
+      }
+    } else if (tr.wait && tr.wait.cond()) { const w = tr.wait; tr.wait = null; w.res(); }
+  }
+}
+/* estado real del pedido seguido: de la lista reciente o, si ya salió de ella, consultándolo directamente */
+function trackTracers(m) {
+  for (const tr of tracers) {
+    if (!tr.id) continue;
+    const o = (m.recent || []).find(o => o.id === tr.id);
+    if (o) { tr.real = o.status; tr.poison = o.items.some(s => s.endsWith(" FAIL")); continue; }
+    fetch("/orders/" + tr.id).then(r => { if (r.status === 404) tr.gone = true; return r.ok ? r.json() : null; })
+      .then(o => { if (o) { tr.real = o.status; tr.poison = o.items.some(i => i.sku === "FAIL"); } }).catch(() => {});
+  }
+}
+async function onePedido() {
+  try {
+    const r = await fetch("/api/sim/burst", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ count: 1 }) });
+    if (r.status === 401 || r.status === 403) { location.href = "/login?next=/panel&admin=1"; return; }
+    if (!r.ok) {
+      const e = await r.json().catch(() => ({})); toast(e.detail || "Error " + r.status);
+      if (r.status === 503) runTracer(newTracer(null));   // la BD no pudo guardarlo: la bolita rebota
+      return;
+    }
+    const { order_id } = await r.json();
+    if (order_id) runTracer(newTracer(order_id));
+    poll();
+  } catch { toast("No se pudo contactar a la API"); }
 }
 const arrivals = [];   // puntos en camino a la cola: cuándo llegan y si ya los tomó un worker
 /* ajustes para que los contadores del diagrama esperen a las bolitas: qIn = en camino a la cola,
@@ -939,7 +1306,7 @@ function stepParticles(dt) {
   if (!state.m) return;
   for (let i = parts.length - 1; i >= 0; i--) {
     const p = parts[i], f = flows[p.key];
-    p.s += dt * animSpeed / DUR;
+    p.s += dt / DUR;   // velocidad normal: la cámara lenta es solo para «1 pedido»
     if (p.s >= p.die) { p.c.remove(); parts.splice(i, 1); p.done?.(); continue; }
     const pt = f.path.getPointAtLength(p.s * f.len);
     p.c.setAttribute("cx", pt.x); p.c.setAttribute("cy", pt.y);
@@ -951,7 +1318,7 @@ function stepParticles(dt) {
 let tPrev = performance.now();
 function frame(t) {
   const dt = Math.min(.1, (t - tPrev) / 1000); tPrev = t;
-  stepParticles(dt); syncVisNums(); tickNums(dt); requestAnimationFrame(frame);
+  stepParticles(dt); stepTracers(dt); syncVisNums(); tickNums(dt); requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 

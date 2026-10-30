@@ -74,6 +74,11 @@ class Outbox(ABC):
     @abstractmethod
     def pending_count(self) -> int: ...
 
+    @abstractmethod
+    def recent(self, limit: int) -> list[dict]:
+        """Los eventos más nuevos primero: id, aggregate_id, event_type, created_at y published_at (ISO, o None
+        si aún no se publica). Solo para mostrarlos en el panel."""
+
 
 class ProductRepository(ABC):
     @abstractmethod
