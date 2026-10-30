@@ -5,10 +5,11 @@ import os
 import sqlite3
 from contextlib import closing
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from typing import Callable
 
 from app.repositories.interfaces import Outbox, OrderRepository
-from app.models.order import Order, OrderItem, OrderStatus
+from app.models.order import Order, OrderItem, OrderStatus, money
 
 
 def _now() -> str:
@@ -67,7 +68,7 @@ class SqliteOrderRepository(OrderRepository):
     def save(self, order: Order) -> None:
         self._tx(
             ("INSERT INTO orders VALUES (?,?,?,?,?)",
-             (order.id, order.customer_email, json.dumps([i.__dict__ for i in order.items]),
+             (order.id, order.customer_email, json.dumps([i.to_dict() for i in order.items]),
               order.status.value, order.created_at)),
             ("INSERT INTO outbox (aggregate_id, event_type, payload, created_at) VALUES (?, 'OrderCreated', ?, ?)",
              (order.id, json.dumps({"order_id": order.id}), _now())),
@@ -113,13 +114,9 @@ class SqliteOrderRepository(OrderRepository):
             counts[status] = n
         return counts
 
-    def revenue(self, status: OrderStatus) -> float:
-        rows = self._run(
-            """SELECT SUM(json_extract(j.value,'$.quantity') * json_extract(j.value,'$.unit_price'))
-               FROM orders, json_each(orders.items) j WHERE orders.status=?""",
-            (status.value,),
-        )
-        return round(rows[0][0] or 0.0, 2)
+    def revenue(self, status: OrderStatus) -> Decimal:
+        # SQLite no tiene un tipo decimal exacto (multiplicaría en float): se suma en Python con Decimal
+        return money(sum((o.total for o in self.list(status)), Decimal(0)))
 
     def count_ahead(self, order: Order) -> int:
         rows = self._run("SELECT COUNT(*) FROM orders WHERE status IN ('PENDING','PUBLISHED') AND created_at<?",

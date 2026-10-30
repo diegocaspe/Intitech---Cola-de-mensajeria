@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from decimal import Decimal
 from typing import Callable
 
 from app.models.order import Order, OrderStatus
@@ -41,7 +42,7 @@ class OrderRepository(ABC):
     def count_by_status(self) -> dict[str, int]: ...
 
     @abstractmethod
-    def revenue(self, status: OrderStatus) -> float: ...
+    def revenue(self, status: OrderStatus) -> Decimal: ...
 
     @abstractmethod
     def count_ahead(self, order: Order) -> int:

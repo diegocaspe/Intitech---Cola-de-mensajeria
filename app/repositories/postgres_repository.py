@@ -1,6 +1,7 @@
 """Repositorios de PostgreSQL: pedidos, outbox y usuarios. La conexión y las tablas están en app/database."""
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Callable
 
 import psycopg
@@ -8,7 +9,7 @@ from psycopg.types.json import Jsonb
 from psycopg_pool import ConnectionPool
 
 from app.repositories.interfaces import Outbox, OrderRepository, UserRepository
-from app.models.order import Order, OrderItem, OrderStatus
+from app.models.order import Order, OrderItem, OrderStatus, money
 from app.models.user import Role, User
 
 
@@ -25,7 +26,7 @@ class PostgresOrderRepository(OrderRepository):
     def save(self, order: Order) -> None:
         with self.pool.connection() as conn, conn.transaction():   # pedido + evento: todo o nada
             conn.execute("INSERT INTO orders (id, customer_email, items, status, created_at) VALUES (%s,%s,%s,%s,%s)",
-                         (order.id, order.customer_email, Jsonb([i.__dict__ for i in order.items]),
+                         (order.id, order.customer_email, Jsonb([i.to_dict() for i in order.items]),
                           order.status.value, order.created_at))
             conn.execute("INSERT INTO outbox (aggregate_id, event_type, payload) VALUES (%s, 'OrderCreated', %s)",
                          (order.id, Jsonb({"order_id": order.id})))
@@ -65,10 +66,10 @@ class PostgresOrderRepository(OrderRepository):
             counts[status] = n
         return counts
 
-    def revenue(self, status: OrderStatus) -> float:
+    def revenue(self, status: OrderStatus) -> Decimal:
         rows = self._q("""SELECT COALESCE(SUM((e->>'quantity')::int * (e->>'unit_price')::numeric), 0)
                           FROM orders, jsonb_array_elements(items) e WHERE status=%s""", (status.value,))
-        return round(float(rows[0][0]), 2)
+        return money(rows[0][0])   # NUMERIC llega como Decimal: suma exacta en la BD
 
     def count_ahead(self, order: Order) -> int:
         return self._q("SELECT COUNT(*) FROM orders WHERE status IN ('PENDING','PUBLISHED') AND created_at < %s",

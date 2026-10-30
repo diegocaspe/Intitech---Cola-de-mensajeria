@@ -2,6 +2,7 @@ import threading
 import time
 from contextlib import asynccontextmanager
 from dataclasses import asdict
+from decimal import Decimal
 from pathlib import Path
 from typing import Literal
 
@@ -295,7 +296,7 @@ def store_qr(request: Request):
 class ItemIn(BaseModel):
     sku: str
     quantity: int = Field(gt=0)
-    unit_price: float = Field(ge=0)
+    unit_price: Decimal = Field(ge=0, max_digits=10, decimal_places=2)
 
 
 class OrderIn(BaseModel):

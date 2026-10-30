@@ -1,6 +1,8 @@
+from decimal import Decimal
+
 import pytest
 
-from app.models.order import OrderStatus
+from app.models.order import OrderStatus, money
 from app.repositories.catalog_repository import InMemoryProductRepository
 from app.repositories.interfaces import OrderPublisher
 from app.repositories.sqlite_repository import SqliteOrderRepository, SqliteOutbox
@@ -161,3 +163,19 @@ def test_checkout_rejects_invalid(email, lines):
     co, _ = make_checkout()
     with pytest.raises(CheckoutError):
         co.checkout(email, lines)
+
+
+# --- dinero exacto ------------------------------------------------------------
+
+def test_money_is_exact_decimal_end_to_end():
+    svc, _ = make()
+    orders = [svc.create_order("a@b.com", [{"sku": "A1", "quantity": 1, "unit_price": 0.1}]) for _ in range(3)]
+    for o in orders:
+        svc.process_order(o.id)
+    assert svc.repo.revenue(OrderStatus.PROCESSED) == Decimal("0.30")    # con float: 0.30000000000000004
+    stored = svc.get_order(orders[0].id)                                   # ida y vuelta por la BD sin perder exactitud
+    assert isinstance(stored.total, Decimal) and stored.items[0].unit_price == Decimal("0.10")
+
+
+def test_money_rounds_half_up_like_a_cashier():
+    assert money(2.675) == Decimal("2.68")                                 # round(2.675, 2) con float da 2.67
