@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: tienda
       POSTGRES_PASSWORD: tienda
     ports:
-      - "5432:5432"   # para inspeccionar las tablas con DBeaver/pgAdmin durante la demo
+      - "127.0.0.1:5432:5432"   # DBeaver/pgAdmin desde la laptop; no se expone a la red Wi-Fi del público
     volumes:
       - pg_data:/var/lib/postgresql/data   # los pedidos y usuarios sobreviven a caídas y reinicios
     healthcheck:
@@ -18,8 +18,8 @@ services:
   rabbitmq:
     image: rabbitmq:3.13-management
     ports:
-      - "5672:5672"
-      - "15672:15672"   # panel web: guest / guest
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"   # panel web (guest / guest), solo desde la laptop
     environment:
       # refresca las estadísticas cada 0.5 s (por defecto 5 s) para que el panel se vea en vivo
       RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit collect_statistics_interval 500"

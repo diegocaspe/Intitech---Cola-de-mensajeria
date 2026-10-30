@@ -128,6 +128,10 @@ si cambias una ruta, vuelve a exportarlo desde http://localhost:8000/openapi.jso
 ```bash
 docker compose run --rm --no-deps api pytest -q
 ```
+O sin Docker, en un entorno virtual (las pruebas usan SQLite y un canal de RabbitMQ falso):
+```powershell
+python -m venv .venv; .\.venv\Scripts\python -m pip install -r requirements.txt; .\.venv\Scripts\python -m pytest -q
+```
 
 ## La tienda
 
@@ -150,8 +154,16 @@ docker compose run --rm --no-deps api pytest -q
    `New-NetFirewallRule -DisplayName "Demo tienda 8000" -Direction Inbound -Protocol TCP -LocalPort 8000 -Action Allow`
 3. Plan B: comparte internet desde el celular del presentador y conecta la laptop a ese punto de acceso.
 
+## Limitaciones conocidas (decisiones conscientes para la demo)
+
+| Decisión | Por qué en la demo | Qué se haría en producción |
+|---|---|---|
+| La API monta `/var/run/docker.sock` | los botones de sabotaje apagan contenedores reales | nunca: acceso al socket equivale a control total del host; la tolerancia a fallos se probaría con herramientas de caos aparte |
+| Contraseñas por defecto (admin, PostgreSQL, `guest` de RabbitMQ) en `docker-compose.yml` | arrancar con un solo comando, sin configurar nada | secretos fuera del repositorio (variables de entorno, Docker secrets o un gestor de secretos) |
+| `SECRET_KEY` de ejemplo si se usa `docker compose up` a mano | `iniciar.ps1` ya genera una aleatoria en cada arranque | clave fija, larga y secreta, fuera del código |
+| PostgreSQL y RabbitMQ publicados en `127.0.0.1` | inspeccionar tablas y colas desde la laptop; el público en la Wi-Fi solo ve el puerto 8000 | sin puertos publicados: solo red interna entre contenedores |
+| HTTP sin TLS y cookie sin `Secure` | red local, sin certificado | HTTPS detrás de un proxy y cookie `Secure` |
+
 ## Notas
 
-- Los botones de sabotaje real necesitan que Docker esté disponible para la API: `docker-compose.yml` monta
-  `/var/run/docker.sock` en el contenedor `api`. Es solo para la demo; no se haría en producción.
 - "Reiniciar demo" (enlace pequeño bajo los botones) vacía la BD y las colas para repetir la presentación.

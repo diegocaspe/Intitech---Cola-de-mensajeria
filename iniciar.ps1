@@ -14,6 +14,12 @@ if (-not $ip) {
     $env:PUBLIC_URL = "http://${ip}:8000"
 }
 
+# Clave aleatoria para firmar las sesiones (en vez de la de ejemplo del docker-compose.yml).
+# Cambia en cada arranque: las sesiones anteriores dejan de valer y hay que volver a ingresar.
+if (-not $env:SECRET_KEY) {
+    $env:SECRET_KEY = -join ((1..48) | ForEach-Object { '{0:x}' -f (Get-Random -Maximum 16) })
+}
+
 docker compose up --build -d
 if ($LASTEXITCODE -ne 0) { Write-Host "Error al levantar los contenedores. ¿Está abierto Docker Desktop?" -ForegroundColor Red; exit 1 }
 
