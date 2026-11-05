@@ -659,6 +659,8 @@ async function openOrders() {
   openLayer("orders");
   const head = `<div class="acct"><span class="av">${esc(me.name[0].toUpperCase())}</span>
       <div><b>${esc(me.name)}</b><small>${esc(me.email)}${me.role === "admin" ? " · Administrador" : ""}</small></div></div>
+    ${me.email_status === "pending" ? `<div class="alert verify-alert">${icon("mail", "s")}<span><b>Verifica tu correo.</b> Te enviamos un enlace a ${esc(me.email)}.
+      Puedes seguir comprando mientras tanto. <button class="linkbtn" onclick="resendVerify(this)">Reenviar el correo</button></span></div>` : ""}
     <div class="linkrow">${me.role === "admin" ? `<a class="btn btn-secondary btn-s" href="/panel">${icon("gear", "s")} Panel de control</a>` : ""}<button class="btn btn-ghost btn-s" onclick="logout()">${icon("log-out", "s")} Cerrar sesión</button></div>
     <h4 style="font-size:18px">Mis pedidos</h4>`;
   $("ordersBody").innerHTML = head + `<div class="empty flat">Cargando…</div>`;
@@ -674,6 +676,28 @@ async function logout() {
   await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
   location.href = "/";
 }
+async function resendVerify(btn) {
+  btn.disabled = true;
+  let ok = false;
+  try { const r = await fetch("/api/auth/verify/resend", { method: "POST" }); ok = r.ok && (await r.json()).sent; } catch {}
+  btn.textContent = ok ? "Listo: revisa tu bandeja" : "Espera un minuto y vuelve a intentarlo";
+  if (!ok) setTimeout(() => { btn.disabled = false; btn.textContent = "Reenviar el correo"; }, 60000);
+}
+
+/* aviso flotante (p. ej. al volver del enlace de verificación del correo) */
+function notice(kind, html) {
+  const n = document.createElement("div");
+  n.className = "notice " + kind; n.setAttribute("role", "status");
+  n.innerHTML = icon(kind === "ok" ? "circle-check" : "circle-alert", "s") + `<span>${html}</span>`;
+  document.body.appendChild(n);
+  setTimeout(() => n.classList.add("out"), 6000); setTimeout(() => n.remove(), 6600);
+}
+const VERIFY_MSG = {
+  ok: ["ok", "<b>¡Correo verificado!</b> Gracias por confirmarlo."],
+  expirado: ["warn", "<b>El enlace venció.</b> Entra a Mi cuenta y pide uno nuevo."],
+  usado: ["warn", "<b>Este enlace ya se usó.</b> Si ya verificaste tu correo, no tienes que hacer nada más."],
+  invalido: ["warn", "<b>El enlace no es válido.</b> Revisa que lo copiaste completo."],
+};
 async function loadMe() {
   try { const r = await fetch("/api/auth/me"); me = r.ok ? await r.json() : null; } catch { me = null; }
   if (me) {
@@ -696,12 +720,16 @@ function tick() {
 (async function init() {
   tick(); setInterval(tick, 1000);
   $("grid").innerHTML = Array.from({ length: 8 }, () => `<div class="sk"><i style="aspect-ratio:1"></i><i style="height:12px;width:40%"></i><i style="height:14px"></i><i style="height:24px;width:50%"></i><i style="height:36px"></i></div>`).join("");
-  const hideLoader = () => { $("loader").classList.add("out"); document.body.classList.remove("lock"); };
-  const loaderT = setTimeout(hideLoader, 2500);
+  /* el loader se ve al menos LOADER_MIN ms (contados desde que empezó a cargar la página) para que la entrada se note */
+  const LOADER_MIN = 2000;
+  const hideLoader = () => setTimeout(() => {
+    $("loader").classList.add("out"); document.body.classList.remove("lock");
+  }, Math.max(0, LOADER_MIN - performance.now()));
+  setTimeout(hideLoader, 5000);   /* red colgada: no dejar al usuario atrapado tras el loader */
   try {
     P = await (await fetch("/api/products")).json();
-  } catch { clearTimeout(loaderT); hideLoader(); $("grid").innerHTML = $("flashGrid").innerHTML = `<div class="empty"><h3>No se pudo cargar el catálogo</h3><p>Recarga la página en unos segundos.</p></div>`; return; }
-  clearTimeout(loaderT); hideLoader();
+  } catch { hideLoader(); $("grid").innerHTML = $("flashGrid").innerHTML = `<div class="empty"><h3>No se pudo cargar el catálogo</h3><p>Recarga la página en unos segundos.</p></div>`; return; }
+  hideLoader();
   BY = Object.fromEntries(P.map(p => [p.sku, p]));
   for (const s in cart) if (!BY[s]) delete cart[s];
   renderHome(); route(); renderCarousel(); renderCombos(); renderCart();
@@ -710,6 +738,12 @@ function tick() {
   if (new URLSearchParams(location.search).has("pagar")) {   // vuelve del login para pagar
     history.replaceState(null, "", "/");
     if (me && cartCount()) openCheckout();
+  }
+  const verified = new URLSearchParams(location.search).get("verificado");   // vuelve del enlace del correo
+  if (verified) {
+    history.replaceState(null, "", "/");
+    const [kind, msg] = VERIFY_MSG[verified] || VERIFY_MSG.invalido;
+    setTimeout(() => notice(kind, msg), Math.max(0, LOADER_MIN + 200 - performance.now()));   // tras el loader
   }
 })();
 </script>

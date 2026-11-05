@@ -76,7 +76,8 @@ paths:
       tags:
       - Usuarios
       summary: Usuario actual
-      description: Datos del usuario con sesión iniciada, o null si no hay sesión.
+      description: 'Datos del usuario con sesión iniciada, o null si no hay sesión. email_status: pending (falta verificar
+        el correo), verified, legacy (cuenta de prueba anterior a los correos) o null si la base de datos no responde.'
       operationId: me_api_auth_me_get
       responses:
         '200':
@@ -84,6 +85,98 @@ paths:
           content:
             application/json:
               schema: {}
+  /api/auth/verify:
+    get:
+      tags:
+      - Usuarios
+      summary: Verificar el correo
+      description: Destino del enlace del correo de bienvenida. El token es de un solo uso y vence a las 24 h. Redirige a
+        la tienda con ?verificado=ok, expirado, usado o invalido.
+      operationId: verify_email_api_auth_verify_get
+      parameters:
+      - name: token
+        in: query
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: Token
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/auth/verify/resend:
+    post:
+      tags:
+      - Usuarios
+      summary: Reenviar el correo de verificación
+      description: Genera un enlace nuevo para la cuenta con sesión iniciada (como mucho uno por minuto).
+      operationId: resend_verification_api_auth_verify_resend_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/auth/forgot:
+    post:
+      tags:
+      - Usuarios
+      summary: Olvidé mi contraseña
+      description: Si el correo pertenece a un cliente, le envía un enlace para crear una contraseña nueva (vence en 60 min,
+        un solo uso). Responde lo mismo exista o no la cuenta.
+      operationId: forgot_password_api_auth_forgot_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/auth/reset:
+    post:
+      tags:
+      - Usuarios
+      summary: Restablecer la contraseña
+      description: Cambia la contraseña con el token del enlace recibido por correo. El token se gasta al usarlo.
+      operationId: reset_password_api_auth_reset_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/products:
     get:
       tags:
@@ -277,7 +370,7 @@ paths:
       tags:
       - Pedidos (admin)
       summary: Reenviar pendientes del outbox
-      description: Publica en RabbitMQ los pedidos que quedaron guardados sin enviar (por ejemplo, con el broker caído).
+      description: 'Herramienta de administración: publica ya los pedidos pendientes sin esperar al relay.'
       operationId: republish_pending_orders_republish_pending_post
       responses:
         '200':
@@ -302,28 +395,58 @@ paths:
     get:
       tags:
       - Panel (admin)
-      summary: Ver la DLQ (pedidos fallidos)
-      description: Mensajes que agotaron sus 3 reintentos, con el error y la hora.
+      summary: Ver una DLQ
+      description: 'Mensajes que agotaron sus 3 reintentos, con el error y la hora. queue=pedidos (por defecto) o queue=correos
+        (correos que no se pudieron enviar: tipo y destinatario, sin el contenido).'
       operationId: dlq_list_api_dlq_get
+      parameters:
+      - name: queue
+        in: query
+        required: false
+        schema:
+          enum:
+          - pedidos
+          - correos
+          type: string
+          default: pedidos
+          title: Queue
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/dlq/reprocess:
     post:
       tags:
       - Panel (admin)
       summary: Reprocesar desde la DLQ
-      description: Devuelve a la cola principal los pedidos elegidos (o todos).
+      description: 'Devuelve a la cola principal los mensajes elegidos (o todos). queue=correos reenvía correos a la cola
+        del mailer: los que ya salieron no se repiten (idempotencia por email_id).'
       operationId: dlq_reprocess_api_dlq_reprocess_post
+      parameters:
+      - name: queue
+        in: query
+        required: false
+        schema:
+          enum:
+          - pedidos
+          - correos
+          type: string
+          default: pedidos
+          title: Queue
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/DlqAction'
-        required: true
       responses:
         '200':
           description: Successful Response
@@ -341,14 +464,25 @@ paths:
       tags:
       - Panel (admin)
       summary: Descartar de la DLQ
-      description: Elimina de la DLQ los pedidos elegidos (o todos).
+      description: Elimina de la DLQ los mensajes elegidos (o todos). queue=pedidos (por defecto) o queue=correos.
       operationId: dlq_discard_api_dlq_discard_post
+      parameters:
+      - name: queue
+        in: query
+        required: false
+        schema:
+          enum:
+          - pedidos
+          - correos
+          type: string
+          default: pedidos
+          title: Queue
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/DlqAction'
-        required: true
       responses:
         '200':
           description: Successful Response
@@ -493,9 +627,9 @@ paths:
       tags:
       - Sabotajes (admin)
       summary: Sabotear o recuperar
-      description: 'Valores de action. Caídas: kill-worker, crash-broker, crash-db. Recuperar: revive-worker, revive-broker,
-        revive-db, recover (todo). Worker lento: slow-on / slow-off. Pedidos con error: poison (uno), poison-on / poison-off.
-        Persistencia: persist-on / persist-off. Escalar: workers-up / workers-down.'
+      description: 'Valores de action. Caídas: kill-worker, kill-relay, kill-mailer, crash-broker, crash-db. Recuperar: revive-worker,
+        revive-relay, revive-mailer, revive-broker, revive-db, recover (todo). Worker lento: slow-on / slow-off. Pedidos con
+        error: poison (uno), poison-on / poison-off. Persistencia: persist-on / persist-off. Escalar: workers-up / workers-down.'
       operationId: chaos_api_chaos__action__post
       parameters:
       - name: action
@@ -563,8 +697,25 @@ components:
             type: array
           - type: 'null'
           title: Order Ids
+        email_ids:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Email Ids
       type: object
       title: DlqAction
+    ForgotIn:
+      properties:
+        email:
+          type: string
+          maxLength: 120
+          title: Email
+      type: object
+      required:
+      - email
+      title: ForgotIn
     HTTPValidationError:
       properties:
         detail:
@@ -584,8 +735,10 @@ components:
           exclusiveMinimum: 0.0
           title: Quantity
         unit_price:
-          type: number
-          minimum: 0.0
+          anyOf:
+          - type: number
+            minimum: 0.0
+          - type: string
           title: Unit Price
       type: object
       required:
@@ -661,6 +814,21 @@ components:
       - email
       - password
       title: RegisterIn
+    ResetIn:
+      properties:
+        token:
+          type: string
+          maxLength: 200
+          title: Token
+        password:
+          type: string
+          maxLength: 128
+          title: Password
+      type: object
+      required:
+      - token
+      - password
+      title: ResetIn
     SimStart:
       properties:
         mode:
@@ -699,7 +867,7 @@ components:
       title: ValidationError
 tags:
 - name: Usuarios
-  description: Registro, inicio y cierre de sesión.
+  description: Registro, inicio y cierre de sesión, verificación del correo y recuperación de contraseña.
 - name: Tienda
   description: 'Lo que usa la tienda del cliente: catálogo, compra y seguimiento del pedido.'
 - name: Pedidos (admin)

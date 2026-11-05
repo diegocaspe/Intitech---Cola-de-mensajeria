@@ -151,28 +151,3 @@ class TrafficSimulator:
             if next_t < now - 1.0:   # nos atrasamos (BD lenta): no acumular ráfagas
                 next_t = now
             time.sleep(max(0.0, next_t - now))
-
-
-class OutboxRelay:
-    """Relay del Transactional Outbox: publica los eventos que quedaron sin enviar en cuanto el broker vuelve."""
-
-    def __init__(self, service: OrderService, events: EventLog, interval: float = 1.5):
-        self.service, self.events, self.interval = service, events, interval
-        self._was_healthy = True
-
-    def start(self) -> None:
-        threading.Thread(target=self._loop, daemon=True).start()
-
-    def _loop(self) -> None:
-        while True:
-            time.sleep(self.interval)
-            try:
-                n = self.service.relay_outbox(min_age_s=3)
-                healthy = self.service.publisher.is_healthy()
-                if self._was_healthy and not healthy:
-                    self.events.add("bad", "RabbitMQ no responde: los eventos de los pedidos nuevos esperan en el outbox", "octagon")
-                if n:
-                    self.events.add("ok", f"Relay del outbox: {n} eventos pendientes publicados en RabbitMQ", "database")
-                self._was_healthy = healthy
-            except Exception:
-                pass                      # BD caída: se reintenta en la siguiente vuelta

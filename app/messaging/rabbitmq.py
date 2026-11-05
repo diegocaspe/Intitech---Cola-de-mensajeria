@@ -9,7 +9,7 @@ import pika
 
 from app import config
 from app.services.order_service import ProcessingError
-from app.repositories.interfaces import OrderPublisher
+from app.repositories.interfaces import EmailSendError, OrderPublisher
 
 log = logging.getLogger(__name__)
 
@@ -100,13 +100,29 @@ def declare_topology(ch) -> None:
             "x-dead-letter-routing-key": config.ROUTING_KEY,
         })
 
+    # Correos: el mismo esquema, en su propio exchange. Cola durable, reintentos 2 s / 5 s / 10 s con TTL y su DLQ
+    # (en el mismo DLX que la de pedidos, con otra routing key)
+    ch.queue_declare(config.EMAIL_DLQ, durable=True)
+    ch.queue_bind(config.EMAIL_DLQ, config.DLX, config.EMAIL_ROUTING_KEY)
+    ch.exchange_declare(config.EMAIL_EXCHANGE, "direct", durable=True)
+    ch.queue_declare(config.EMAIL_QUEUE, durable=True, arguments={
+        "x-dead-letter-exchange": config.DLX, "x-dead-letter-routing-key": config.EMAIL_ROUTING_KEY})
+    ch.queue_bind(config.EMAIL_QUEUE, config.EMAIL_EXCHANGE, config.EMAIL_ROUTING_KEY)
+    for delay, queue in zip(config.RETRY_DELAYS, config.EMAIL_RETRY_QUEUES):
+        ch.queue_declare(queue, durable=True, arguments={
+            "x-message-ttl": delay * 1000,
+            "x-dead-letter-exchange": config.EMAIL_EXCHANGE,
+            "x-dead-letter-routing-key": config.EMAIL_ROUTING_KEY,
+        })
+
 
 def purge_queues() -> None:
     conn = connect(retries=1)
     try:
         ch = conn.channel()
         declare_topology(ch)
-        for q in (config.QUEUE, config.VOLATILE_QUEUE, config.DLQ, *config.RETRY_QUEUES):
+        for q in (config.QUEUE, config.VOLATILE_QUEUE, config.DLQ, *config.RETRY_QUEUES,
+                  config.EMAIL_QUEUE, config.EMAIL_DLQ, *config.EMAIL_RETRY_QUEUES):
             ch.queue_purge(q)
     finally:
         conn.close()
@@ -166,6 +182,31 @@ class RabbitOrderPublisher(OrderPublisher):
                             content_type="application/json",
                             headers={"retries": 0},
                         ),
+                        mandatory=True,
+                    )
+                    self._healthy = True
+                    return
+                except (*_NET_ERRORS, ConnectionError) as exc:
+                    last_exc = exc
+                    self._close()
+            self._healthy = False
+            self._down_until = time.monotonic() + self.RETRY_AFTER
+            raise ConnectionError(f"Publicación fallida: {last_exc}")
+
+    def publish_email(self, payload: dict) -> None:
+        """Correos: siempre por el camino durable (el interruptor de persistencia del panel es solo para pedidos)."""
+        with self._lock:
+            if time.monotonic() < self._down_until:
+                raise ConnectionError("RabbitMQ no disponible")
+            last_exc = None
+            for _ in range(2):
+                try:
+                    self._channel().basic_publish(
+                        exchange=config.EMAIL_EXCHANGE,
+                        routing_key=config.EMAIL_ROUTING_KEY,
+                        body=json.dumps(payload),
+                        properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent,
+                                                        content_type="application/json", headers={"retries": 0}),
                         mandatory=True,
                     )
                     self._healthy = True
@@ -261,8 +302,95 @@ class OrderConsumer:
             ch.basic_nack(method.delivery_tag, requeue=False)  # RabbitMQ lo envía a la DLQ (con cabecera x-death)
 
 
+class EmailConsumer:
+    """Consumidor del mailer, con las mismas garantías que OrderConsumer: ack manual tras enviar, reintentos con espera
+    creciente (2 s, 5 s, 10 s) ante fallos de SMTP o red, DLQ al tercer fallo y reconexión automática."""
+
+    def __init__(self, service):
+        self.service = service
+
+    def run(self, stop: threading.Event) -> None:
+        while not stop.is_set():
+            conn = None
+            try:
+                conn = connect(retries=1)
+                ch = conn.channel()
+                declare_topology(ch)
+                ch.basic_qos(prefetch_count=1)
+                ch.confirm_delivery()   # la copia que va a la cola de reintento también debe confirmarla el broker
+                ch.basic_consume(config.EMAIL_QUEUE, on_message_callback=self._on_message, auto_ack=False)
+                log.info("Escuchando '%s'", config.EMAIL_QUEUE)
+                while not stop.is_set():
+                    conn.process_data_events(time_limit=0.5)
+            except (*_NET_ERRORS, ConnectionError) as exc:
+                log.warning("Conexión con RabbitMQ perdida (%s). Reintentando...", exc.__class__.__name__)
+                stop.wait(2)
+            except Exception:
+                log.exception("Error inesperado en el mailer. Reconectando...")
+                stop.wait(2)
+            finally:
+                try:
+                    if conn and conn.is_open:
+                        conn.close()
+                except Exception:
+                    pass
+
+    def _on_message(self, ch, method, props, body) -> None:
+        try:
+            payload = json.loads(body)
+            email_id = str(payload["email_id"])
+        except (ValueError, KeyError, TypeError):
+            log.error("Mensaje de correo ilegible -> DLQ")
+            ch.basic_nack(method.delivery_tag, requeue=False)
+            return
+        headers = props.headers or {}
+        retries = headers.get("retries", 0)
+        try:
+            try:
+                self.service.deliver(payload)
+            except EmailSendError as exc:            # SMTP o red: reintento diferido y luego DLQ
+                self._retry_or_dead_letter(ch, method, body, headers, retries, email_id, exc)
+                return
+            except (ValueError, KeyError, TypeError) as exc:   # evento mal formado: reintentar no lo arregla
+                log.error("Correo %s inválido (%s) -> DLQ", email_id[:8], exc.__class__.__name__)
+                ch.basic_nack(method.delivery_tag, requeue=False)
+                return
+            ch.basic_ack(method.delivery_tag)        # solo tras enviar y registrar el email_id
+        except _NET_ERRORS:
+            raise
+        except Exception as exc:
+            # infraestructura (p. ej. la BD de idempotencia caída): no gasta reintentos, vuelve a la cola y espera
+            log.warning("Infraestructura no disponible con el correo %s: %s. Devuelto a la cola.",
+                        email_id[:8], exc.__class__.__name__)
+            time.sleep(2)
+            ch.basic_nack(method.delivery_tag, requeue=True)
+
+    def _retry_or_dead_letter(self, ch, method, body, headers, retries, email_id, exc) -> None:
+        if retries < config.MAX_RETRIES:
+            log.error("Correo %s falló (%s). Reintento %d en %d s", email_id[:8], exc, retries + 1,
+                      config.RETRY_DELAYS[retries])
+            ch.basic_publish("", config.EMAIL_RETRY_QUEUES[retries], body, pika.BasicProperties(
+                delivery_mode=pika.DeliveryMode.Persistent,
+                content_type="application/json",
+                headers={**headers, "retries": retries + 1, "x-last-error": str(exc),
+                         "x-first-failure": headers.get("x-first-failure") or datetime.now(timezone.utc).isoformat()},
+            ), mandatory=True)
+            ch.basic_ack(method.delivery_tag)
+        else:
+            log.error("Correo %s agotó sus %d reintentos -> DLQ", email_id[:8], config.MAX_RETRIES)
+            ch.basic_nack(method.delivery_tag, requeue=False)
+
+
 class DeadLetterInspector:
-    """Revisa, reprocesa o descarta los mensajes de la DLQ sin perderlos en el camino."""
+    """Revisa, reprocesa o descarta los mensajes de una DLQ sin perderlos en el camino. Por defecto la de pedidos;
+    con email=True, la de correos (los mensajes se identifican por email_id en vez de order_id)."""
+
+    def __init__(self, email: bool = False):
+        self.email = email
+        self.queue = config.EMAIL_DLQ if email else config.DLQ
+        self.exchange = config.EMAIL_EXCHANGE if email else config.EXCHANGE
+        self.routing_key = config.EMAIL_ROUTING_KEY if email else config.ROUTING_KEY
+        self.id_field = "email_id" if email else "order_id"
 
     def _open(self):
         conn = connect(retries=1, heartbeat=0)
@@ -270,20 +398,34 @@ class DeadLetterInspector:
         declare_topology(ch)
         return conn, ch
 
+    def _id(self, body) -> str | None:
+        try:
+            return json.loads(body).get(self.id_field)
+        except (ValueError, AttributeError):
+            return None
+
     def peek(self, limit: int = 50) -> list[dict]:
         """Lee los mensajes sin confirmarlos; al cerrar el canal RabbitMQ los devuelve intactos a la DLQ."""
         conn, ch = self._open()
         items = []
         try:
             for _ in range(limit):
-                method, props, body = ch.basic_get(config.DLQ, auto_ack=False)
+                method, props, body = ch.basic_get(self.queue, auto_ack=False)
                 if method is None:
                     break
                 headers = props.headers or {}
                 death = (headers.get("x-death") or [{}])[0]
                 died_at = death.get("time")
+                extra = {}
+                if self.email:   # tipo y destinatario; nunca los datos (los enlaces llevan tokens)
+                    try:
+                        p = json.loads(body)
+                        extra = {"kind": p.get("kind"), "to": p.get("to")}
+                    except ValueError:
+                        pass
                 items.append({
-                    "order_id": json.loads(body).get("order_id"),
+                    self.id_field: self._id(body),
+                    **extra,
                     "retries": headers.get("retries", 0),
                     "error": _text(headers.get("x-last-error")) or "Rechazado por el worker",
                     "first_failure": _text(headers.get("x-first-failure")),
@@ -303,10 +445,10 @@ class DeadLetterInspector:
         try:
             ch.confirm_delivery()
             while True:
-                method, props, body = ch.basic_get(config.DLQ, auto_ack=False)
+                method, props, body = ch.basic_get(self.queue, auto_ack=False)
                 if method is None:
                     break
-                order_id = json.loads(body).get("order_id")
+                order_id = self._id(body)
                 if order_ids is None or order_id in order_ids:
                     action(ch, body)
                     ch.basic_ack(method.delivery_tag)
@@ -317,7 +459,7 @@ class DeadLetterInspector:
 
     def reprocess(self, order_ids: set[str] | None = None) -> list[str]:
         def republish(ch, body):
-            ch.basic_publish(config.EXCHANGE, config.ROUTING_KEY, body, pika.BasicProperties(
+            ch.basic_publish(self.exchange, self.routing_key, body, pika.BasicProperties(
                 delivery_mode=pika.DeliveryMode.Persistent, content_type="application/json",
                 headers={"retries": 0, "x-reprocessed": True}), mandatory=True)
         return self._take(order_ids, republish)

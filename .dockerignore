@@ -2,3 +2,8 @@ data
 __pycache__
 *.pyc
 .venv
+venv
+.git
+# los secretos llegan como variables de entorno, nunca dentro de la imagen
+.env
+.env.*

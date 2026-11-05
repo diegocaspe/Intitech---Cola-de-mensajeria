@@ -43,16 +43,23 @@ class QueueMonitor:
                 dlq, _ = self._passive(config.DLQ)
                 stages = [self._passive(q)[0] for q in config.RETRY_QUEUES]   # esperando 2 s, 5 s, 10 s
                 retrying = sum(stages)
+                mail_ready, mail_consumers = self._passive(config.EMAIL_QUEUE)
+                mail_retrying = sum(self._passive(q)[0] for q in config.EMAIL_RETRY_QUEUES)
+                mail_dlq, _ = self._passive(config.EMAIL_DLQ)
             except Exception:
                 self._reset()
                 return None
         unacked = min(_mgmt_unacked(), consumers)
+        mail_unacked = min(_mgmt_unacked(config.EMAIL_QUEUE), mail_consumers)
         return {"ready": durable + volatile, "unacked": unacked, "consumers": consumers,
-                "persistent": durable + unacked, "volatile": volatile, "retrying": retrying, "retry_stages": stages, "dlq": dlq}
+                "persistent": durable + unacked, "volatile": volatile, "retrying": retrying, "retry_stages": stages, "dlq": dlq,
+                # correos: esperando en la cola (incluye el que se está enviando), en reintento y en su DLQ
+                "emails": {"queued": mail_ready + mail_unacked, "retrying": mail_retrying, "dlq": mail_dlq,
+                           "consumers": mail_consumers}}
 
 
-def _mgmt_unacked() -> int:
-    url = f"http://{config.RABBITMQ_HOST}:{config.RABBITMQ_MGMT_PORT}/api/queues/%2F/{config.QUEUE}"
+def _mgmt_unacked(queue: str = config.QUEUE) -> int:
+    url = f"http://{config.RABBITMQ_HOST}:{config.RABBITMQ_MGMT_PORT}/api/queues/%2F/{queue}"
     token = base64.b64encode(f"{config.RABBITMQ_USER}:{config.RABBITMQ_PASS}".encode()).decode()
     try:
         with urlopen(Request(url, headers={"Authorization": f"Basic {token}"}), timeout=1.0) as r:

@@ -1,9 +1,11 @@
-"""Conexión a PostgreSQL: pool de conexiones y creación de las tablas (orders, outbox y users)."""
+"""Conexión a PostgreSQL: pool de conexiones y creación de las tablas (orders, outbox, users, email_tokens y
+sent_emails)."""
 import logging
 import time
 
 import psycopg
 from psycopg_pool import ConnectionPool
+from psycopg_pool.base import AttemptWithBackoff
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +44,39 @@ CREATE TABLE IF NOT EXISTS users (
     role           TEXT NOT NULL DEFAULT 'customer' CHECK (role IN ('customer','admin')),
     created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Correos automáticos. Las cuentas que ya existían al agregar esta columna quedan como 'legacy' (de prueba: no reciben
+-- correos); las que se registran desde la tienda entran como 'pending' y pasan a 'verified' al abrir el enlace
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_status TEXT NOT NULL DEFAULT 'legacy'
+    CHECK (email_status IN ('legacy','pending','verified'));
+
+-- Tokens de un solo uso enviados por correo (verificar cuenta, restablecer contraseña). Solo se guarda su hash SHA-256
+CREATE TABLE IF NOT EXISTS email_tokens (
+    token_hash  TEXT PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    purpose     TEXT NOT NULL CHECK (purpose IN ('verify','reset')),
+    created_at  TIMESTAMPTZ NOT NULL,
+    expires_at  TIMESTAMPTZ NOT NULL,
+    used_at     TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_email_tokens_user ON email_tokens (user_id, purpose, created_at DESC);
+
+-- Idempotencia del mailer: un email_id que ya está aquí no se vuelve a enviar
+CREATE TABLE IF NOT EXISTS sent_emails (
+    email_id   TEXT PRIMARY KEY,
+    kind       TEXT NOT NULL,
+    recipient  TEXT NOT NULL,
+    sent_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- los eventos de correo son pocos: este índice permite contarlos y descontarlos rápido de la numeración del panel
+CREATE INDEX IF NOT EXISTS idx_outbox_emails ON outbox (id) WHERE event_type <> 'OrderCreated';
 """
+
+
+# Tras una caída, el pool reintenta conectar con espera exponencial (1, 2, 4, 8, 16 s...): cuanto más dura la
+# caída, más tarda en notar que la BD volvió. Con la BD en la misma máquina basta reintentar cada 0,5 s, siempre.
+AttemptWithBackoff.INITIAL_DELAY = 0.5
+AttemptWithBackoff.DELAY_BACKOFF = 1.0
 
 
 def create_pool(url: str, max_size: int = 10) -> ConnectionPool:

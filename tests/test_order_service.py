@@ -29,12 +29,29 @@ def make(fail=False):
     return OrderService(repo, pub, SqliteOutbox(repo)), pub
 
 
-def test_create_publishes_and_marks_published():
+def test_create_only_writes_to_the_database_and_the_relay_publishes():
     svc, pub = make()
     order = svc.create_order("a@b.com", ITEMS)
+    assert pub.sent == []                                         # la API nunca habla con RabbitMQ
+    assert svc.get_order(order.id).status == OrderStatus.PENDING
+    assert svc.outbox.pending_count() == 1
+    assert order.total == 20.0
+    assert svc.relay_outbox() == 1
     assert pub.sent == [order.id]
     assert svc.get_order(order.id).status == OrderStatus.PUBLISHED
-    assert order.total == 20.0
+    assert svc.outbox.pending_count() == 0
+
+
+def test_queue_window_lists_both_ends_in_publication_order():
+    svc, _ = make()
+    orders = [svc.create_order("a@b.com", ITEMS) for _ in range(5)]
+    assert svc.outbox.queue_window(2)["count"] == 0                # aún no publicados: no están en la fila
+    svc.relay_outbox()
+    svc.repo.update_status(orders[0].id, OrderStatus.PROCESSED)    # ya salió de la fila
+    ids = [o.id for o in orders[1:]]
+    window = svc.outbox.queue_window(2)
+    assert (window["count"], window["head"], window["tail"]) == (4, ids[:2], ids[-2:])
+    assert window["numbers"] == {ids[0]: 2, ids[1]: 3, ids[2]: 4, ids[3]: 5}    # cuenta desde el primer pedido, aunque ya salió
 
 
 def test_broker_down_event_waits_in_outbox_then_relay_publishes():
@@ -77,40 +94,33 @@ def test_relay_stops_when_broker_falls_midway_and_resumes_in_order():
     assert svc.outbox.pending_count() == 0
 
 
-def test_relay_leaves_fresh_events_to_the_fast_path():
-    svc, pub = make(fail=True)
-    svc.create_order("a@b.com", ITEMS)
-    pub.fail = False
-    assert svc.relay_outbox(min_age_s=60) == 0                    # muy reciente: aún puede publicarlo la API
-    assert svc.outbox.pending_count() == 1
-
-
 def test_outbox_recent_lists_newest_first_with_publish_time():
-    svc, pub = make(fail=True)
-    first = svc.create_order("a@b.com", ITEMS)                    # broker caído: queda pendiente
-    pub.fail = False
-    second = svc.create_order("c@d.com", ITEMS)                   # publicado en el camino rápido
+    svc, _ = make()
+    second = svc.create_order("c@d.com", ITEMS)                   # publicado por el relay
+    svc.relay_outbox()
+    first = svc.create_order("a@b.com", ITEMS)                    # aún pendiente
     newest, oldest = svc.outbox.recent(6)
-    assert (newest["aggregate_id"], oldest["aggregate_id"]) == (second.id, first.id)
-    assert newest["event_type"] == "OrderCreated" and newest["published_at"] is not None
-    assert oldest["published_at"] is None
+    assert (newest["aggregate_id"], oldest["aggregate_id"]) == (first.id, second.id)
+    assert newest["event_type"] == "OrderCreated" and newest["published_at"] is None
+    assert oldest["published_at"] is not None
     assert "+00:00" in newest["created_at"]                       # ISO con zona horaria
 
 
 def test_order_and_event_are_saved_atomically():
     svc, pub = make()
     order = svc.create_order("a@b.com", ITEMS)
-    assert svc.outbox.pending_count() == 0                        # publicado en el camino rápido
+    assert svc.outbox.pending_count() == 1                        # el pedido y su evento se guardan juntos
     with pytest.raises(Exception):                                # mismo id: falla el INSERT del pedido...
         svc.repo.save(order)
-    assert svc.repo.count_by_status()["PUBLISHED"] == 1
-    assert svc.outbox.pending_count() == 0                        # ...y tampoco queda un evento huérfano
+    assert svc.repo.count_by_status()["PENDING"] == 1
+    assert svc.outbox.pending_count() == 1                        # ...y tampoco queda un evento huérfano
 
 
 def test_reconcile_resends_published_but_lost_messages():
     svc, pub = make()
     lost = svc.create_order("a@b.com", ITEMS)                     # el broker "lo olvidó": nunca se procesa
     done = svc.create_order("c@d.com", ITEMS)
+    svc.relay_outbox()
     svc.process_order(done.id)
     assert svc.repo.stale_published(older_than_s=0) == [lost.id]
     pub.sent.clear()

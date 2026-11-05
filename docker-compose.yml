@@ -1,16 +1,21 @@
 services:
   postgres:
     image: postgres:16-alpine
+    # Los valores salen del archivo .env (ver .env.example). ":?" hace que compose se niegue a arrancar si falta alguno.
+    # Ojo: PostgreSQL solo los aplica al crear el volumen pg_data por primera vez.
     environment:
-      POSTGRES_DB: tienda
-      POSTGRES_USER: tienda
-      POSTGRES_PASSWORD: tienda
+      POSTGRES_DB: ${POSTGRES_DB:?Falta POSTGRES_DB en .env (ver .env.example)}
+      POSTGRES_USER: ${POSTGRES_USER:?Falta POSTGRES_USER en .env (ver .env.example)}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env (ver .env.example)}
     ports:
-      - "127.0.0.1:5432:5432"   # DBeaver/pgAdmin desde la laptop; no se expone a la red Wi-Fi del público
+      - "127.0.0.1:5433:5432"   # DBeaver/pgAdmin desde la laptop (5433: el 5432 lo usa un PostgreSQL local); no se expone a la red Wi-Fi del público
     volumes:
       - pg_data:/var/lib/postgresql/data   # los pedidos y usuarios sobreviven a caídas y reinicios
+    networks:
+      default:
+        ipv4_address: 172.30.50.10   # IP fija: ver extra_hosts en api y worker
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tienda -d tienda"]
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 3s
       timeout: 3s
       retries: 20
@@ -19,8 +24,11 @@ services:
     image: rabbitmq:3.13-management
     ports:
       - "127.0.0.1:5672:5672"
-      - "127.0.0.1:15672:15672"   # panel web (guest / guest), solo desde la laptop
+      - "127.0.0.1:15672:15672"   # panel web (usuario y clave de RABBITMQ_USER / RABBITMQ_PASS), solo desde la laptop
     environment:
+      # como en PostgreSQL, el usuario se crea solo cuando el volumen rabbit_data es nuevo
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?Falta RABBITMQ_USER en .env (ver .env.example)}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:?Falta RABBITMQ_PASS en .env (ver .env.example)}
       # refresca las estadísticas cada 0.5 s (por defecto 5 s) para que el panel se vea en vivo
       RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit collect_statistics_interval 500"
     volumes:
@@ -35,18 +43,42 @@ services:
     build: .
     ports:
       - "8000:8000"
-    environment: &env
-      RABBITMQ_HOST: rabbitmq
-      DATABASE_URL: postgresql://tienda:tienda@postgres:5432/tienda
-      CONTROL_PATH: /data/control.json
+    environment:
+      # api, relay y worker comparten la conexión a RabbitMQ y PostgreSQL; solo la API recibe los secretos de sesión y admin
+      <<: &env
+        RABBITMQ_HOST: rabbitmq
+        RABBITMQ_USER: ${RABBITMQ_USER:?Falta RABBITMQ_USER en .env (ver .env.example)}
+        RABBITMQ_PASS: ${RABBITMQ_PASS:?Falta RABBITMQ_PASS en .env (ver .env.example)}
+        POSTGRES_HOST: postgres
+        POSTGRES_DB: ${POSTGRES_DB:?Falta POSTGRES_DB en .env (ver .env.example)}
+        POSTGRES_USER: ${POSTGRES_USER:?Falta POSTGRES_USER en .env (ver .env.example)}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env (ver .env.example)}
+        CONTROL_PATH: /data/control.json
       PUBLIC_URL: ${PUBLIC_URL:-}   # la define iniciar.ps1 con la IP de la laptop en la red local
-      SECRET_KEY: ${SECRET_KEY:-demo-black-friday-cambia-esta-clave}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@tienda.com}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin2025!}
+      SECRET_KEY: ${SECRET_KEY:?Falta SECRET_KEY en .env (ver .env.example)}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Falta ADMIN_EMAIL en .env (ver .env.example)}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD en .env (ver .env.example)}
     volumes:
       - app_data:/data
       - /var/run/docker.sock:/var/run/docker.sock   # permite los botones de sabotaje reales
       - ./app/static:/srv/app/static:ro   # cambios del frontend al instante: solo recarga el navegador
+    # Con la BD caída, el DNS de Docker tarda ~4 s en responder que "postgres" no existe, y eso demoraba notar
+    # que volvió. Con el nombre fijo en /etc/hosts se resuelve al instante y la conexión falla o entra en < 1 s
+    extra_hosts: &pg_host
+      - "postgres:172.30.50.10"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  relay:
+    build: .
+    command: ["python", "-m", "app.relay"]
+    environment: *env
+    extra_hosts: *pg_host
+    volumes:
+      - app_data:/data
     depends_on:
       postgres:
         condition: service_healthy
@@ -57,6 +89,7 @@ services:
     build: .
     command: ["python", "-m", "app.worker"]
     environment: *env
+    extra_hosts: *pg_host
     volumes:
       - app_data:/data
     depends_on:
@@ -64,6 +97,29 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+
+  mailer:
+    # consume la cola "correos" y envía por Gmail. Solo recibe lo que necesita: ni SECRET_KEY ni la clave del admin
+    build: .
+    command: ["python", "-m", "app.mailer"]
+    environment:
+      <<: *env
+      PUBLIC_URL: ${PUBLIC_URL:-}   # base de los enlaces de los correos (verificar cuenta, restablecer contraseña)
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      GMAIL_USER: ${GMAIL_USER:-}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
+    extra_hosts: *pg_host
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.50.0/24
 
 volumes:
   pg_data:

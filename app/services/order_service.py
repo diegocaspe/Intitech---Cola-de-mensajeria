@@ -1,6 +1,7 @@
 import logging
 
-from app.repositories.interfaces import Outbox, OrderPublisher, OrderRepository
+from app.repositories.interfaces import ORDER_EVENT, Outbox, OrderPublisher, OrderRepository, UserRepository
+from app.models.email import EmailEvent, EmailKind
 from app.models.order import Order, OrderItem, OrderStatus
 
 log = logging.getLogger(__name__)
@@ -11,38 +12,30 @@ class ProcessingError(Exception):
 
 
 class OrderService:
-    def __init__(self, repo: OrderRepository, publisher: OrderPublisher, outbox: Outbox):
+    def __init__(self, repo: OrderRepository, publisher: OrderPublisher, outbox: Outbox,
+                 users: UserRepository | None = None):
         self.repo = repo
         self.publisher = publisher
         self.outbox = outbox
+        self.users = users   # opcional: con él, al confirmar un pedido de un cliente real se pide su comprobante
 
     # --- lado API ---------------------------------------------------------
     def create_order(self, customer_email: str, items: list[dict]) -> Order:
         order = Order(customer_email, [OrderItem(**i) for i in items])
-        # 1) Transactional Outbox: el pedido y su evento se guardan juntos en la BD (todo o nada).
+        # Transactional Outbox: el pedido y su evento se guardan juntos en la BD (todo o nada). La API no habla
+        # con RabbitMQ: el relay (app/relay.py) lee el outbox y publica. Nunca hay un pedido sin su mensaje.
         self.repo.save(order)
-        # 2) Camino rápido: se intenta publicar ya. Si el broker no responde, el evento queda en el
-        #    outbox y el relay lo enviará en cuanto vuelva. Nunca hay un pedido sin su mensaje.
-        if self._publish_now(order.id):
-            order.status = OrderStatus.PUBLISHED
         return order
 
-    def _publish_now(self, order_id: str) -> bool:
-        try:
-            self.publisher.publish_order_created(order_id)
-        except Exception as exc:
-            log.warning("No se pudo publicar %s (queda en el outbox): %s", order_id, exc)
-            return False
-        self.outbox.mark_sent(order_id)
-        self.repo.mark_published(order_id)
-        return True
-
-    def relay_outbox(self, limit: int = 500, min_age_s: float = 3) -> int:
-        """Publica los eventos que quedaron en el outbox (p. ej. el broker estaba caído).
-        min_age_s evita competir con el camino rápido de un pedido recién creado."""
-        def publish(order_id: str) -> None:
-            self.publisher.publish_order_created(order_id)
-            self.repo.mark_published(order_id)
+    def relay_outbox(self, limit: int = 500, min_age_s: float = 0) -> int:
+        """Publica los eventos pendientes del outbox, en orden. Lo llama el proceso relay. Los pedidos van a su cola y
+        los correos (email.*) a la de correos, con las mismas garantías (persistentes y con publisher confirms)."""
+        def publish(event_type: str, aggregate_id: str, payload: dict) -> None:
+            if event_type == ORDER_EVENT:
+                self.publisher.publish_order_created(aggregate_id)
+                self.repo.mark_published(aggregate_id)
+            else:
+                self.publisher.publish_email(payload)
         return self.outbox.relay(publish, limit, min_age_s)
 
     def reconcile_lost(self, older_than_s: float) -> int:
@@ -88,8 +81,24 @@ class OrderService:
         # Simulación de lógica de negocio (stock, pago, correo...). SKU "FAIL" siempre falla.
         if any(i.sku == "FAIL" for i in order.items):
             raise ProcessingError("Producto sin stock (simulado)")
-        self.repo.update_status(order_id, OrderStatus.PROCESSED)
+        # confirmado + comprobante en el outbox, en la misma transacción (solo si nadie lo confirmó antes)
+        self.repo.mark_processed(order_id, self._receipt(order))
         log.info("Pedido %s procesado. Total: %.2f", order_id, order.total)
+
+    def _receipt(self, order: Order) -> EmailEvent | None:
+        """Comprobante de compra solo para clientes reales registrados desde la tienda: ni el administrador ni los
+        compradores inventados por el simulador (no tienen cuenta) ni las cuentas de prueba anteriores."""
+        if self.users is None:
+            return None
+        user = self.users.get_by_email(order.customer_email)
+        if user is None or not user.receives_emails:
+            return None
+        return EmailEvent(EmailKind.COMPRA_CONFIRMADA, user.email, user.name, {
+            "order_id": order.id,
+            "created_at": order.created_at,
+            "items": [i.to_dict() for i in order.items],   # precios como texto: exactos
+            "total": str(order.total),
+        })
 
     def mark_failed(self, order_id: str) -> None:
         self.repo.update_status(order_id, OrderStatus.FAILED)

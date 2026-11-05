@@ -7,7 +7,9 @@
 <title>Panel en vivo · Inti Tech</title>
 <link rel="icon" type="image/png" href="/static/assets/logo/mark-yellow.png">
 <link rel="stylesheet" href="/static/css/inti.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap">
 <style>
+  .dbp { --font-chalk:'Caveat','Segoe Print',cursive; }
   /* colores que también lee el JS (gráficos y partículas) */
   :root {
     color-scheme: dark;
@@ -119,16 +121,53 @@
   .node text { fill:#fff; font-family:var(--font-body); }
   .node .t1 { font-family:var(--font-display); font-size:18px; font-weight:600; } .node .t2 { font-size:13.5px; font-weight:700; fill:var(--n-300); }
   .node .big { font-family:var(--font-display); font-size:30px; font-weight:600; }
-  .node.down rect.box { stroke:var(--red-500); fill:rgba(229,72,77,.12); }
+  .node.down rect.box { stroke:var(--red-500); fill:#2F212F; }   /* opaco (rojo al 12 % sobre --n-850): no deja ver las cintas de abajo */
   .node .light { fill:var(--inti-green); } .node.down .light { fill:var(--red-500); } .node.idle .light { fill:var(--n-400); }
   .node .tag { display:none; } .node.down .tag { display:block; fill:#F08A8D; font-size:13px; font-weight:800; letter-spacing:.05em; }
   .dg-i { color:var(--blue-300); }
   .pipe { fill:none; stroke:var(--n-700); stroke-width:3; stroke-linecap:round; } .pipe.dash { stroke-dasharray:2 8; }
   .pipelbl { fill:var(--n-400); font-size:13px; font-weight:700; font-family:var(--font-body); }
   .pipe.retry { stroke:rgba(255,201,60,.35); } .pipe.bad { stroke:rgba(229,72,77,.45); }
+  /* cintas transportadoras: cada .pipe queda como riel invisible que recorren las cajas; la cinta se dibuja
+     encima (ver buildBelts): borde, superficie y listones que avanzan en el sentido del flujo */
+  #pipe .pipe { visibility:hidden; }
+  .belt path { fill:none; stroke-linecap:round; }
+  .belt .b-rim { stroke:var(--n-600); stroke-width:20; }
+  .belt .b-top { stroke:#10151F; stroke-width:15; }
+  .belt .b-slat { stroke:#3A4358; stroke-width:13; stroke-linecap:butt; stroke-dasharray:3 9; animation:belt var(--belt-t, .3s) linear infinite; }
+  .belt.dash .b-rim { stroke:var(--n-700); stroke-width:15; } .belt.dash .b-top { stroke-width:10; } .belt.dash .b-slat { stroke-width:8; }
+  .belt.retry .b-rim { stroke:rgba(255,201,60,.45); } .belt.bad .b-rim { stroke:rgba(229,72,77,.55); }
+  .belt.stopped .b-slat { animation-play-state:paused; } .belt.stopped .b-rim { stroke:rgba(229,72,77,.6); }
+  @keyframes belt { to { stroke-dashoffset:-12; } }
+  /* cada pedido es una caja de cartón vista desde arriba; la cinta adhesiva lleva el color del tramo (su estado) */
+  .pkg .pk-sh { fill:rgba(0,0,0,.45); }
+  .pkg .pk-body { fill:#C8925A; stroke:#6E4826; stroke-width:1; }
+  .pkg .pk-flap { fill:none; stroke:#A2703F; stroke-width:1; }
+  .pkg .pk-tape { fill:var(--tape); stroke:rgba(0,0,0,.35); stroke-width:.8; }
+  .pkg .pk-lbl { fill:#F4EBDD; }
+  .pkg.big .pk-body { stroke:#fff; stroke-width:1.8; }
+  /* cinta de precaución sobre las cintas que entran y salen de un cuadro caído (ver cautionTapes) */
+  .caution { filter:drop-shadow(0 2px 2px rgba(0,0,0,.55)); }
+  .caution .ct-in { animation:ctin 280ms var(--ease-out) both; transform-box:fill-box; transform-origin:center; }
+  .caution rect { stroke:#111; stroke-width:.8; }
+  .caution circle { fill:var(--n-300); stroke:#111; stroke-width:.8; }
+  @keyframes ctin { from { transform:scaleY(0); } }
   /* el circuito de reintento solo se dibuja mientras hay pedidos reintentándose */
-  #pipe .pipe.retry, #pipe .rlbl-fail { opacity:0; transition:opacity 400ms var(--ease-out); }
-  #pipe.retrying .pipe.retry, #pipe.retrying .rlbl-fail { opacity:1; }
+  #pipe .belt.retry, #pipe .rlbl-fail { opacity:0; transition:opacity 400ms var(--ease-out); }
+  #pipe.retrying .belt.retry, #pipe.retrying .rlbl-fail { opacity:1; }
+  /* outbox en la caja de PostgreSQL: ámbar si hay eventos sin publicar. Relay: montacargas junto a la cinta PostgreSQL → RabbitMQ, rojo si cae */
+  .node .ob-n { font-size:11.5px; fill:var(--n-400); font-variant-numeric:tabular-nums; }
+  .node .ob-n.on { fill:#FFC93C; }
+  .node .rl-lbl { font-size:12px; font-weight:700; fill:var(--n-400); font-family:var(--font-body); }
+  .node.down .rl-lbl { fill:#F08A8D; }
+  .lift-body { fill:#FFC93C; } .lift-mast { fill:none; stroke:var(--n-300); stroke-width:2; stroke-linecap:round; }
+  .lift-wheel { fill:#141414; stroke:var(--n-300); stroke-width:1.2; }
+  .lift-box { fill:#C8925A; stroke:#6E4826; stroke-width:.8; opacity:0; }
+  .lift.working { animation:lift 500ms ease-in-out infinite alternate; }
+  .lift.working .lift-box { opacity:1; }
+  .node.idle .lift-body { fill:var(--n-500); }
+  .node.down .lift-body { fill:var(--red-500); } .node.down .lift-mast { stroke:var(--red-500); } .node.down .lift-wheel { stroke:var(--red-500); }
+  @keyframes lift { to { transform:translateX(5px); } }
   .retry-node .rlbl { fill:var(--n-400); font-size:11.5px; font-weight:700; }
   .rslot rect { fill:rgba(0,0,0,.22); stroke:var(--n-700); stroke-width:1.5; transition:fill 300ms, stroke 300ms; }
   .rslot text { font-size:13px; font-weight:700; fill:var(--n-400); }
@@ -170,6 +209,18 @@
   .dlq td.err { color:#F08A8D; font-size:13px; font-weight:700; max-width:220px; }
   .dlq td.act { white-space:nowrap; text-align:right; } .dlq td.act .mini + .mini { margin-left:6px; }
   .kpi .d .mini { margin-top:4px; }
+  /* cola de correos */
+  .mail-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+  .mstat { display:flex; flex-direction:column; gap:6px; padding:14px 16px; border-radius:16px; background:var(--n-850); border:1.5px solid var(--n-700); min-width:0; }
+  .mstat .k { font-weight:800; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--n-300); }
+  .mstat .v { font-family:var(--font-display); font-weight:600; font-size:32px; line-height:1; white-space:nowrap; }
+  .mstat .d { font-size:13px; font-weight:700; color:var(--n-400); }
+  .mstat.good .v { color:var(--green-300); }
+  .mstat.warn { border-color:var(--inti-yellow); } .mstat.warn .v { color:var(--inti-yellow); }
+  .mstat.bad { background:var(--red-600); border-color:var(--red-600); } .mstat.bad .k, .mstat.bad .d, .mstat.bad .v { color:#fff; }
+  .dlq-tabs { margin:-4px 0 14px; }
+  .dlq .to { font-size:13px; color:var(--text2); word-break:break-all; }
+  @media (max-width:760px) { .mail-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
   .badge { display:inline-flex; gap:6px; align-items:center; height:28px; padding:0 12px; border-radius:999px; font-size:13px; font-weight:800; letter-spacing:.02em; white-space:nowrap; }
   .b-PENDING { background:rgba(142,152,175,.18); color:var(--n-200); } .b-PUBLISHED { background:rgba(35,87,245,.22); color:var(--blue-300); }
   .b-PROCESSED { background:rgba(18,183,106,.18); color:var(--green-300); } .b-FAILED { background:rgba(229,72,77,.2); color:#F08A8D; }
@@ -268,60 +319,158 @@
   .bf-pop h2 > .i { color:var(--inti-yellow); }
   @keyframes bfin { from { opacity:0; transform:translateY(-6px) scale(.98); } }
   /* ---------- detalle de PostgreSQL: tablas orders y outbox en vivo ---------- */
-  #particles { pointer-events:none; }   /* las bolitas no deben "robar" el mouse a la caja */
+  #particles { pointer-events:none; }   /* las cajas no deben "robar" el mouse a la caja */
   #nDb { cursor:pointer; outline:none; }
   #nDb:hover rect.box, #nDb:focus-visible rect.box { stroke:var(--n-400); }
   #nDb.open:not(.down) rect.box { stroke:var(--blue-300); stroke-width:3; filter:drop-shadow(0 0 8px rgba(84,128,248,.55)); }
   #nDb.open.down rect.box { stroke-width:3.5; }
-  /* ventana: barra de título fija + cuerpo con scroll; las columnas se adaptan al ancho (container queries) */
-  .dbp { position:fixed; z-index:70; display:flex; flex-direction:column; width:560px; max-width:calc(100vw - 16px); max-height:calc(100vh - 16px); color:#fff; background:var(--n-850); border:1.5px solid var(--n-700); border-radius:18px; box-shadow:0 24px 60px -12px rgba(0,0,0,.75); pointer-events:none; animation:bfin 160ms var(--ease-out); container:dbp / inline-size; }
-  .dbp.pinned { pointer-events:auto; border-color:var(--blue-400); }
+  /* ventana: pizarra enmarcada en madera; barra de título fija + cuerpo con scroll. Las columnas se adaptan al ancho (container queries) */
+  .dbp { --chalk:#F3F5EE; --chalk-2:#C9D4CB; --chalk-amber:#FFD36B; --slate:#1F332C;
+    --chalk-line:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='4'%3E%3Cpath d='M0 2C30 1 55 3 90 2S150 1 180 2.6 225 2 240 2' fill='none' stroke='white' stroke-opacity='.42' stroke-width='1.4'/%3E%3C/svg%3E");
+    position:fixed; z-index:70; display:flex; flex-direction:column; width:800px; max-width:calc(100vw - 16px); max-height:calc(100vh - 16px); padding:8px 8px 18px; color:var(--chalk); border-radius:12px;
+    background:repeating-linear-gradient(92deg, rgba(0,0,0,.14) 0 2px, transparent 2px 9px, rgba(255,255,255,.035) 9px 11px, transparent 11px 23px), linear-gradient(180deg, #694629, #4B301C);
+    box-shadow:0 28px 64px -14px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.16); pointer-events:none; animation:bfin 160ms var(--ease-out); container:dbp / inline-size; }
+  .dbp[hidden] { display:none; }   /* sin esto, el display:flex de arriba le gana al atributo hidden y la X no la cierra */
+  .dbp.pinned { pointer-events:auto; }
   .dbp.pinned::before { content:""; position:absolute; inset:-10px; z-index:-1; }   /* borde invisible: más fácil de agarrar */
-  .dbp-h { flex:none; display:flex; align-items:center; gap:8px; padding:14px 54px 10px 18px; border-radius:18px 18px 0 0; }
-  .dbp-h > .i { color:var(--blue-300); }
-  .dbp-h b { font-family:var(--font-display); font-weight:600; font-size:17px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .dbp-body { flex:1; min-height:0; overflow:auto; padding:0 18px 14px; }
-  .dbp-body > :first-child { margin-top:2px; }
+  .dbp::after { content:""; position:absolute; left:28px; bottom:5px; width:84px; height:7px; border-radius:3px; background:linear-gradient(90deg, #F3F5EE 0 40%, transparent 40% 58%, #FFD36B 58% 100%); }   /* tizas sobre la repisa */
+  .dbp ::selection { background:rgba(255,211,107,.4); color:#fff; }
+  .ch-board { flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden; border-radius:5px; background-color:var(--slate); box-shadow:inset 0 2px 10px rgba(0,0,0,.55);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E"), radial-gradient(70% 45% at 22% 12%, rgba(255,255,255,.055), transparent 70%), radial-gradient(60% 50% at 82% 88%, rgba(255,255,255,.04), transparent 70%); }
+  .ch-rough { position:absolute; width:0; height:0; }
+  .dbp-h { flex:none; display:flex; align-items:flex-start; gap:8px; padding:7px 50px 7px 14px; background:var(--chalk-line) left bottom repeat-x; }
+  .dbp-h > .i { flex:none; margin-top:5px; color:var(--chalk); }
+  .dbp-h b { display:block; font-family:var(--font-chalk); font-weight:700; font-size:25px; line-height:1.1; text-shadow:0 0 1px rgba(255,255,255,.4); }
+  .ch-note { margin:2px 0 0; font-family:var(--font-chalk); font-size:17px; line-height:1.3; color:var(--chalk-2); }
+  .dbp-body { flex:1; min-height:0; overflow:auto; padding:8px 14px 9px; scrollbar-color:rgba(243,245,238,.35) transparent; scrollbar-width:thin; }
   /* fija = se mueve desde la barra de título y se redimensiona desde bordes y esquinas */
   .dbp.pinned .dbp-h { cursor:grab; user-select:none; -webkit-user-select:none; touch-action:none; }
-  .dbp.pinned .dbp-h:hover { background:rgba(255,255,255,.03); }
   .dbp.dragging .dbp-h { cursor:grabbing; }
-  .dbp.dragging, .dbp.resizing { box-shadow:0 32px 80px -12px rgba(0,0,0,.85); user-select:none; -webkit-user-select:none; }
-  .t-ord th:nth-child(1) { width:78px; } .t-ord th:nth-child(3) { width:84px; } .t-ord th:nth-child(4) { width:98px; } .t-ord th:nth-child(5) { width:70px; }
-  .t-out th:nth-child(1) { width:52px; } .t-out th:nth-child(2) { width:84px; } .t-out th:nth-child(4) { width:70px; } .t-out th:nth-child(5) { width:104px; }
-  /* al achicarla se ocultan primero las columnas menos importantes; id, status y publicado siempre quedan */
-  @container dbp (max-width:500px) { .t-ord :is(th,td):nth-child(5), .t-out :is(th,td):nth-child(3) { display:none; } }
-  @container dbp (max-width:410px) { .t-ord :is(th,td):nth-child(2), .t-out :is(th,td):nth-child(4) { display:none; } .dbp-legend { flex-direction:column; } }
-  @container dbp (max-width:330px) { .t-out tr:not(.dbp-empty) > :nth-child(1) { display:none; } .dbp-h b { font-size:15px; } }
-  .dbp-x { display:none; position:absolute; top:10px; right:10px; width:32px; height:32px; border-radius:10px; border:1.5px solid var(--n-700); background:var(--n-800); color:#fff; align-items:center; justify-content:center; padding:0; }
-  .dbp-x:hover { background:var(--n-700); }
+  .dbp.dragging, .dbp.resizing { box-shadow:0 36px 84px -12px rgba(0,0,0,.9); user-select:none; -webkit-user-select:none; }
+  .dbp-x { display:none; position:absolute; top:15px; right:18px; width:30px; height:30px; border-radius:18px 12px 16px 11px / 12px 17px 11px 16px; border:2px solid rgba(243,245,238,.6); background:transparent; color:var(--chalk); align-items:center; justify-content:center; padding:0; transition:background 150ms var(--ease-out); }
+  .dbp-x:hover { background:rgba(255,255,255,.12); }
   .dbp-x:focus-visible { box-shadow:var(--ring-focus); outline:none; }
   .dbp.pinned .dbp-x { display:flex; }
-  .dbp-down { display:flex; align-items:center; gap:8px; margin-bottom:10px; padding:8px 10px; border-radius:10px; background:rgba(229,72,77,.16); border:1.5px solid rgba(229,72,77,.5); color:#FFD5D6; font-size:13px; font-weight:700; }
+  .dbp-down { display:flex; align-items:center; gap:8px; margin-bottom:12px; padding:8px 12px; border-radius:12px 8px 14px 9px; background:rgba(229,72,77,.2); border:2px solid rgba(240,138,141,.7); color:#FFE1E2; font-size:13px; font-weight:700; }
   .dbp-down[hidden] { display:none; }
-  .dbp.stale table { opacity:.6; }
-  .dbp-cap { font-size:13px; font-weight:600; color:var(--n-300); margin:12px 0 4px; }
-  .dbp-cap code { font-family:var(--font-mono); font-weight:700; color:var(--blue-300); }
-  .dbp table { font-size:13px; table-layout:fixed; }
-  .dbp th { font-size:11px; padding:0 6px 6px; }
-  .dbp td { padding:5px 6px; border-top:1px solid var(--n-700); vertical-align:middle; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
-  .dbp .mono { font-family:var(--font-mono); color:var(--blue-300); }
-  .dbp .r { text-align:right; }
-  .dbp-empty td { color:var(--n-400); text-align:center; font-weight:600; padding:10px 6px; }
-  .dbp-st { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:800; letter-spacing:.03em; }
+  .dbp.stale .ch-cell { opacity:.6; }
+  /* dos columnas alineadas fila por fila (subgrid); el marco ámbar de la columna outbox las abarca a todas */
+  .ch-grid { display:grid; grid-template-columns:minmax(0,1fr) 58px minmax(0,1.12fr); grid-template-rows:auto auto; }
+  .ch-head { position:relative; z-index:1; padding:4px 10px 6px; }
+  .ch-head h3 { margin:0; font-family:var(--font-chalk); font-weight:700; font-size:19px; line-height:1.1; letter-spacing:.01em; }
+  .ch-head p { margin:2px 0 0; font-family:var(--font-chalk); font-size:16px; line-height:1.3; color:var(--chalk-2); }
+  .ch-head code { font-family:var(--font-mono); font-size:12px; font-weight:700; color:var(--chalk-2); margin-left:6px; white-space:nowrap; }
+  .ch-head-ord { grid-column:1; grid-row:1; }
+  .ch-head-evt { grid-column:3; grid-row:1; padding-top:7px; }
+  .ch-head-evt h3 { color:var(--chalk-amber); }
+  .ch-head-evt strong { display:inline; margin-left:6px; font-size:28px; line-height:1; letter-spacing:.04em; }
+  .ch-frame { grid-column:3; grid-row:1 / 3; border:3px solid var(--chalk-amber); background:rgba(255,211,107,.055); border-radius:255px 18px 225px 16px / 16px 225px 18px 255px; filter:url(#chalkRough); pointer-events:none; }
+  .ch-list { grid-column:1 / -1; grid-row:2; position:relative; z-index:1; display:grid; grid-template-columns:subgrid; margin:0; padding:0 0 4px; list-style:none; transition:opacity 200ms var(--ease-out); }
+  .ch-pair { grid-column:1 / -1; display:grid; grid-template-columns:subgrid; align-items:stretch; outline:none; background:var(--chalk-line) left bottom repeat-x; }
+  .ch-pair:last-child { background:none; }
+  .ch-cell { min-width:0; display:flex; flex-direction:column; justify-content:center; gap:2px; padding:5px 10px; font-size:12.5px; font-variant-numeric:tabular-nums; border-radius:12px 7px 14px 8px / 8px 13px 7px 12px; transition:background 150ms var(--ease-out); }
+  .ch-pair:is(:hover,:focus-visible) .ch-ord { background:rgba(255,255,255,.1); }
+  .ch-pair:is(:hover,:focus-visible) .ch-evt { background:rgba(255,211,107,.17); }
+  .ch-pair:focus-visible { outline:2px dashed var(--chalk); outline-offset:-2px; }
+  .ch-evt { padding-inline:15px; }   /* que el texto no toque el marco ámbar */
+  .ch-line { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:3px 10px; }
+  .ch-line.fit { flex-wrap:nowrap; }
+  .ch-f { flex:none; border-radius:5px; white-space:nowrap; }
+  .ch-f.grow { flex:1 1 0; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .ch-k { font-size:12px; font-weight:700; color:var(--chalk-2); }
+  .ch-total { font-weight:800; }
+  .dbp .mono { font-family:var(--font-mono); font-weight:700; color:#BFD2FF; }
+  .ch-miss { display:none; font-family:var(--font-chalk); font-size:16px; color:var(--chalk-2); }
+  .no-ord .ch-ord .ch-line, .no-evt .ch-evt .ch-line { display:none; }
+  .no-ord .ch-ord .ch-miss, .no-evt .ch-evt .ch-miss { display:block; }
+  .ch-arrow { display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--font-chalk); font-size:15px; line-height:1; color:var(--chalk-2); transition:color 150ms var(--ease-out); }
+  .ch-arrow svg { width:48px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; filter:url(#chalkRough); overflow:visible; }
+  .ch-pair:nth-child(even) .ch-arrow svg { transform:scaleY(-1); }
+  .ch-pair:is(:hover,:focus-visible) .ch-arrow { color:var(--chalk-amber); }
+  .no-ord .ch-arrow, .no-evt .ch-arrow { opacity:.3; }
+  .ch-empty { grid-column:1 / -1; padding:16px 12px; text-align:center; font-family:var(--font-chalk); font-size:18px; color:var(--chalk-2); }
+  .dbp-st { display:inline-block; padding:1px 7px; border:1.5px solid currentColor; border-radius:12px 8px 13px 7px / 8px 12px 7px 13px; font-size:11px; font-weight:800; letter-spacing:.03em; }
   .st-PENDING { background:rgba(255,201,60,.16); color:var(--inti-yellow); }
   .st-PUBLISHED { background:rgba(35,87,245,.24); color:var(--blue-300); }
   .st-PROCESSED { background:rgba(18,183,106,.18); color:var(--green-300); }
   .st-FAILED { background:rgba(229,72,77,.2); color:#F08A8D; }
-  .dbp-wait { color:var(--inti-yellow); font-weight:700; }
-  .dbp-ok { color:var(--green-300); font-weight:700; } .dbp-ok .i { width:13px; height:13px; vertical-align:-2px; }
-  .dbp-legend { display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:12px; padding-top:10px; border-top:1px solid var(--n-700); font-size:12px; font-weight:600; color:var(--n-300); }
-  .dbp-legend .dbp-st { margin-right:4px; }
-  /* fila nueva: entra deslizándose; celda que cambia: destello breve */
-  .dbp tr.enter td { animation:dbin 300ms var(--ease-out) both; }
+  .dbp-wait { color:var(--inti-yellow); font-weight:800; }
+  .dbp-ok { color:var(--green-300); font-weight:800; }
+  .dbp-wait .i, .dbp-ok .i { width:13px; height:13px; vertical-align:-2px; }
+  /* poco ancho: la tabla de pedidos completa arriba y la de outbox completa abajo. display:contents deja las celdas
+     como hijas directas de la rejilla, y order las agrupa por tabla sin tocar el HTML (que sigue emparejado) */
+  @container dbp (max-width:640px) {
+    .ch-grid { grid-template-columns:minmax(0,1fr); grid-template-rows:none; }
+    .ch-head-ord, .ch-head-evt, .ch-list { grid-column:1; grid-row:auto; }
+    .ch-frame, .ch-arrow, .no-ord .ch-ord, .no-evt .ch-evt { display:none; }
+    .ch-list, .ch-pair { display:contents; }
+    .ch-head-ord { order:-1; } .ch-ord, .ch-empty { order:1; } .ch-head-evt { order:2; padding-top:14px; } .ch-evt { order:3; }
+    .ch-ord { background:var(--chalk-line) left bottom repeat-x; }
+    .ch-pair:last-child .ch-ord { background:none; }
+    .ch-evt { margin-top:5px; border:2.5px solid var(--chalk-amber); background:rgba(255,211,107,.055); }
+    .ch-pair.enter .ch-cell { animation:dbin 300ms var(--ease-out) both; }
+    .dbp-h b { font-size:24px; }
+    .dbp-h { padding-left:12px; } .dbp-body { padding:8px 10px 10px; }
+  }
+  @container dbp (max-width:330px) { .ch-note { font-size:16px; } }
+  /* fila nueva: entra deslizándose y su flecha se dibuja; dato que cambia: destello breve */
+  .ch-pair.enter { animation:dbin 300ms var(--ease-out) both; }
+  .ch-pair.enter .ch-arrow path { stroke-dasharray:70; animation:dbdraw 300ms var(--ease-out) both; }
   @keyframes dbin { from { opacity:0; transform:translateY(-8px); } }
-  .dbp td.flash { animation:dbflash 1100ms var(--ease-out); }
+  @keyframes dbdraw { from { stroke-dashoffset:70; } to { stroke-dashoffset:0; } }
+  .ch-f.flash { animation:dbflash 1100ms var(--ease-out); }
   @keyframes dbflash { 0%, 25% { background:rgba(255,201,60,.32); } 100% { background:transparent; } }
+  @media (prefers-reduced-motion:reduce) { .ch-pair.enter, .ch-pair.enter .ch-arrow path, .ch-f.flash { animation:none; } }
+  /* ---------- almacén de RabbitMQ: racks con la cola FIFO ---------- */
+  #nQ { cursor:pointer; outline:none; }
+  #nQ:hover #vrim, #nQ:focus-visible #vrim { stroke:var(--n-300); }
+  #nQ.open:not(.down) #vrim { stroke:var(--blue-300); stroke-width:3; filter:drop-shadow(0 0 8px rgba(84,128,248,.55)); }
+  .rkp { width:800px; padding:6px; color:#fff; background:repeating-linear-gradient(135deg, #FFC93C 0 12px, #1A1A1A 12px 24px); border-radius:10px; }
+  .rkp::after { display:none; }
+  .rk-board { flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden; border-radius:6px; background:linear-gradient(180deg, #1B2029, #14181F); }
+  .rkp .dbp-h { padding:9px 50px 9px 14px; background:#20262F; }
+  .rkp .dbp-h > .i { margin-top:3px; color:var(--inti-yellow); }
+  .rkp .dbp-h b { font-family:var(--font-display); font-weight:600; font-size:19px; line-height:1.2; text-shadow:none; }
+  .rk-note { margin:1px 0 0; font-size:13px; font-weight:600; line-height:1.3; color:var(--n-300); }
+  .rkp .dbp-x { top:13px; right:15px; border-radius:9px; border-color:var(--n-500); }
+  .rkp .dbp-body { padding:10px 12px 10px; scrollbar-color:var(--n-500) transparent; }
+  .rk-stage { position:relative; display:grid; grid-template-columns:92px minmax(0,1fr) 88px; gap:10px; overflow:hidden; }
+  .rk-dock { position:relative; display:flex; flex-direction:column; gap:1px; min-height:174px; padding:12px 8px 8px; text-align:center; border-radius:6px; background:#232A35; overflow:hidden; }
+  .rk-dock::before { content:""; position:absolute; inset:0 0 auto; height:5px; background:repeating-linear-gradient(135deg, #FFC93C 0 7px, #1A1A1A 7px 14px); }
+  .rk-dock b { font-family:var(--font-display); font-weight:600; font-size:14px; line-height:1.2; }
+  .rk-dock small { font-size:12px; font-weight:600; line-height:1.25; color:var(--n-300); }
+  .rk-out.off::before { background:repeating-linear-gradient(135deg, #E5484D 0 7px, #1A1A1A 7px 14px); }
+  .rk-out.off small { color:#F08A8D; }
+  /* conector: tramo de cinta entre el inicio y el final de la fila, con lo que queda oculto */
+  .rk-gap { position:absolute; z-index:1; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:1px; height:46px; padding:0 6px; overflow:hidden; text-align:center; border-radius:5px; border:1.5px solid var(--n-600); background:repeating-linear-gradient(90deg, #10151F 0 9px, #252C3B 9px 12px); }
+  .rk-gap[hidden] { display:none; }
+  .rk-gap b { font-size:12.5px; font-weight:800; line-height:1.3; color:#fff; font-variant-numeric:tabular-nums; }
+  .rk-gap i { font-style:normal; color:var(--inti-yellow); letter-spacing:.05em; }
+  .rk-gap small { font-family:var(--font-mono); font-size:11px; font-weight:700; line-height:1.3; color:var(--n-300); white-space:nowrap; }
+  /* rack de carga: parantes azules cada 4 lugares y largueros naranjas en cada estante */
+  .rk-rack { position:relative; min-width:0; height:174px; --rk-bay:224px; background-color:#191E27;
+    background-image:linear-gradient(#2F62B3, #2F62B3), repeating-linear-gradient(90deg, #2F62B3 0 5px, transparent 5px var(--rk-bay)), repeating-linear-gradient(180deg, transparent 0 52px, #E8812A 52px 58px);
+    background-size:5px 100%, auto, auto; background-position:right top, 0 0, 0 0; background-repeat:no-repeat, repeat, repeat; }
+  .rk-empty { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; margin:0; padding:8px; text-align:center; font-size:13.5px; font-weight:700; color:var(--n-300); }
+  .rk-empty[hidden] { display:none; }
+  .rk-box { position:absolute; left:0; top:0; z-index:2; display:flex; flex-direction:column; align-items:center; width:62px; pointer-events:none; --tape:#5480F8; transition:transform var(--rk-move, 420ms) var(--ease-out), opacity 300ms var(--ease-out); }
+  .rk-box svg { width:34px; height:28px; display:block; overflow:visible; }
+  .rk-box span { margin-top:-1px; padding:0 3px; border-radius:3px; font-family:var(--font-mono); font-size:11px; font-weight:700; line-height:1.3; color:#E7ECF7; background:rgba(0,0,0,.45); font-variant-numeric:tabular-nums; }
+  .rk-box.front span { background:var(--inti-yellow); color:#141414; }
+  .rk-box.busy { --tape:#12B76A; }
+  .rk-box.out { opacity:0; }
+  .rk-still .rk-box { transition:none; }
+  .rkp.stale .rk-box { opacity:.55; }
+  .rk-stats { display:flex; flex-wrap:wrap; gap:3px 16px; margin:9px 0 0; font-size:12.5px; font-weight:600; color:var(--n-300); }
+  .rk-stats b { font-family:var(--font-display); font-weight:600; font-size:15px; color:#fff; font-variant-numeric:tabular-nums; }
+  .rk-slow { margin-left:auto; color:var(--inti-yellow); font-weight:700; }
+  .rk-slow[hidden] { display:none; }
+  @container dbp (max-width:560px) {
+    .rk-slow { margin-left:0; }
+    .rk-stage { grid-template-columns:minmax(0,1fr); }
+    .rk-dock { min-height:0; }
+    .rk-in { min-height:82px; } .rk-out { min-height:150px; }
+  }
   @media (max-width:1680px) { .top-title, .admin span:last-child { display:none; } }
   @media (max-width:1500px) { .kpis { grid-template-columns:repeat(4,minmax(0,1fr)); } .kpi.rev { grid-column:span 2; } .flow-row { grid-template-columns:minmax(0,1fr) 380px; } .warm-t small { display:none; } }
   @media (max-width:1180px) { .flow-row { grid-template-columns:1fr; } .two, .charts { grid-template-columns:1fr; } .top-title { display:none; } }
@@ -386,77 +535,82 @@
 
     <div class="flow-row">
     <section class="card">
-      <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-route"/></svg>Recorrido de un pedido <small id="dotScale">cada punto es un pedido real</small></h2>
-      <svg id="pipe" viewBox="0 0 1000 310" role="img" aria-label="Flujo del pedido: clientes, API, cola RabbitMQ, workers y base de datos">
-        <defs><clipPath id="vclip"><rect x="400" y="70" width="160" height="140" rx="16"/></clipPath></defs>
-        <path id="p-cust" class="pipe" d="M130,150 L190,150"/>
-        <path id="p-queue" class="pipe" d="M320,150 L400,150"/>
-        <path id="p-work" class="pipe" d="M560,150 L640,150"/>
-        <path id="p-db" class="pipe" d="M780,150 L860,150"/>
-        <path id="p-save" class="pipe dash" d="M255,105 C255,8 925,8 925,105"/>
-        <path id="p-pend" class="pipe dash" d="M255,195 L255,240"/>
-        <path id="p-dlq" class="pipe dash" d="M480,210 L480,240"/>
-        <path id="p-fail" class="pipe dash retry" d="M720,195 L720,236"/>
-        <path id="p-back" class="pipe dash retry" d="M620,236 C620,214 596,201 562,199"/>
-        <path id="p-todlq" class="pipe dash bad" d="M596,272 L562,272"/>
-        <text class="pipelbl" x="590" y="40" text-anchor="middle">① guarda el pedido en la BD</text>
-        <text class="pipelbl" x="360" y="140" text-anchor="middle">②</text>
-        <text class="pipelbl" x="600" y="140" text-anchor="middle">③</text>
-        <text class="pipelbl" x="820" y="140" text-anchor="middle">④</text>
+      <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-route"/></svg>Recorrido de un pedido <small id="dotScale">cada caja es un pedido real</small></h2>
+      <svg id="pipe" viewBox="0 0 870 372" role="img" aria-label="Flujo del pedido: la API guarda el pedido y su evento en PostgreSQL, el relay publica el evento en RabbitMQ, un worker lo procesa y actualiza la base de datos">
+        <defs><pattern id="caution" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)"><rect width="8" height="8" fill="#FFC93C"/><rect width="4" height="8" fill="#141414"/></pattern><clipPath id="vclip"><rect x="460" y="130" width="160" height="140" rx="16"/></clipPath></defs>
+        <path id="p-cust" class="pipe" d="M150,200 L220,200"/>
+        <!-- ② el relay lee el outbox de PostgreSQL y lo publica en RabbitMQ: la cinta baja de una caja a la otra -->
+        <path id="p-queue" class="pipe" d="M540,92 L540,130"/>
+        <path id="p-work" class="pipe" d="M620,200 L720,200"/>
+        <!-- las dos curvas a PostgreSQL son espejo una de otra respecto de x=540, el centro de RabbitMQ y de PostgreSQL -->
+        <path id="p-save" class="pipe dash" d="M290,155 C290,85 330,50 450,50"/>
+        <path id="p-db" class="pipe dash" d="M790,155 C790,85 750,50 630,50"/>
+        <path id="p-dlq" class="pipe dash" d="M540,270 L540,300"/>
+        <path id="p-fail" class="pipe dash retry" d="M790,245 L790,296"/>
+        <path id="p-back" class="pipe dash retry" d="M680,296 C680,274 656,261 622,259"/>
+        <path id="p-todlq" class="pipe dash bad" d="M656,332 L620,332"/>
+        <text class="pipelbl" x="345" y="34" text-anchor="middle">① guarda pedido + evento</text>
+        <text class="pipelbl" x="735" y="34" text-anchor="middle">④ confirma y actualiza</text>
+        <text class="pipelbl" x="452" y="116" text-anchor="end">②</text>
+        <text class="pipelbl" x="670" y="184" text-anchor="middle">③</text>
 
-        <g class="node" id="nCust"><rect class="box" x="10" y="105" width="120" height="90" rx="20"/>
-          <use href="/static/icons.svg#i-users" class="dg-i" x="20" y="126" width="18" height="18"/><text class="t1" x="80" y="140" text-anchor="middle">Clientes</text>
-          <text class="t2" id="tCust" x="70" y="166" text-anchor="middle">0 pedidos/s</text></g>
+        <g class="node" id="nCust"><rect class="box" x="10" y="155" width="140" height="90" rx="20"/>
+          <use href="/static/icons.svg#i-users" class="dg-i" x="26" y="176" width="18" height="18"/><text class="t1" x="88" y="190" text-anchor="middle">Clientes</text>
+          <text class="t2" id="tCust" x="80" y="216" text-anchor="middle">0 pedidos/s</text></g>
 
-        <g class="node" id="nApi"><rect class="box" x="190" y="105" width="130" height="90" rx="20"/>
-          <circle class="light" cx="304" cy="121" r="5"/>
-          <text class="t1" x="255" y="143" text-anchor="middle">API tienda</text>
-          <text class="t2" x="255" y="167" text-anchor="middle">FastAPI</text></g>
+        <g class="node" id="nApi"><rect class="box" x="220" y="155" width="140" height="90" rx="20"/>
+          <circle class="light" cx="344" cy="171" r="5"/>
+          <text class="t1" x="290" y="193" text-anchor="middle">API tienda</text>
+          <text class="t2" x="290" y="217" text-anchor="middle">FastAPI</text></g>
 
-        <g class="node" id="nPend"><rect class="box" x="190" y="240" width="130" height="56" rx="16"/>
-          <text class="t2" x="255" y="261" text-anchor="middle">Outbox (BD)</text>
-          <text class="big num" id="tPend" x="255" y="288" text-anchor="middle" style="font-size:22px">0</text></g>
-
-        <g class="node" id="nQ">
-          <rect class="box" x="400" y="70" width="160" height="140" rx="16"/>
+        <g class="node" id="nQ" tabindex="0" role="button" aria-expanded="false" aria-controls="rkPop" aria-label="RabbitMQ: ver la cola FIFO en vivo">
+          <rect class="box" x="460" y="130" width="160" height="140" rx="16"/>
           <g clip-path="url(#vclip)">
-            <rect id="fillReady" x="400" y="210" width="160" height="0" fill="#5480F8" opacity=".55"/>
-            <rect id="fillUnack" x="400" y="210" width="160" height="0" fill="#12B76A" opacity=".8"/>
+            <rect id="fillReady" x="460" y="270" width="160" height="0" fill="#5480F8" opacity=".55"/>
+            <rect id="fillUnack" x="460" y="270" width="160" height="0" fill="#12B76A" opacity=".8"/>
           </g>
-          <rect x="400" y="70" width="160" height="140" rx="16" fill="none" stroke="var(--n-500)" stroke-width="2.5" id="vrim"/>
-          <circle class="light" cx="544" cy="86" r="5"/>
-          <text class="t1" x="480" y="94" text-anchor="middle">RabbitMQ</text>
-          <text class="big num" id="tDepth" x="480" y="146" text-anchor="middle">0</text>
-          <text class="t2" id="tDepthSub" x="480" y="168" text-anchor="middle">mensajes en cola</text>
-          <g id="gPersist"><use href="/static/icons.svg#i-disk" class="dg-i" x="436" y="181" width="14" height="14"/><text class="t2" id="tPersist" x="455" y="192">0 en disco</text></g>
-          <text class="tag" x="480" y="122" text-anchor="middle">SIN CONEXIÓN</text></g>
+          <rect x="460" y="130" width="160" height="140" rx="16" fill="none" stroke="var(--n-500)" stroke-width="2.5" id="vrim"/>
+          <circle class="light" cx="604" cy="146" r="5"/>
+          <text class="t1" x="540" y="154" text-anchor="middle">RabbitMQ</text>
+          <text class="big num" id="tDepth" x="540" y="206" text-anchor="middle">0</text>
+          <text class="t2" id="tDepthSub" x="540" y="228" text-anchor="middle">mensajes en cola</text>
+          <g id="gPersist"><use href="/static/icons.svg#i-disk" class="dg-i" x="496" y="241" width="14" height="14"/><text class="t2" id="tPersist" x="515" y="252">0 en disco</text></g>
+          <text class="tag" x="540" y="182" text-anchor="middle">SIN CONEXIÓN</text></g>
 
-        <g class="node" id="nDlq"><rect class="box" x="400" y="240" width="160" height="56" rx="16"/>
-          <use href="/static/icons.svg#i-inbox" class="dg-i" x="424" y="249" width="15" height="15"/><text class="t2" x="488" y="261" text-anchor="middle">DLQ (fallidos)</text>
-          <text class="big num" id="tDlq" x="480" y="288" text-anchor="middle" style="font-size:22px">0</text></g>
+        <g class="node" id="nDlq"><rect class="box" x="460" y="300" width="160" height="56" rx="16"/>
+          <use href="/static/icons.svg#i-inbox" class="dg-i" x="484" y="309" width="15" height="15"/><text class="t2" x="548" y="321" text-anchor="middle">DLQ (fallidos)</text>
+          <text class="big num" id="tDlq" x="540" y="348" text-anchor="middle" style="font-size:22px">0</text></g>
 
-        <g class="node" id="nWork"><rect class="box" x="640" y="105" width="140" height="90" rx="20"/>
-          <circle class="light" cx="764" cy="121" r="5"/>
-          <use href="/static/icons.svg#i-cpu" class="dg-i" x="660" y="122" width="18" height="18"/><text class="t1" x="722" y="136" text-anchor="middle">Workers</text>
-          <text class="big num" id="tWork" x="710" y="166" text-anchor="middle" style="font-size:24px">×1</text>
+        <g class="node" id="nWork"><rect class="box" x="720" y="155" width="140" height="90" rx="20"/>
+          <circle class="light" cx="844" cy="171" r="5"/>
+          <use href="/static/icons.svg#i-cpu" class="dg-i" x="740" y="172" width="18" height="18"/><text class="t1" x="802" y="186" text-anchor="middle">Workers</text>
+          <text class="big num" id="tWork" x="790" y="216" text-anchor="middle" style="font-size:24px">×1</text>
           <g id="wdots"></g>
-          <text class="tag" x="710" y="214" text-anchor="middle">CAÍDO</text></g>
+          <text class="tag" x="745" y="264" text-anchor="middle">CAÍDO</text></g>
 
-        <g class="node" id="nDb" tabindex="0" role="button" aria-expanded="false" aria-controls="dbPop" aria-label="PostgreSQL: ver las tablas orders y outbox en vivo"><rect class="box" x="860" y="105" width="130" height="90" rx="20"/>
-          <circle class="light" cx="974" cy="121" r="5"/>
-          <use href="/static/icons.svg#i-database" class="dg-i" x="867" y="129" width="18" height="18"/><text class="t1" x="890" y="143">PostgreSQL</text>
-          <text class="t2" id="tDb" x="925" y="168" text-anchor="middle">0 procesados</text>
-          <text class="tag" x="925" y="214" text-anchor="middle">CAÍDA</text></g>
+        <g class="node" id="nDb" tabindex="0" role="button" aria-expanded="false" aria-controls="dbPop" aria-label="PostgreSQL: ver las tablas orders y outbox en vivo"><rect class="box" x="450" y="8" width="180" height="84" rx="20"/>
+          <circle class="light" cx="614" cy="24" r="5"/>
+          <use href="/static/icons.svg#i-database" class="dg-i" x="478" y="20" width="18" height="18"/><text class="t1" x="500" y="34">PostgreSQL</text>
+          <text class="t2" id="tDb" x="540" y="58" text-anchor="middle">0 procesados</text>
+          <text class="t2 ob-n" id="tPend" x="540" y="78" text-anchor="middle" lengthAdjust="spacingAndGlyphs">outbox: 0 pendientes</text>
+          <text class="tag" x="560" y="116">CAÍDA</text></g>
 
-        <g class="node retry-node" id="nRetry"><rect class="box" x="596" y="236" width="248" height="66" rx="16"/>
-          <use href="/static/icons.svg#i-rotate-ccw" class="dg-i" x="612" y="245" width="15" height="15"/><text class="t2" x="633" y="257">Reintentos</text>
-          <text class="rlbl" x="828" y="257" text-anchor="end">espera creciente</text>
-          <g class="rslot" id="rs0"><rect x="610" y="266" width="70" height="28" rx="9"/><text class="rs-d" x="619" y="285">2 s</text><text class="rs-n num" id="rsN0" x="671" y="285.5" text-anchor="end">0</text></g>
-          <g class="rslot" id="rs1"><rect x="685" y="266" width="70" height="28" rx="9"/><text class="rs-d" x="694" y="285">5 s</text><text class="rs-n num" id="rsN1" x="746" y="285.5" text-anchor="end">0</text></g>
-          <g class="rslot" id="rs2"><rect x="760" y="266" width="70" height="28" rx="9"/><text class="rs-d" x="769" y="285">10 s</text><text class="rs-n num" id="rsN2" x="821" y="285.5" text-anchor="end">0</text></g></g>
-        <text class="pipelbl rlbl-fail" x="730" y="222">falla</text>
+        <g class="node retry-node" id="nRetry"><rect class="box" x="656" y="296" width="212" height="66" rx="16"/>
+          <use href="/static/icons.svg#i-rotate-ccw" class="dg-i" x="668" y="305" width="15" height="15"/><text class="t2" x="688" y="317">Reintentos</text>
+          <text class="rlbl" x="856" y="317" text-anchor="end">espera creciente</text>
+          <g class="rslot" id="rs0"><rect x="668" y="326" width="58" height="28" rx="9"/><text class="rs-d" x="676" y="345">2 s</text><text class="rs-n num" id="rsN0" x="720" y="345.5" text-anchor="end">0</text></g>
+          <g class="rslot" id="rs1"><rect x="732" y="326" width="58" height="28" rx="9"/><text class="rs-d" x="740" y="345">5 s</text><text class="rs-n num" id="rsN1" x="784" y="345.5" text-anchor="end">0</text></g>
+          <g class="rslot" id="rs2"><rect x="796" y="326" width="58" height="28" rx="9"/><text class="rs-d" x="803" y="345">10 s</text><text class="rs-n num" id="rsN2" x="848" y="345.5" text-anchor="end">0</text></g></g>
+        <text class="pipelbl rlbl-fail" x="800" y="277">⑤ falla</text>
 
         <g id="particles"></g>
+        <g class="node" id="nRelay"><title>Relay: revisa el outbox cada segundo y publica los eventos pendientes en RabbitMQ</title>
+          <g transform="translate(500,100)"><g class="lift" aria-hidden="true">
+            <rect class="lift-box" x="17" y="7" width="9" height="8" rx="1"/>
+            <path class="lift-body" d="M1,16 V8 H5 L7,2 H12 V16 Z"/><path class="lift-mast" d="M15,0 V20 M15,18 H27"/>
+            <circle class="lift-wheel" cx="4" cy="18" r="3"/><circle class="lift-wheel" cx="11" cy="18" r="3"/></g></g>
+          <text class="rl-lbl" x="494" y="115" text-anchor="end">relay</text></g>
+        <g id="cautions"></g>
       </svg>
       <div class="pipe-foot">
       <div class="warm" role="group" aria-label="Calentamiento: tráfico bajo">
@@ -479,11 +633,11 @@
         <button class="abtn" onclick="post('/api/sim/burst',{count:5})"><b><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-plus"/></svg> 5 pedidos</b></button>
       </div>
       <div class="legend">
-        <span><i>1</i>La API guarda el pedido en la BD</span>
-        <span><i>2</i>Lo publica en RabbitMQ y espera la confirmación</span>
+        <span><i>1</i>La API guarda el pedido y su evento (outbox) en la BD</span>
+        <span><i>2</i>El relay publica el evento en RabbitMQ</span>
         <span><i>3</i>Un worker lo procesa</span>
         <span><i>4</i>Confirma (ACK) y actualiza la BD</span>
-        <span><i class="r">5</i>Si falla, reintenta tras esperar 2 s, 5 s y 10 s; si sigue fallando, va a la DLQ</span>
+        <span><i class="r">5</i>Si falla, reintenta (2 s, 5 s, 10 s) y luego va a la DLQ</span>
       </div>
       </div>
     </section>
@@ -492,7 +646,9 @@
         <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-bomb"/></svg>Autosabotaje <span class="danger-tag">Zona de peligro</span></h2>
         <div class="sab-grid">
           <button class="abtn danger sab" id="bKillW" onclick="sab(this, 'kill-worker', 'revive-worker')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-user-x"/></svg></span><b>Matar al worker</b><span id="killSub">Contenedor eliminado a mitad de un pedido</span></button>
-          <button class="abtn danger sab" id="bCrash" onclick="sab(this, 'crash-broker', 'revive-broker')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-unplug"/></svg></span><b>Tirar RabbitMQ</b><span id="crashSub">Caída brusca (SIGKILL)</span></button>
+          <button class="abtn danger sab" id="bKillR" onclick="sab(this, 'kill-relay', 'revive-relay')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-truck"/></svg></span><b>Tirar relay</b><span id="killRSub">Deja de publicar: el outbox acumula</span></button>
+          <button class="abtn danger sab" id="bKillM" onclick="sab(this, 'kill-mailer', 'revive-mailer')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-mail"/></svg></span><b>Matar mailer</b><span id="killMSub">Los correos esperan en la cola</span></button>
+          <button class="abtn danger sab" id="bCrash" onclick="sab(this, 'crash-broker', 'revive-broker')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-unplug"/></svg></span><b>Tirar RabbitMQ</b><span id="crashSub">Se corta el broker</span></button>
           <button class="abtn danger sab" id="bCrashDb" onclick="sab(this, 'crash-db', 'revive-db')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-database-zap"/></svg></span><b>Tirar PostgreSQL</b><span id="crashDbSub">La BD cae en plena venta</span></button>
           <button class="abtn danger sab" id="bSlow" onclick="sab(this, 'slow-on', 'slow-off')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-snail"/></svg></span><b>Workers lentos</b><span id="slowSub">Un servicio externo se degrada</span></button>
           <button class="abtn danger sab" id="bPoison" onclick="sab(this, 'poison-on', 'poison-off')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-skull"/></svg></span><b>Pedidos venenosos</b><span id="poisonSub">1 de cada 5 pedidos falla: reintentos → DLQ</span></button>
@@ -515,6 +671,16 @@
       </section>
     </div>
 
+    <section class="card mailq" aria-labelledby="mailqH">
+      <h2 id="mailqH"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-mail"/></svg>Cola de correos <small>outbox → relay → cola «correos» → mailer → Gmail</small></h2>
+      <div class="mail-grid">
+        <div class="mstat" id="mPendC"><span class="k">Pendientes</span><b class="v num" id="mPend">0</b><span class="d" id="mPendD">en el outbox y en la cola</span></div>
+        <div class="mstat good"><span class="k">Enviados</span><b class="v num" id="mSent">0</b><span class="d">cada email_id una sola vez</span></div>
+        <div class="mstat" id="mDlqC"><span class="k">En la DLQ</span><b class="v num" id="mDlq">0</b><span class="d">tras 3 reintentos (2 s, 5 s, 10 s)</span></div>
+        <div class="mstat" id="mSvcC"><span class="k">Mailer</span><b class="v" id="mSvc">—</b><span class="d" id="mSvcD"></span></div>
+      </div>
+    </section>
+
     <div class="two">
       <section class="card">
         <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-flask-conical"/></svg>Experimento de persistencia <small>RabbitMQ cae de verdad</small></h2>
@@ -524,6 +690,9 @@
       </section>
       <section class="card">
         <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-inbox"/></svg>Mensajes fallidos (DLQ) <small id="dlqCount"></small></h2>
+        <div class="seg dlq-tabs" id="dlqTabs" role="radiogroup" aria-label="Qué DLQ mostrar">
+          <button role="radio" aria-checked="true" data-q="pedidos" onclick="dlqTab('pedidos')">Pedidos</button><button role="radio" aria-checked="false" data-q="correos" onclick="dlqTab('correos')">Correos</button>
+        </div>
         <div id="dlqList"><div class="empty">Cargando…</div></div>
       </section>
     </div>
@@ -538,22 +707,36 @@
 
 </div>
 <div id="toast" role="alert"></div>
-<div class="dbp" id="dbPop" role="dialog" aria-label="Tablas de PostgreSQL en vivo" hidden>
-  <div class="dbp-h"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-database"/></svg><b>PostgreSQL en vivo</b></div>
+<div class="dbp" id="dbPop" role="dialog" aria-label="Pizarra de PostgreSQL en vivo: tablas orders y outbox" hidden>
+  <svg class="ch-rough" aria-hidden="true"><filter id="chalkRough"><feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2.5"/></filter></svg>
+  <div class="ch-board">
+  <div class="dbp-h"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-database"/></svg><div><b>PostgreSQL en vivo</b><p class="ch-note">Ambas tablas viven en la misma base de datos y se guardan en UNA sola transacción</p></div></div>
   <button class="dbp-x" id="dbPopX" aria-label="Cerrar las tablas de PostgreSQL" onclick="dbPin(false)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-x"/></svg></button>
   <div class="dbp-body">
   <div class="dbp-down" id="dbPopDown" hidden><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-triangle-alert"/></svg>PostgreSQL no responde · se muestran los últimos datos conocidos</div>
-  <div class="dbp-cap"><code>orders</code>: cada pedido y su estado</div>
-  <table class="t-ord">
-    <thead><tr><th>id</th><th>cliente</th><th class="r">total</th><th>status</th><th>hora</th></tr></thead><tbody id="dbpOrders"></tbody></table>
-  <div class="dbp-cap"><code>outbox</code>: eventos pendientes de enviar a RabbitMQ</div>
-  <table class="t-out">
-    <thead><tr><th>id</th><th>pedido</th><th>evento</th><th>creado</th><th>publicado</th></tr></thead><tbody id="dbpOutbox"></tbody></table>
-  <div class="dbp-legend">
-    <span><span class="dbp-st st-PENDING">PENDING</span>guardado, aún no llega a RabbitMQ</span>
-    <span><span class="dbp-st st-PUBLISHED">PUBLISHED</span>en la cola de RabbitMQ</span>
-    <span><span class="dbp-st st-PROCESSED">PROCESSED</span>procesado por el worker</span>
-    <span><span class="dbp-st st-FAILED">FAILED</span>fue a la DLQ</span>
+  <div class="ch-grid">
+    <div class="ch-frame" aria-hidden="true"></div>
+    <div class="ch-head ch-head-ord"><h3>SOLICITUD DEL PEDIDO <code>orders</code></h3><p>Lo que pidió el cliente</p></div>
+    <div class="ch-head ch-head-evt"><h3>EVENTO DEL PEDIDO =<strong>OUTBOX</strong></h3><p>Eventos pendientes de enviar a RabbitMQ (el relay los lee y publica)</p></div>
+    <ol class="ch-list" id="dbpPairs"></ol>
+  </div>
+  </div>
+  </div>
+</div>
+
+<div class="dbp rkp" id="rkPop" role="dialog" aria-label="Almacén de RabbitMQ: cola FIFO en vivo" hidden>
+  <div class="rk-board">
+  <div class="dbp-h"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-rabbit"/></svg><div><b>RabbitMQ en vivo</b><p class="rk-note">FIFO: el primero en llegar es el primero en salir</p></div></div>
+  <button class="dbp-x" aria-label="Cerrar el almacén de RabbitMQ" onclick="rkFloat.pin(false)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-x"/></svg></button>
+  <div class="dbp-body">
+  <div class="dbp-down" id="rkDown" hidden><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-triangle-alert"/></svg>RabbitMQ no responde · se muestran los últimos datos conocidos</div>
+  <div class="rk-stage" id="rkStage">
+    <div class="rk-dock rk-in" id="rkIn"><b>Llegada</b><small>se forman al final</small></div>
+    <div class="rk-rack" id="rkRack"><p class="rk-empty" id="rkEmpty">Fila vacía: el worker va al día</p></div>
+    <div class="rk-gap" id="rkGap" hidden><b><i>• • •</i> <span id="rkGapN"></span> <i>• • •</i></b><small id="rkGapR"></small></div>
+    <div class="rk-dock rk-out" id="rkOut"><b>Worker</b><small id="rkOutSub">0 en proceso</small></div>
+  </div>
+  <p class="rk-stats"><span><b id="rkReady">0</b> en fila</span><span><b id="rkUnack">0</b> en proceso</span><span><b id="rkDisk">0</b> en disco</span><span><b id="rkMem">0</b> en memoria</span><span class="rk-slow" id="rkSlow" hidden>Cámara lenta: el worker ya procesó estas cajas</span></p>
   </div>
   </div>
 </div>
@@ -578,9 +761,31 @@ async function post(url, body) {
 }
 const chaos = a => post("/api/chaos/" + a);
 /* el botón muestra que trabaja hasta que la API responde */
-async function busy(btn, p) { btn.classList.add("busy"); btn.setAttribute("aria-busy", "true"); try { await p; } finally { btn.classList.remove("busy"); btn.removeAttribute("aria-busy"); } }
-/* sabotaje como interruptor: si está activo, el mismo botón lo deshace */
-const sab = (btn, on, off) => { if (!btn.classList.contains("busy")) busy(btn, chaos(btn.classList.contains("on") ? off : on)); };
+async function busy(btn, p) {
+  btn.classList.add("busy"); btn.setAttribute("aria-busy", "true");
+  try { await p; } finally {
+    btn.removeAttribute("aria-busy");
+    if (!isReviving(btn.id)) btn.classList.remove("busy");   // si está levantando un servicio, sabState lo quita al volver
+  }
+}
+/* sabotaje como interruptor: si está activo, el mismo botón lo deshace. Al deshacerlo, el botón sigue ocupado
+   ("LEVANTANDO…") hasta que el servicio responde de verdad, y no acepta otro clic que lo vuelva a tirar */
+const reviving = {};   // id del botón → hasta cuándo (ms) se espera que el servicio vuelva
+const isReviving = id => Date.now() < (reviving[id] || 0);
+const sab = (btn, on, off) => {
+  if (btn.classList.contains("busy") || isReviving(btn.id)) return;
+  const undo = btn.classList.contains("on");
+  if (undo) { reviving[btn.id] = Date.now() + 30000; btn.querySelector("span:last-child").textContent = "LEVANTANDO…"; }
+  busy(btn, chaos(undo ? off : on));
+};
+/* refleja en el botón si su servicio está caído, y si se está levantando */
+function sabState(id, subId, down, downTx, idleTx) {
+  if (!down) delete reviving[id];
+  const rev = down && isReviving(id);
+  $(id).classList.toggle("on", down);
+  $(id).classList.toggle("busy", rev || $(id).getAttribute("aria-busy") === "true");
+  $(subId).textContent = rev ? "LEVANTANDO…" : down ? downTx : idleTx;
+}
 const rateVal = () => +$("rate").value;
 /* desplegable Black Friday (simulación de tráfico) en la cabecera */
 function toggleBf(open = $("bfPop").hidden) { $("bfPop").hidden = !open; $("bfBtn").setAttribute("aria-expanded", open); }
@@ -643,7 +848,7 @@ function sample(m) {
   const now = performance.now(), o = m.orders;
   if (last) {
     const dt = (now - last.t) / 1000;
-    if (dt > 0.3) {
+    if (dt > 0.95) {   // una muestra por segundo aunque la API se consulte más seguido: los gráficos son por segundo
       const k = 0.5; // suavizado
       recvRate += (Math.max(0, (o.total - last.total) / dt) - recvRate) * k;
       procRate += (Math.max(0, (o.PROCESSED - last.proc) / dt) - procRate) * k;
@@ -661,10 +866,14 @@ function svcState(name, m) {
   if (s) return s === "running" ? "up" : "down";
   if (name === "rabbitmq") return m.broker_up ? "up" : "down";
   if (name === "worker") return m.queue && m.queue.consumers > 0 ? "up" : "down";
+  if (name === "mailer") return m.queue?.emails?.consumers > 0 ? "up" : "down";
   if (name === "postgres") return m.db_up ? "up" : "down";
   return "up";
 }
-function setNode(id, st) { const n = $(id).classList; n.toggle("down", st === "down"); n.toggle("idle", st === "idle"); }
+function setNode(id, st) {
+  const n = $(id).classList; n.toggle("down", st === "down"); n.toggle("idle", st === "idle");
+  cautionTapes(id, st === "down");
+}
 
 function render(m) {
   state.m = m; state.control = m.control;
@@ -702,19 +911,25 @@ function render(m) {
   const brokerSt = svcState("rabbitmq", m), workSt = svcState("worker", m), apiSt = "up";
   const dbSt = m.db_up ? "up" : "down";
   setNode("nQ", brokerSt); setNode("nWork", workSt); setNode("nApi", apiSt); setNode("nDb", dbSt);
+  const relaySt = svcState("relay", m);
+  setNode("nRelay", relaySt === "up" && brokerSt === "down" ? "idle" : relaySt);   // sin broker no se cae: espera
+  stopBelts(brokerSt, workSt, dbSt, relaySt);
+  setNum("tPend", m.outbox_pending, v => "outbox: " + fmt(v) + (v === 1 ? " pendiente" : " pendientes"));
+  $("tPend").classList.toggle("on", m.outbox_pending > 0);
+  if (m.outbox_pending >= 1000) $("tPend").setAttribute("textLength", 126); else $("tPend").removeAttribute("textLength");   // con miles, no se sale de la caja
   $("nQ").classList.toggle("idle", false);
   $("tCust").textContent = (sim.running ? sim.current_rate : 0) + " pedidos/s";
-  setNum("tPend", m.outbox_pending); setNum("tDlq", Math.max(o.FAILED, q?.dlq || 0));
+  setNum("tDlq", Math.max(o.FAILED, q?.dlq || 0));
   renderRetries(q); trackTracers(m); spawnOrders(m);
   state.depth = depth;   // los contadores del diagrama se fijan en syncVisNums, al ritmo de las bolitas
   const nW = m.control.workers;
   $("tWork").textContent = "×" + nW; $("wcount").textContent = nW;
   $("wdots").innerHTML = Array.from({ length: nW }, (_, i) =>
-    `<rect x="${640 + 13 + i * 12.3}" y="178" width="10" height="9" rx="2" fill="${workSt === "up" ? css("--aqua") : css("--bad")}"/>`).join("");
+    `<rect x="${720 + 13 + i * 12.3}" y="228" width="10" height="9" rx="2" fill="${workSt === "up" ? css("--aqua") : css("--bad")}"/>`).join("");
   const cap = Math.max(150, state.maxDepth * 1.25);
   const hReady = q ? 140 * Math.min(1, q.ready / cap) : 0, hUn = q ? 140 * Math.min(1, q.unacked / cap) : 0;
-  $("fillUnack").setAttribute("y", 210 - hUn); $("fillUnack").setAttribute("height", hUn);
-  $("fillReady").setAttribute("y", 210 - hUn - hReady); $("fillReady").setAttribute("height", hReady);
+  $("fillUnack").setAttribute("y", 270 - hUn); $("fillUnack").setAttribute("height", hUn);
+  $("fillReady").setAttribute("y", 270 - hUn - hReady); $("fillReady").setAttribute("height", hReady);
   $("tDepthSub").textContent = q ? "mensajes en cola" : "último valor conocido";
   $("tDepth").style.opacity = q ? 1 : .45;
   setNum("tPersist", q ? q.persistent : 0, v => fmt(v) + " en disco" + (q && q.volatile ? ` · ${fmt(q.volatile)} en memoria` : ""));
@@ -732,9 +947,13 @@ function render(m) {
   $("btnDay").classList.toggle("pop", !dayRun); $("btnDay").classList.toggle("stop", dayRun);
   $("btnConst").innerHTML = constRun ? `<b>${icon("stop")} Detener</b><span>corta el tráfico</span>` : `<b>${icon("play")} Constante</b><span>ritmo fijo</span>`;
   $("btnConst").classList.toggle("stop", constRun);
-  $("bKillW").classList.toggle("on", workSt === "down");
-  $("bCrash").classList.toggle("on", brokerSt === "down");
-  $("bCrashDb").classList.toggle("on", dbSt === "down");
+  sabState("bKillW", "killSub", workSt === "down", "CAÍDO · pulsa para levantarlo", "Contenedor eliminado a mitad de un pedido");
+  sabState("bKillR", "killRSub", relaySt === "down", "CAÍDO · pulsa para levantarlo", "Deja de publicar: el outbox acumula");
+  const mailSt = svcState("mailer", m);
+  sabState("bKillM", "killMSub", mailSt === "down", "CAÍDO · pulsa para levantarlo", "Los correos esperan en la cola");
+  renderMail(m, mailSt);
+  sabState("bCrash", "crashSub", brokerSt === "down", "CAÍDO · pulsa para levantarlo", "Se corta el broker");
+  sabState("bCrashDb", "crashDbSub", dbSt === "down", "CAÍDA · pulsa para levantarla", "La BD cae en plena venta");
   $("bSlow").classList.toggle("on", m.control.slow);
   $("bPersist").setAttribute("aria-checked", m.control.persistent);
   $("persistLbl").textContent = m.control.persistent ? "Persistencia encendida" : "Persistencia APAGADA";
@@ -745,9 +964,6 @@ function render(m) {
   $("poisonSub").textContent = !sim.poison ? "1 de cada 5 pedidos falla: reintentos → DLQ"
     : retrying > 0 ? `ACTIVO · ${retrying} en reintento · pulsa para apagar`
     : sim.running ? "ACTIVO · 1 de cada 5 pedidos fallará" : "ACTIVO · envía pedidos para verlo";
-  $("killSub").textContent = workSt === "down" ? "CAÍDO · pulsa para levantarlo" : "Contenedor eliminado a mitad de un pedido";
-  $("crashSub").textContent = brokerSt === "down" ? "CAÍDO · pulsa para levantarlo" : "Caída brusca (SIGKILL)";
-  $("crashDbSub").textContent = dbSt === "down" ? "CAÍDA · pulsa para levantarla" : "La BD cae en plena venta";
   updateRateLabel();
 
   renderNarrator(m, depth);
@@ -758,10 +974,29 @@ function render(m) {
   drawAll();
 }
 
+/* correos pendientes = eventos aún en el outbox + mensajes en la cola «correos» y en sus colas de reintento */
+function mailCounts(m) {
+  const e = m.queue?.emails, ob = m.emails?.outbox_pending || 0;
+  return { pending: ob + (e ? e.queued + e.retrying : 0), retrying: e?.retrying || 0, dlq: e?.dlq ?? 0,
+           sent: m.emails?.sent || 0, outbox: ob, known: !!e };
+}
+function renderMail(m, mailSt) {
+  const c = mailCounts(m), down = mailSt === "down";
+  setNum("mPend", c.pending); setNum("mSent", c.sent); setNum("mDlq", c.dlq);
+  $("mPendD").textContent = c.retrying ? `${fmt(c.retrying)} esperando reintento`
+    : c.outbox ? `${fmt(c.outbox)} aún en el outbox` : c.known ? "en el outbox y en la cola" : "broker sin conexión";
+  $("mPendC").className = "mstat" + (c.pending > 0 && down ? " warn" : "");
+  $("mDlqC").className = "mstat" + (c.dlq > 0 ? " warn" : "");
+  $("mSvc").textContent = down ? "Caído" : "En línea";
+  $("mSvcC").className = "mstat" + (down ? " bad" : " good");
+  $("mSvcD").textContent = down ? "los correos esperan en disco" : "envía por Gmail (SMTP)";
+}
+
 function renderNarrator(m, depth) {
   const o = m.orders, q = m.queue, sim = m.sim;
-  let k = "ok", ic = "check-circle", tx = "Todo en orden: cada pedido se guarda, se publica con confirmación, se procesa y se confirma (ACK).", sub = "";
+  let k = "ok", ic = "check-circle", tx = "Todo en orden: cada pedido se guarda con su evento, el relay lo publica con confirmación, se procesa y se confirma (ACK).", sub = "";
   const workerDown = svcState("worker", m) === "down";
+  const mailDown = svcState("mailer", m) === "down", mail = mailCounts(m);
   if (!m.db_up) {
     k = "bad"; ic = "database";
     tx = depth > 0 ? `PostgreSQL está caído. Los ${fmt(depth)} pedidos que ya estaban en la cola esperan en RabbitMQ sin perderse.`
@@ -772,6 +1007,10 @@ function renderNarrator(m, depth) {
     tx = `RabbitMQ está caído, pero los clientes siguen comprando: ${fmt(m.outbox_pending)} eventos esperan en el outbox de PostgreSQL.`;
     sub = m.control.persistent ? "Cuando el broker vuelva, el relay los publica solo. Los mensajes que ya estaban en la cola siguen en disco."
       : "Ojo: la persistencia está apagada, así que los mensajes que estaban en la cola en memoria se acaban de perder.";
+  } else if (svcState("relay", m) === "down") {
+    k = "bad"; ic = "octagon";
+    tx = `El relay está caído: los clientes siguen comprando y ${fmt(m.outbox_pending)} eventos esperan en el outbox.`;
+    sub = "RabbitMQ no recibe nada y los workers se quedan sin trabajo. Al levantarlo, publica todos los pendientes: no se pierde ningún pedido.";
   } else if (m.lost > 0) {
     k = "bad"; ic = "alert";
     tx = `Se perdieron ${fmt(m.lost)} mensajes: RabbitMQ cayó mientras viajaban sin persistencia.`;
@@ -784,6 +1023,11 @@ function renderNarrator(m, depth) {
     k = "warn"; ic = "pause";
     tx = `Sin workers: ${fmt(depth)} mensajes esperando en la cola, guardados en disco.`;
     sub = "Nada se pierde. En cuanto un worker vuelva, procesará la acumulación.";
+  } else if (mailDown) {
+    k = "warn"; ic = "mail";
+    tx = mail.pending > 0 ? `El mailer está caído: ${fmt(mail.pending)} correo(s) esperan en la cola, guardados en disco.`
+      : "El mailer está caído: los correos nuevos (bienvenida, avisos, comprobantes) esperarán en la cola.";
+    sub = "Los clientes siguen registrándose y comprando. Al «Recuperar todo», el mailer envía la acumulación y ningún correo sale dos veces.";
   } else if (m.control.slow) {
     k = "warn"; ic = "snail"; tx = "Los workers están lentos: la cola crece porque entra más de lo que sale.";
     sub = "La cola absorbe la diferencia. Escala con ＋ workers para drenarla más rápido.";
@@ -793,6 +1037,12 @@ function renderNarrator(m, depth) {
   } else if (o.FAILED > 0 || (q && q.dlq > 0)) {
     k = "warn"; ic = "inbox"; tx = `${fmt(Math.max(o.FAILED, q?.dlq || 0))} pedidos fallaron 3 veces y se aislaron en la DLQ.`;
     sub = "No bloquean al resto de la cola. Se pueden revisar y reprocesar después.";
+  } else if (mail.retrying > 0) {
+    k = "warn"; ic = "mail"; tx = `Gmail no respondió: ${fmt(mail.retrying)} correo(s) esperan su reintento (2 s, 5 s, 10 s).`;
+    sub = "Igual que los pedidos: esperan en colas con TTL y, si fallan 3 veces, van a la DLQ de correos.";
+  } else if (mail.dlq > 0) {
+    k = "warn"; ic = "inbox"; tx = `${fmt(mail.dlq)} correo(s) no se pudieron enviar tras 3 intentos y están en la DLQ de correos.`;
+    sub = "Se pueden reprocesar desde «Mensajes fallidos (DLQ) → Correos».";
   } else if (q && q.ready > 120) {
     k = "warn"; ic = "trend"; tx = `Pico de tráfico: ${fmt(q.ready)} pedidos esperando turno en la cola.`;
     sub = "La cola amortigua el golpe y la tienda no se cae. Escala workers para vaciarla.";
@@ -822,13 +1072,35 @@ function renderLab(lab) {
   $("labOut").innerHTML = `<div style="margin-top:12px">${rows}</div><div class="exp-conc">${conc}</div>`;
 }
 
+let dlqQueue = "pedidos";
+const MAIL_KIND = { "email.registro": "Bienvenida", "email.login": "Inicio de sesión", "email.compra_confirmada": "Comprobante",
+                    "email.recuperar": "Recuperar contraseña" };
+function dlqTab(q) {
+  dlqQueue = q;
+  document.querySelectorAll("#dlqTabs button").forEach(b => b.setAttribute("aria-checked", b.dataset.q === q));
+  $("dlqList").innerHTML = `<div class="empty">Cargando…</div>`;
+  loadDlq();
+}
 async function loadDlq() {
   try {
-    const r = await fetch("/api/dlq");
+    const queue = dlqQueue;
+    const r = await fetch("/api/dlq?queue=" + queue);
     if (r.status === 401 || r.status === 403) return;
+    if (queue !== dlqQueue) return;   // cambiaron de pestaña mientras cargaba
     if (!r.ok) { $("dlqList").innerHTML = `<div class="empty">RabbitMQ no disponible en este momento</div>`; return; }
     const items = await r.json();
     $("dlqCount").textContent = items.length ? `${items.length} mensaje(s)` : "";
+    if (queue === "correos") {
+      $("dlqList").innerHTML = !items.length
+        ? `<div class="empty">Sin correos fallidos. Si Gmail rechaza un envío 3 veces seguidas (2 s, 5 s, 10 s), el correo llega aquí.</div>`
+        : `<div class="dlq-head"><button class="mini warn" onclick="dlqAct('reprocess')">${icon("rotate-ccw")} Reprocesar todos</button><button class="mini bad" onclick="dlqAct('discard')">${icon("trash-2")} Descartar todos</button></div>
+          <table class="dlq"><tr><th>Correo</th><th>Error</th><th>Intentos</th><th>Llegó</th><th></th></tr>` +
+          items.map(it => `<tr><td>${esc(MAIL_KIND[it.kind] || it.kind || "—")}<br><span class="to">${esc(it.to || "")}</span></td>
+            <td class="err">${esc(it.error)}</td><td class="num">${it.retries}</td>
+            <td class="num">${it.dead_at ? new Date(it.dead_at).toLocaleTimeString("es", { hour12: false }) : "—"}</td>
+            <td class="act"><button class="mini warn" onclick="dlqAct('reprocess','${esc(it.email_id)}')">Reprocesar</button><button class="mini bad" onclick="dlqAct('discard','${esc(it.email_id)}')">Descartar</button></td></tr>`).join("") + `</table>`;
+      return;
+    }
     $("dlqList").innerHTML = !items.length
       ? `<div class="empty">Sin mensajes fallidos. Prueba «Venenosos ×5»: se reintentan 3 veces y llegan aquí.</div>`
       : `<div class="dlq-head"><button class="mini warn" onclick="dlqAct('reprocess')">${icon("rotate-ccw")} Reprocesar todos</button><button class="mini bad" onclick="dlqAct('discard')">${icon("trash-2")} Descartar todos</button></div>
@@ -841,7 +1113,8 @@ async function loadDlq() {
 }
 async function dlqAct(action, id) {
   if (!id && action === "discard" && !confirm("¿Descartar definitivamente todos los mensajes de la DLQ?")) return;
-  await post("/api/dlq/" + action, { order_ids: id ? [id] : null });
+  const ids = id ? [id] : null;
+  await post(`/api/dlq/${action}?queue=${dlqQueue}`, dlqQueue === "correos" ? { email_ids: ids } : { order_ids: ids });
   loadDlq();
 }
 
@@ -859,38 +1132,42 @@ function renderLog(ev) {
 }
 
 /* ================= detalle de PostgreSQL (tablas orders y outbox) ================= */
-/* pasar el mouse por la caja PostgreSQL = vista previa; clic = queda fijo hasta la X, Escape u otro clic en la caja */
+/* clic en la caja PostgreSQL = se abre hasta la X, Escape u otro clic en la caja */
 const DB_ST = { PENDING: "guardado, aún no llega a RabbitMQ", PUBLISHED: "en la cola de RabbitMQ", PROCESSED: "procesado por el worker", FAILED: "fue a la DLQ" };
 const hms = iso => new Date(iso).toLocaleTimeString("es-PE", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
 const soles = n => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const dbp = { pinned: false };
 
-/* reutiliza las filas por id: las nuevas entran animadas, las celdas que cambian destellan y las que salen se quitan */
-function syncRows(tbody, rows, cells, empty, quiet) {
-  const old = new Map([...tbody.rows].filter(tr => tr.dataset.k).map(tr => [tr.dataset.k, tr]));
-  [...tbody.rows].filter(tr => !tr.dataset.k).forEach(tr => tr.remove());
-  const keep = rows.map(r => {
-    const [k, ...html] = cells(r);
-    let tr = old.get(k);
-    if (tr) {
-      old.delete(k);
-      html.forEach((h, i) => {
-        const td = tr.cells[i];
-        if (td._h === h) return;
-        td.innerHTML = h; td._h = h;
-        if (!quiet) { td.classList.remove("flash"); void td.offsetWidth; td.classList.add("flash"); }   // reinicia el destello
-      });
-    } else {
-      tr = document.createElement("tr"); tr.dataset.k = k;
-      html.forEach(h => { const td = tr.insertCell(); td.innerHTML = h; td._h = h; });
-      if (!quiet) tr.classList.add("enter");
+/* un pedido y su evento comparten fila; los 10 datos (5 y 5) tienen lugar fijo en el orden de PAIR_HTML */
+const PAIR_HTML = `<div class="ch-cell ch-ord"><div class="ch-line"><span class="ch-f"></span><span class="ch-f"></span><span class="ch-f"></span></div><div class="ch-line fit"><span class="ch-f grow"></span><span class="ch-f ch-total"></span></div><span class="ch-miss">pedido fuera de la lista reciente</span></div>
+  <div class="ch-arrow" aria-hidden="true">genera<svg viewBox="0 0 62 18"><path d="M2 10C14 6 30 13 46 9 50 8 54 9 59 9M50 3 60 9 51 15"/></svg></div>
+  <div class="ch-cell ch-evt"><div class="ch-line"><span class="ch-f"></span><span class="ch-f"></span><span class="ch-f"></span></div><div class="ch-line"><span class="ch-f"></span><span class="ch-f"></span></div><span class="ch-miss">evento fuera de la lista reciente</span></div>`;
+/* reutiliza las filas por pedido: las nuevas entran animadas, los datos que cambian destellan y las que salen se quitan */
+function syncPairs(list, rows, empty, quiet) {
+  const old = new Map([...list.children].filter(li => li.dataset.k).map(li => [li.dataset.k, li]));
+  [...list.children].filter(li => !li.dataset.k).forEach(li => li.remove());
+  const keep = rows.map(({ k, o, e, html }) => {
+    let li = old.get(k);
+    if (li) old.delete(k);
+    else {
+      li = document.createElement("li"); li.className = "ch-pair"; li.tabIndex = 0; li.dataset.k = k; li.innerHTML = PAIR_HTML;
+      li._f = [...li.querySelectorAll(".ch-f")];
+      if (!quiet) li.classList.add("enter");
     }
-    return tr;
+    li.classList.toggle("no-ord", !o); li.classList.toggle("no-evt", !e);
+    html.forEach((h, i) => {
+      const f = li._f[i];
+      if (f._h === h) return;
+      const isNew = f._h === undefined;
+      f.innerHTML = h; f._h = h;
+      if (!quiet && !isNew) { f.classList.remove("flash"); void f.offsetWidth; f.classList.add("flash"); }   // reinicia el destello
+    });
+    return li;
   });
-  old.forEach(tr => tr.remove());
+  old.forEach(li => li.remove());
   // solo se insertan las filas que no están en su lugar: mover una fila existente reiniciaría su animación
-  keep.forEach((tr, i) => { if (tbody.rows[i] !== tr) tbody.insertBefore(tr, tbody.rows[i] || null); });
-  if (!rows.length) tbody.innerHTML = `<tr class="dbp-empty"><td colspan="5">${empty}</td></tr>`;
+  keep.forEach((li, i) => { if (list.children[i] !== li) list.insertBefore(li, list.children[i] || null); });
+  if (!rows.length) list.innerHTML = `<li class="ch-empty">${empty}</li>`;
 }
 function updateDbPop(m, quiet = false) {
   $("dbPopDown").hidden = m.db_up;
@@ -899,126 +1176,123 @@ function updateDbPop(m, quiet = false) {
   const orders = (m.recent || []).map(o => ({ ...o, status: shownStatus(o) })).filter(o => o.status);
   const outbox = (m.outbox_recent || []).filter(e => { const g = gate(e.aggregate_id); return !g || g.saved || g.pub || g.proc; })
     .map(e => { const g = gate(e.aggregate_id); return g && !(g.pub || g.proc) ? { ...e, published_at: null } : e; });
-  syncRows($("dbpOrders"), orders.slice(0, 6), o => [o.id,
-    `<span class="mono">${esc(o.id.slice(0, 8))}</span>`,
-    `<span title="${esc(o.email)}">${esc(o.email)}</span>`,
-    `<div class="r">${soles(o.total)}</div>`,
-    `<span class="dbp-st st-${o.status}" title="${DB_ST[o.status]}">${o.status}</span>`,
-    o.created_at ? hms(o.created_at) : "—",
-  ], "Aún no hay pedidos guardados", quiet);
-  syncRows($("dbpOutbox"), outbox.slice(0, 6), e => [String(e.id),
-    `<span class="mono">${e.id}</span>`,
-    `<span class="mono">${esc(e.aggregate_id.slice(0, 8))}</span>`,
-    esc(e.event_type),
-    hms(e.created_at),
-    e.published_at ? `<span class="dbp-ok">${icon("check")} ${hms(e.published_at)}</span>` : `<span class="dbp-wait">pendiente</span>`,
-  ], "Aún no hay eventos", quiet);
+  // empareja por id de pedido; un lado sin pareja (ya salió de su lista reciente) también ocupa su fila
+  const evByOrder = new Map(outbox.map(e => [e.aggregate_id, e])), seen = new Set(orders.map(o => o.id));
+  const when = r => Date.parse((r.o || r.e).created_at) || 0;
+  const rows = [...orders.map(o => ({ o, e: evByOrder.get(o.id) })),
+                ...outbox.filter(e => !seen.has(e.aggregate_id)).map(e => ({ e }))]
+    .sort((a, b) => when(b) - when(a)).slice(0, 4)
+    .map(({ o, e }) => ({ k: o ? o.id : e.aggregate_id, o, e, html: [
+      o ? `<span class="mono">${esc(o.id.slice(0, 8))}</span>` : "",
+      o ? `<span class="dbp-st st-${o.status}" title="${DB_ST[o.status]}">${o.status}</span>` : "",
+      o ? `<span class="ch-k">hora</span> ${o.created_at ? hms(o.created_at) : "—"}` : "",
+      o ? `<span title="${esc(o.email)}">${esc(o.email)}</span>` : "",
+      o ? soles(o.total) : "",
+      e ? `<span class="ch-k">evento</span> <span class="mono">${e.id}</span>` : "",
+      e ? `<span class="ch-k">pedido</span> <span class="mono">${esc(e.aggregate_id.slice(0, 8))}</span>` : "",
+      e ? esc(e.event_type) : "",
+      e ? `<span class="ch-k">creado</span> ${hms(e.created_at)}` : "",
+      e ? (e.published_at ? `<span class="dbp-ok">${icon("check")} publicado ${hms(e.published_at)}</span>` : `<span class="dbp-wait">${icon("hourglass")} pendiente</span>`) : "",
+    ] }));
+  syncPairs($("dbpPairs"), rows, "Aún no hay pedidos guardados", quiet);
   placeDbPop();
 }
-/* ubica el popover junto a la caja sin tapar los controles; si nada cabe limpio, elige donde tape menos */
-function placeDbPop() {
-  const pop = $("dbPop"); if (pop.hidden) return;
-  const M = 8, G = 14, w = pop.offsetWidth, h = pop.offsetHeight, vw = innerWidth, vh = innerHeight;
-  const fit = (x, y) => ({ x: Math.max(M, Math.min(x, vw - w - M)), y: Math.max(M, Math.min(y, vh - h - M)) });
-  if (dbp.moved) {   // el usuario la arrastró: se queda donde la soltó (solo se mantiene dentro de la pantalla)
-    const p = fit(dbp.moved.x, dbp.moved.y); pop.style.left = p.x + "px"; pop.style.top = p.y + "px"; return;
-  }
-  const b = $("nDb").getBoundingClientRect();
-  const avoid = [b, ...[".top", ".warm", ".sabotage", "#bfPop", "#spdPop"].map(s => document.querySelector(s))
-    .filter(el => el && !el.hidden).map(el => el.getBoundingClientRect())];
-  const warm = document.querySelector(".warm").getBoundingClientRect();
-  const cands = [
-    fit(b.left - w - G, b.top),              // a la izquierda, alineado con la caja
-    fit(b.left - w - G, warm.top - h - G),   // a la izquierda, terminando encima de los botones
-    fit(b.right - w, b.top - h - G),         // encima de la caja
-    fit(b.right - w, b.bottom + G),          // debajo
-    fit(b.right + G, b.top),                 // a la derecha
-  ];
-  const cover = c => avoid.reduce((s, r) => s + Math.max(0, Math.min(c.x + w, r.right) - Math.max(c.x, r.left))
-    * Math.max(0, Math.min(c.y + h, r.bottom) - Math.max(c.y, r.top)), 0);
-  const best = cands.reduce((a, c) => cover(c) < cover(a) ? c : a);
-  pop.style.left = best.x + "px"; pop.style.top = best.y + "px";
-}
-function showDbPop() {
-  const pop = $("dbPop");
-  if (pop.hidden) { pop.hidden = false; if (state.m) updateDbPop(state.m, true); }   // al abrir no se anima lo que ya estaba
-  placeDbPop();
-}
-function dbPin(on) {
-  dbp.pinned = on;
-  $("dbPop").classList.toggle("pinned", on);
-  $("nDb").classList.toggle("open", on); $("nDb").setAttribute("aria-expanded", on);
-  if (on) showDbPop();
-  else { if ($("dbPop").contains(document.activeElement)) $("nDb").focus(); $("dbPop").hidden = true; dbp.moved = null; }
-}
-/* arrastrar la ventana fija desde su barra de título (mouse o dedo) */
-const dbHead = $("dbPop").querySelector(".dbp-h");
-dbHead.addEventListener("pointerdown", e => {
-  if (!dbp.pinned || e.button !== 0) return;
-  const r = $("dbPop").getBoundingClientRect();
-  dbp.drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };   // dónde se agarró, para que no "salte"
-  dbHead.setPointerCapture(e.pointerId);
-  $("dbPop").classList.add("dragging"); e.preventDefault();
-});
-dbHead.addEventListener("pointermove", e => {
-  if (!dbp.drag) return;
-  dbp.moved = { x: e.clientX - dbp.drag.dx, y: e.clientY - dbp.drag.dy };
-  placeDbPop();
-});
-const endDrag = () => { dbp.drag = null; $("dbPop").classList.remove("dragging"); };
-dbHead.addEventListener("pointerup", endDrag);
-dbHead.addEventListener("pointercancel", endDrag);
-/* redimensionar la ventana fija desde cualquier borde o esquina, como en Windows */
-// zona para agarrar: 10 px por fuera del borde (ver .dbp.pinned::before) + 6 px por dentro; las esquinas, más grandes
+/* ventana flotante: clic en su caja del diagrama = se abre hasta la X, Escape u otro clic en la caja; se mueve desde
+   la barra de título y se redimensiona desde bordes y esquinas. La usan la pizarra de PostgreSQL y el almacén de RabbitMQ */
 const EDGE = 6, CORNER = 24, MIN_W = 300, MIN_H = 220;
 const CURSORS = { n: "ns-resize", s: "ns-resize", e: "ew-resize", w: "ew-resize", ne: "nesw-resize", sw: "nesw-resize", nw: "nwse-resize", se: "nwse-resize" };
-function edgeAt(e) {
-  if (e.target.closest(".dbp-x")) return "";
-  const r = $("dbPop").getBoundingClientRect();
-  const t = e.clientY - r.top, b = r.bottom - e.clientY, l = e.clientX - r.left, rt = r.right - e.clientX;   // < 0 = por fuera
-  let v = t < EDGE ? "n" : b < EDGE ? "s" : "", h = l < EDGE ? "w" : rt < EDGE ? "e" : "";
-  if (v && !h) h = l < CORNER ? "w" : rt < CORNER ? "e" : "";   // cerca de una esquina: diagonal
-  if (h && !v) v = t < CORNER ? "n" : b < CORNER ? "s" : "";
-  return v + h;
+let popTop = 70;   // la última ventana tocada queda encima
+function makePop(pop, node, refresh) {
+  const st = { pinned: false }, head = pop.querySelector(".dbp-h");
+  /* ubica la ventana junto a la caja sin tapar los controles; si nada cabe limpio, elige donde tape menos */
+  function place() {
+    if (pop.hidden) return;
+    const M = 8, G = 14, w = pop.offsetWidth, h = pop.offsetHeight, vw = document.documentElement.clientWidth, vh = innerHeight;   // clientWidth: sin la barra de scroll, que taparía el borde derecho
+    const fit = (x, y) => ({ x: Math.max(M, Math.min(x, vw - w - M)), y: Math.max(M, Math.min(y, vh - h - M)) });
+    if (st.moved) {   // el usuario la arrastró: se queda donde la soltó (solo se mantiene dentro de la pantalla)
+      const p = fit(st.moved.x, st.moved.y); pop.style.left = p.x + "px"; pop.style.top = p.y + "px"; return;
+    }
+    // arriba a la derecha de la caja: crece hacia la derecha desde su borde izquierdo y termina por encima de la
+    // cinta curva (①), así no tapa el recorrido de los pedidos. Si no cabe arriba, fit la deja dentro de la pantalla
+    const b = node.getBoundingClientRect(), arc = belts["p-save"].getBoundingClientRect();
+    const p = fit(b.left, Math.min(b.top, arc.top) - h - G);
+    pop.style.left = p.x + "px"; pop.style.top = p.y + "px";
+  }
+  function pin(on) {
+    st.pinned = on;
+    pop.classList.toggle("pinned", on);
+    node.classList.toggle("open", on); node.setAttribute("aria-expanded", on);
+    if (on) { if (pop.hidden) { pop.hidden = false; pop.style.zIndex = ++popTop; refresh(); } place(); }   // al abrir no se anima lo que ya estaba
+    else { if (pop.contains(document.activeElement)) node.focus(); pop.hidden = true; st.moved = null; }
+  }
+  /* arrastrar la ventana fija desde su barra de título (mouse o dedo) */
+  head.addEventListener("pointerdown", e => {
+    if (!st.pinned || e.button !== 0) return;
+    const r = pop.getBoundingClientRect();
+    st.drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };   // dónde se agarró, para que no "salte"
+    head.setPointerCapture(e.pointerId);
+    pop.classList.add("dragging"); e.preventDefault();
+  });
+  head.addEventListener("pointermove", e => {
+    if (!st.drag) return;
+    st.moved = { x: e.clientX - st.drag.dx, y: e.clientY - st.drag.dy };
+    place();
+  });
+  const endDrag = () => { st.drag = null; pop.classList.remove("dragging"); };
+  head.addEventListener("pointerup", endDrag);
+  head.addEventListener("pointercancel", endDrag);
+  /* redimensionar desde cualquier borde o esquina, como en Windows */
+  // zona para agarrar: 10 px por fuera del borde (ver .dbp.pinned::before) + 6 px por dentro; las esquinas, más grandes
+  function edgeAt(e) {
+    if (e.target.closest(".dbp-x")) return "";
+    const r = pop.getBoundingClientRect();
+    const t = e.clientY - r.top, b = r.bottom - e.clientY, l = e.clientX - r.left, rt = r.right - e.clientX;   // < 0 = por fuera
+    let v = t < EDGE ? "n" : b < EDGE ? "s" : "", h = l < EDGE ? "w" : rt < EDGE ? "e" : "";
+    if (v && !h) h = l < CORNER ? "w" : rt < CORNER ? "e" : "";   // cerca de una esquina: diagonal
+    if (h && !v) v = t < CORNER ? "n" : b < CORNER ? "s" : "";
+    return v + h;
+  }
+  pop.addEventListener("pointermove", e => {
+    if (st.resize) {
+      const s = st.resize, dx = e.clientX - s.x0, dy = e.clientY - s.y0, M = 8;
+      let { left: x, top: y, width: w, height: h } = s.r;
+      if (s.dir.includes("e")) w = Math.min(w + dx, document.documentElement.clientWidth - M - x);
+      if (s.dir.includes("s")) h = Math.min(h + dy, innerHeight - M - y);
+      if (s.dir.includes("w")) { const nw = Math.max(MIN_W, Math.min(w - dx, x + w - M)); x += w - nw; w = nw; }
+      if (s.dir.includes("n")) { const nh = Math.max(MIN_H, Math.min(h - dy, y + h - M)); y += h - nh; h = nh; }
+      st.size = { w: Math.max(MIN_W, w), h: Math.max(MIN_H, h) };
+      pop.style.width = st.size.w + "px";
+      if (/[ns]/.test(s.dir)) pop.style.height = st.size.h + "px";   // si solo cambia el ancho, la altura sigue al contenido (al apilarse crece)
+      st.moved = { x, y }; place();
+    } else if (st.pinned && !st.drag) pop.style.cursor = CURSORS[edgeAt(e)] || "";
+  });
+  // en fase de captura: si se agarra un borde, gana el redimensionado (no el arrastre de la barra de título)
+  pop.addEventListener("pointerdown", e => {
+    pop.style.zIndex = ++popTop;
+    const dir = st.pinned && e.button === 0 && edgeAt(e);
+    if (!dir) return;
+    st.resize = { dir, x0: e.clientX, y0: e.clientY, r: pop.getBoundingClientRect() };
+    pop.setPointerCapture(e.pointerId); pop.classList.add("resizing");
+    e.preventDefault(); e.stopPropagation();
+  }, true);
+  const endResize = () => { if (!st.resize) return; st.resize = null; pop.classList.remove("resizing"); };
+  pop.addEventListener("pointerup", endResize);
+  pop.addEventListener("pointercancel", endResize);
+  pop.addEventListener("pointerleave", () => { if (!st.resize) pop.style.cursor = ""; });
+  node.addEventListener("click", () => pin(!st.pinned));
+  node.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pin(!st.pinned); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !pop.hidden) pin(false); });
+  addEventListener("scroll", place, { passive: true });
+  addEventListener("resize", place);
+  return { pin, place };
 }
-const dbPopEl = $("dbPop");
-dbPopEl.addEventListener("pointermove", e => {
-  if (dbp.resize) {
-    const s = dbp.resize, dx = e.clientX - s.x0, dy = e.clientY - s.y0, M = 8;
-    let { left: x, top: y, width: w, height: h } = s.r;
-    if (s.dir.includes("e")) w = Math.min(w + dx, innerWidth - M - x);
-    if (s.dir.includes("s")) h = Math.min(h + dy, innerHeight - M - y);
-    if (s.dir.includes("w")) { const nw = Math.max(MIN_W, Math.min(w - dx, x + w - M)); x += w - nw; w = nw; }
-    if (s.dir.includes("n")) { const nh = Math.max(MIN_H, Math.min(h - dy, y + h - M)); y += h - nh; h = nh; }
-    dbp.size = { w: Math.max(MIN_W, w), h: Math.max(MIN_H, h) };
-    dbPopEl.style.width = dbp.size.w + "px"; dbPopEl.style.height = dbp.size.h + "px";
-    dbp.moved = { x, y }; placeDbPop();
-  } else if (dbp.pinned && !dbp.drag) dbPopEl.style.cursor = CURSORS[edgeAt(e)] || "";
-});
-// en fase de captura: si se agarra un borde, gana el redimensionado (no el arrastre de la barra de título)
-dbPopEl.addEventListener("pointerdown", e => {
-  const dir = dbp.pinned && e.button === 0 && edgeAt(e);
-  if (!dir) return;
-  dbp.resize = { dir, x0: e.clientX, y0: e.clientY, r: dbPopEl.getBoundingClientRect() };
-  dbPopEl.setPointerCapture(e.pointerId); dbPopEl.classList.add("resizing");
-  e.preventDefault(); e.stopPropagation();
-}, true);
-const endResize = () => { if (!dbp.resize) return; dbp.resize = null; dbPopEl.classList.remove("resizing"); };
-dbPopEl.addEventListener("pointerup", endResize);
-dbPopEl.addEventListener("pointercancel", endResize);
-dbPopEl.addEventListener("pointerleave", () => { if (!dbp.resize) dbPopEl.style.cursor = ""; });
-$("nDb").addEventListener("mouseenter", () => { if (!dbp.pinned) showDbPop(); });
-$("nDb").addEventListener("mouseleave", () => { if (!dbp.pinned) $("dbPop").hidden = true; });
-$("nDb").addEventListener("click", () => dbPin(!dbp.pinned));
-$("nDb").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); dbPin(!dbp.pinned); } });
-document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("dbPop").hidden) dbPin(false); });
+const dbFloat = makePop($("dbPop"), $("nDb"), () => { if (state.m) updateDbPop(state.m, true); });
+const dbPin = dbFloat.pin, placeDbPop = dbFloat.place;
 /* al terminar, se quitan las clases de animación (si no, la entrada se repetiría después de un destello) */
 $("dbPop").addEventListener("animationend", e => {
   if (e.animationName === "dbflash") e.target.classList.remove("flash");
-  if (e.animationName === "dbin") e.target.parentElement?.classList.remove("enter");
+  if (e.animationName === "dbin") e.target.closest(".ch-pair")?.classList.remove("enter");
 });
-addEventListener("scroll", placeDbPop, { passive: true });
-addEventListener("resize", placeDbPop);
 
 /* ================= gráficos ================= */
 function niceMax(v) { if (v <= 5) return 5; const p = Math.pow(10, Math.floor(Math.log10(v))); for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p; return v; }
@@ -1100,17 +1374,122 @@ const flows = {
   work:  { path: $("p-work"),  color: "#12B76A" },
   db:    { path: $("p-db"),    color: "#12B76A" },
   save:  { path: $("p-save"),  color: "#FFC93C" },
-  pend:  { path: $("p-pend"),  color: "#F2B21B" },
   dlq:   { path: $("p-todlq"), color: "#E5484D" },
   fail:  { path: $("p-fail"),  color: "#FFC93C" },   // un worker falla → espera de reintento
   back:  { path: $("p-back"),  color: "#FFC93C" },   // vence la espera → vuelve a la cola
 };
 Object.values(flows).forEach(f => { f.len = f.path.getTotalLength(); f.acc = 0; });
-const parts = [], DUR = 1.0;
+/* DUR: segundos por tramo. Corto para que el panel vaya a la par del celular de quien compra (el pedido real se
+   confirma en ~1 s); la cámara lenta de «1 pedido» usa TRACER_DUR. POLL_MS: cada cuánto se consulta la API */
+const parts = [], DUR = 0.4, TRACER_DUR = 1.0, POLL_MS = 250, SPREAD = POLL_MS * 0.9;
+/* cintas: encima de cada riel se dibuja la cinta; sus listones avanzan más o menos al ritmo de las cajas
+   (con tope, para que en los tramos largos no parpadeen) */
+const belts = {};
+function buildBelts() {
+  document.querySelectorAll("#pipe .pipe").forEach(p => {
+    const g = document.createElementNS(NS, "g"), d = p.getAttribute("d");
+    g.setAttribute("class", p.getAttribute("class").replace("pipe", "belt"));
+    g.innerHTML = ["b-rim", "b-top", "b-slat"].map(c => `<path class="${c}" d="${d}"/>`).join("");
+    g.style.setProperty("--belt-t", (12 / Math.min(p.getTotalLength() / DUR, 90)).toFixed(3) + "s");
+    p.before(g); belts[p.id] = g;
+  });
+}
+buildBelts();
+/* las cajas pasan "por detrás" de los cuadros: una máscara las deja casi transparentes (pero visibles) donde
+   coinciden con un cuadro; la parte de la caja que aún está fuera se ve normal */
+const BEHIND = 0.22;   // cuánto se ve la caja detrás de un cuadro (0 = nada, 1 = igual que afuera)
+function maskBehindNodes() {
+  const m = document.createElementNS(NS, "mask"), vb = $("pipe").viewBox.baseVal;
+  m.id = "behindNodes"; m.setAttribute("maskUnits", "userSpaceOnUse");
+  ["x", "y", "width", "height"].forEach(k => m.setAttribute(k, vb[k]));
+  const area = (r, fill) => `<rect x="${r.getAttribute("x")}" y="${r.getAttribute("y")}" width="${r.getAttribute("width")}"`
+    + ` height="${r.getAttribute("height")}" rx="${r.getAttribute("rx") || 0}" fill="${fill}"/>`;
+  const gray = Math.round(255 * BEHIND), boxes = [...document.querySelectorAll("#pipe .node rect.box")];
+  m.innerHTML = `<rect x="${vb.x}" y="${vb.y}" width="${vb.width}" height="${vb.height}" fill="#fff"/>`
+    + boxes.map(r => area(r, `rgb(${gray},${gray},${gray})`)).join("");
+  $("pipe").querySelector("defs").appendChild(m);
+  $("particles").setAttribute("mask", "url(#behindNodes)");
+}
+maskBehindNodes();
+/* los rieles (invisibles) entran hasta el centro de los cuadros que unen: así la caja cruza por detrás de cada
+   cuadro, tenue por la máscara, en vez de desaparecer en un borde y reaparecer en el otro. Las cintas no cambian */
+const RAILS = {
+  "p-cust": ["nCust", "nApi"], "p-queue": ["nDb", "nQ"], "p-work": ["nQ", "nWork"], "p-db": ["nWork", "nDb"],
+  "p-save": ["nApi", "nDb"], "p-fail": ["nWork", "nRetry"], "p-back": ["nRetry", "nQ"], "p-todlq": ["nRetry", "nDlq"],
+};
+function extendRails() {
+  const center = id => { const b = $(id).querySelector("rect.box").getBBox(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; };
+  // prolonga el riel desde pt en la dirección (dx,dy) hasta quedar a la altura del centro c del cuadro
+  const reach = (pt, dx, dy, c) => {
+    const n = Math.hypot(dx, dy), ux = dx / n, uy = dy / n, t = Math.max(0, (c.x - pt.x) * ux + (c.y - pt.y) * uy);
+    return `${(pt.x + ux * t).toFixed(1)},${(pt.y + uy * t).toFixed(1)}`;
+  };
+  for (const [id, [from, to]] of Object.entries(RAILS)) {
+    const p = $(id), L = p.getTotalLength(), s0 = p.getPointAtLength(0), s1 = p.getPointAtLength(1),
+      e0 = p.getPointAtLength(L - 1), e1 = p.getPointAtLength(L);
+    const a = reach(s0, s0.x - s1.x, s0.y - s1.y, center(from)), b = reach(e1, e1.x - e0.x, e1.y - e0.y, center(to));
+    p.setAttribute("d", `M${a} L${p.getAttribute("d").replace(/^M\s*/, "")} L${b}`);
+  }
+  Object.values(flows).forEach(f => { f.len = f.path.getTotalLength(); });
+}
+extendRails();
+/* sabotajes: el cuadro caído queda "acordonado" con cinta de precaución amarilla y negra atravesada en cada cinta
+   transportadora que entra o sale de él; al recuperarse se quita */
+const TAPED = { ...RAILS, "p-dlq": ["nQ", "nDlq"] };
+function cautionTapes(nodeId, on) {
+  const layer = $("cautions"), mine = layer.querySelectorAll(`[data-node="${nodeId}"]`);
+  if (!on) { mine.forEach(t => t.remove()); return; }
+  if (mine.length) return;
+  for (const [id, [from, to]] of Object.entries(TAPED)) {
+    if (from !== nodeId && to !== nodeId) continue;
+    if (belts[id].classList.contains("retry")) continue;   // los ramales de reintento solo se ven mientras hay reintentos
+    const rim = belts[id].querySelector(".b-rim"), L = rim.getTotalLength(), atEnd = to === nodeId;
+    const pt = rim.getPointAtLength(atEnd ? L : 0), nb = rim.getPointAtLength(atEnd ? L - 1 : 1);
+    const n = Math.hypot(nb.x - pt.x, nb.y - pt.y), ux = (nb.x - pt.x) / n, uy = (nb.y - pt.y) / n;   // hacia afuera del cuadro
+    const half = belts[id].classList.contains("dash") ? 15 : 21, deg = Math.atan2(uy, ux) * 180 / Math.PI + 8;
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "caution"); g.dataset.node = nodeId;
+    g.setAttribute("transform", `translate(${(pt.x + ux * 11).toFixed(1)},${(pt.y + uy * 11).toFixed(1)}) rotate(${deg.toFixed(1)})`);
+    g.innerHTML = `<g class="ct-in"><rect x="-4.5" y="${-half}" width="9" height="${2 * half}" rx="1" fill="url(#caution)"/>`
+      + `<circle cx="0" cy="${-half - 2.5}" r="3"/><circle cx="0" cy="${half + 2.5}" r="3"/></g>`;
+    layer.appendChild(g);
+  }
+}
+/* la cinta que lleva a un servicio caído se detiene (y su borde se pone rojo) */
+function stopBelts(broker, work, db, relay) {
+  const down = s => s === "down";
+  belts["p-queue"].classList.toggle("stopped", down(broker) || down(relay) || down(db));   // el relay lee de la BD
+  belts["p-work"].classList.toggle("stopped", down(broker) || down(work));
+  belts["p-db"].classList.toggle("stopped", down(db));
+  belts["p-save"].classList.toggle("stopped", down(db));
+}
+/* caja de cartón vista desde arriba, centrada en (0,0): sombra, cuerpo, pliegue de las solapas, cinta adhesiva
+   (del color del tramo) y etiqueta de envío. k agranda la caja del pedido seguido en cámara lenta */
+function boxMarkup(k) {
+  const n = v => +(v * k).toFixed(2);
+  return `<rect class="pk-sh" x="${n(-7)}" y="${n(-5)}" width="${n(17)}" height="${n(14)}" rx="${n(2.5)}"/>`
+    + `<rect class="pk-body" x="${n(-8.5)}" y="${n(-7)}" width="${n(17)}" height="${n(14)}" rx="${n(2.5)}"/>`
+    + `<path class="pk-flap" d="M${n(-8.5)},${n(-7)} L${n(-4.5)},0 L${n(-8.5)},${n(7)} M${n(8.5)},${n(-7)} L${n(4.5)},0 L${n(8.5)},${n(7)}"/>`
+    + `<rect class="pk-tape" x="${n(-8.5)}" y="${n(-2.2)}" width="${n(17)}" height="${n(4.4)}"/>`
+    + `<rect class="pk-lbl" x="${n(1.5)}" y="${n(3.5)}" width="${n(5)}" height="${n(2.5)}" rx="${n(.5)}"/>`;
+}
+function makeBox(color, k = 1) {
+  const g = document.createElementNS(NS, "g");
+  g.setAttribute("class", k > 1 ? "pkg big" : "pkg"); g.setAttribute("transform", "translate(-50,-50)");
+  g.innerHTML = boxMarkup(k);
+  boxColor(g, color); $("particles").appendChild(g);
+  return g;
+}
+const boxColor = (g, color) => g.style.setProperty("--tape", color);
+/* ubica la caja en la fracción s del tramo y la gira con la cinta (se nota en las curvas y en los tramos verticales) */
+function placeBox(g, f, s) {
+  const l = s * f.len, a = f.path.getPointAtLength(Math.max(0, l - .5)), b = f.path.getPointAtLength(Math.min(f.len, l + .5));
+  const pt = f.path.getPointAtLength(l), deg = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+  g.setAttribute("transform", `translate(${pt.x.toFixed(1)},${pt.y.toFixed(1)}) rotate(${deg.toFixed(1)})`);
+}
 function spawn(key, color, die = 1, done) {
   if (parts.length > 110) { done?.(); return; }
-  const c = document.createElementNS(NS, "circle"); c.setAttribute("r", 5); c.setAttribute("fill", color || flows[key].color);
-  $("particles").appendChild(c); parts.push({ key, c, s: 0, die, done });
+  parts.push({ key, c: makeBox(color || flows[key].color), s: 0, die, done });
 }
 /* reintentos: las partículas siguen los cambios reales de cada cola de espera y de la DLQ */
 function burst(key, n) { for (let i = 0; i < Math.min(n, 8); i++) setTimeout(() => spawn(key), i * 140); }
@@ -1135,52 +1514,65 @@ function renderRetries(q) {
 const DOT_CAP = 12;   // máx. puntos por tramo en cada consulta; por encima, un punto representa varios pedidos
 function spawnOrders(m) {
   const o = m.orders, prev = state.prevOrd;
-  state.prevOrd = { total: o.total, proc: o.PROCESSED };
+  state.prevOrd = { total: o.total, proc: o.PROCESSED, pub: m.relay.published };
   const fresh = freshIds(m.recent || []);
   if (!prev) return;
   // el pedido de «1 pedido» tiene su propia bolita en cámara lenta (ver runTracer): aquí no se cuenta
-  const tR = fresh.created.filter(id => traced.has(id)), tP = fresh.processed.filter(id => traced.has(id));
-  fresh.created = fresh.created.filter(id => !traced.has(id)); fresh.processed = fresh.processed.filter(id => !traced.has(id));
+  const tR = fresh.created.filter(id => traced.has(id)), tB = fresh.published.filter(id => traced.has(id)), tP = fresh.processed.filter(id => traced.has(id));
+  fresh.created = fresh.created.filter(id => !traced.has(id)); fresh.published = fresh.published.filter(id => !traced.has(id)); fresh.processed = fresh.processed.filter(id => !traced.has(id));
   for (const tr of tracers) if (tP.includes(tr.id)) { tr.dbCounted = true; vis.db += 1; }   // el contador de la BD espera a su bolita
   const recv = Math.max(0, o.total - prev.total - tR.length), proc = Math.max(0, o.PROCESSED - prev.proc - tP.length);
-  const per = Math.max(1, Math.ceil(Math.max(recv, proc) / DOT_CAP));
-  $("dotScale").textContent = per === 1 ? "cada punto es un pedido real" : `cada punto ≈ ${per} pedidos reales`;
+  const pub = Math.max(0, m.relay.published - prev.pub - tB.length);   // lo que el relay publicó de verdad desde la consulta anterior
+  const per = Math.max(1, Math.ceil(Math.max(recv, proc, pub) / DOT_CAP));
+  $("dotScale").textContent = per === 1 ? "cada caja es un pedido real" : `cada caja ≈ ${per} pedidos reales`;
   // el resto del tráfico va siempre a velocidad normal
-  const nR = Math.ceil(recv / per), nP = Math.ceil(proc / per), hop = DUR * 1000, now = performance.now(), qAt = hop, dwell = 0;
-  const shareR = recv / (nR || 1), shareP = proc / (nP || 1);
+  const nR = Math.ceil(recv / per), nB = Math.ceil(pub / per), nP = Math.ceil(proc / per), hop = DUR * 1000, now = performance.now(), dwell = 0;
+  const shareB = pub / (nB || 1), shareP = proc / (nP || 1);
   // con poco tráfico cada bolita es un pedido concreto: lleva su id y abre cada estado en la tabla al llegar
-  const tieR = per === 1 && fresh.created.length === nR, tieP = per === 1 && fresh.processed.length === nP;
-  for (let i = 0; i < nR; i++) {
-    const off = i * 900 / nR, id = tieR ? fresh.created[i] : null;
-    if (id) gates.set(id, { saved: false, pub: !m.broker_up, proc: false, until: now + qAt + 2 * hop + 4000 });
+  const tieR = per === 1 && fresh.created.length === nR, tieB = per === 1 && fresh.published.length === nB, tieP = per === 1 && fresh.processed.length === nP;
+  for (let i = 0; i < nR; i++) {   // ① el pedido y su evento se guardan juntos en PostgreSQL
+    const off = i * SPREAD / nR, id = tieR ? fresh.created[i] : null;
+    if (id) gates.set(id, { saved: false, pub: false, proc: false, until: now + off + 3 * hop + 5000, atDb: now + off + 2 * hop });
     setTimeout(() => spawn("cust"), off);
-    setTimeout(() => spawn("save", null, 1, () => openGate(id, "saved")), hop + off);   // ① llega a PostgreSQL: fila PENDING
-    if (m.broker_up) {
-      const a = { t: now + qAt + off + hop, n: shareR, arrived: false, taken: false };
-      arrivals.push(a); vis.qIn += shareR;
-      setTimeout(() => spawn("queue", null, 1, () => {   // ② llega a RabbitMQ: PUBLISHED y outbox publicado
-        vis.qIn -= a.n; if (!a.taken) { a.arrived = true; vis.q += a.n; } openGate(id, "pub");
-      }), qAt + off);
-    } else { setTimeout(() => spawn("queue", "#E5484D", .55), qAt + off); setTimeout(() => spawn("pend"), qAt + off); }   // broker caído: rebota y queda en el outbox
+    setTimeout(() => spawn("save", null, 1, () => openGate(id, "saved")), hop + off);
+  }
+  const base = recv ? 2 * hop : 0;   // lo recién creado primero llega a la BD
+  if (nB) liftWorking(base + SPREAD + hop);
+  for (let i = 0; i < nB; i++) {   // ② el relay lo publica en RabbitMQ, que confirma
+    const id = tieB ? fresh.published[i] : null, g = gates.get(id);
+    // un pedido concreto sale hacia RabbitMQ recién cuando su caja llegó a PostgreSQL (pudo verse en una consulta anterior)
+    const off = g?.atDb ? Math.max(i * SPREAD / nB, g.atDb - now) : base + i * SPREAD / nB;
+    const a = { t: now + off + hop, n: shareB, arrived: false, taken: false };
+    arrivals.push(a); vis.qIn += shareB;
+    if (g) g.until = Math.max(g.until, a.t + 5000);
+    setTimeout(() => spawn("queue", null, 1, () => {   // PUBLISHED y outbox publicado
+      vis.qIn -= a.n; if (!a.taken) { a.arrived = true; vis.q += a.n; } openGate(id, "pub");
+    }), off);
   }
   while (arrivals.length && (arrivals[0].t < now - 5000 || arrivals.length > 200)) take(arrivals.shift());
   // el worker no toma un pedido antes de que su punto llegue a la cola
   vis.db += proc;
   for (let i = 0; i < nP; i++) {
-    const a = arrivals.shift(), t = Math.max(now + i * 900 / nP, a ? a.t + dwell : 0), id = tieP ? fresh.processed[i] : null;
+    const a = arrivals.shift(), t = Math.max(now + i * SPREAD / nP, a ? a.t + dwell : 0), id = tieP ? fresh.processed[i] : null;
     const g = gates.get(id); if (g) g.until = Math.max(g.until, t + 2 * hop + 4000);
-    setTimeout(() => { take(a); spawn("work", null, 1, () => spawn("db", null, 1, () => {   // ④ llega a PostgreSQL: PROCESSED
+    setTimeout(() => { take(a); spawn("work", null, 1, () => spawn("db", null, 1, () => {   // ④ llega a orders: PROCESSED
       vis.db -= shareP; openGate(id, "proc");
     })); }, t - now);
   }
+}
+/* el montacargas del relay trabaja mientras sus cajas van de camino */
+function liftWorking(ms) {
+  const l = document.querySelector("#nRelay .lift"); l.classList.add("working");
+  clearTimeout(state.liftT); state.liftT = setTimeout(() => l.classList.remove("working"), ms);
 }
 /* pedidos nuevos y recién procesados desde la consulta anterior, del más antiguo al más nuevo */
 function freshIds(recent) {
   const prev = state.lastSt; state.lastSt = new Map(recent.map(o => [o.id, o.status]));
   const t = performance.now(); for (const [id, g] of gates) if (t > g.until + 5000) gates.delete(id);
-  if (!prev) return { created: [], processed: [] };
+  if (!prev) return { created: [], published: [], processed: [] };
   const byAge = [...recent].sort((a, b) => a.created_at < b.created_at ? -1 : 1);
   return { created: byAge.filter(o => !prev.has(o.id)).map(o => o.id),
+           published: byAge.filter(o => o.status !== "PENDING" && (prev.get(o.id) === "PENDING" || !prev.has(o.id))).map(o => o.id),
            processed: byAge.filter(o => o.status === "PROCESSED" && prev.get(o.id) !== "PROCESSED").map(o => o.id) };
 }
 /* "compuertas" por pedido: la tabla de PostgreSQL no muestra un estado hasta que la bolita correspondiente llega.
@@ -1198,21 +1590,19 @@ function shownStatus(o) {
 }
 
 /* ================= «1 pedido»: un pedido seguido en cámara lenta ================= */
-/* su bolita recorre el diagrama a la velocidad elegida y se detiene donde el pedido real espera (outbox si RabbitMQ
-   está caído, cola si no hay worker, reintentos si es venenoso). La tabla de PostgreSQL muestra cada cambio de
+/* su bolita recorre el diagrama a la velocidad elegida y se detiene donde el pedido real espera (outbox si el relay o
+   RabbitMQ están caídos, cola si no hay worker, reintentos si es venenoso). La tabla de PostgreSQL muestra cada cambio de
    ese pedido recién cuando su bolita llega. El resto del tráfico y de la página va a velocidad real. */
 const tracers = new Set(), traced = new Set();
 function newTracer(id) {
-  const c = document.createElementNS(NS, "circle");
-  c.setAttribute("r", 6.5); c.setAttribute("stroke", "#fff"); c.setAttribute("stroke-width", 2); c.setAttribute("cx", -20);
-  $("particles").appendChild(c);
+  const c = makeBox(flows.cust.color, 1.45);
   const tr = { id, c, real: null, poison: false, anim: null, wait: null, dbCounted: false };
   tracers.add(tr);
   if (id) { traced.add(id); gates.set(id, { saved: false, pub: false, proc: false, fail: false, until: Infinity }); }
   return tr;
 }
 const move = (tr, key, o = {}) => new Promise(res => {
-  tr.c.setAttribute("fill", o.color || flows[key].color);
+  boxColor(tr.c, o.color || flows[key].color);
   tr.anim = { key, s: 0, rev: !!o.rev, die: o.die || 1, res };
 });
 const until = (tr, cond) => new Promise(res => { tr.wait = { cond, res }; });
@@ -1221,15 +1611,10 @@ const workerUp = () => state.m && svcState("worker", state.m) === "up";
 async function runTracer(tr) {
   await move(tr, "cust");
   if (!tr.id) { await move(tr, "save", { color: "#E5484D", die: .55 }); return endTracer(tr); }   // BD caída: el pedido se rechaza
-  await move(tr, "save"); openGate(tr.id, "saved");                  // ① guardado en PostgreSQL: PENDING
-  await until(tr, () => tr.real);
-  if (tr.real === "PENDING") {                                       // RabbitMQ caído: el evento espera en el outbox
-    await move(tr, "queue", { color: "#E5484D", die: .55 });
-    await move(tr, "pend");
-    await until(tr, () => tr.real !== "PENDING");                    // el relay lo publica cuando RabbitMQ vuelve
-    await move(tr, "pend", { rev: true });
-  }
-  await move(tr, "queue"); openGate(tr.id, "pub");                   // ② en la cola de RabbitMQ: PUBLISHED
+  await move(tr, "save"); openGate(tr.id, "saved");                  // ① guardado en PostgreSQL con su evento: PENDING
+  await until(tr, () => tr.real && tr.real !== "PENDING");           // espera en el outbox hasta que el relay lo publica (sabotajes incluidos)
+  liftWorking(1000 / animSpeed);
+  await move(tr, "queue"); openGate(tr.id, "pub");                   // ② RabbitMQ confirma: PUBLISHED
   await pause(tr, 600 / animSpeed);                                  // se ve un momento en la cola
   if (tr.poison || tr.real === "FAILED") {                           // venenoso: falla, espera 2 s, 5 s y 10 s; al 4.º fallo, DLQ
     for (const wait of [2000, 5000, 10000]) {
@@ -1256,9 +1641,8 @@ function stepTracers(dt) {
     if (tr.gone) { endTracer(tr); continue; }   // el pedido ya no existe (p. ej. se reinició la demo)
     const a = tr.anim;
     if (a) {
-      a.s = Math.min(a.die, a.s + dt * animSpeed / DUR);
-      const f = flows[a.key], pt = f.path.getPointAtLength((a.rev ? 1 - a.s : a.s) * f.len);
-      tr.c.setAttribute("cx", pt.x); tr.c.setAttribute("cy", pt.y);
+      a.s = Math.min(a.die, a.s + dt * animSpeed / TRACER_DUR);
+      placeBox(tr.c, flows[a.key], a.rev ? 1 - a.s : a.s);
       tr.c.setAttribute("opacity", a.die < 1 ? 1 - a.s / a.die * .6 : 1);
       if (a.s >= a.die) {
         tr.anim = null;
@@ -1297,10 +1681,12 @@ const arrivals = [];   // puntos en camino a la cola: cuándo llegan y si ya los
    q = ya llegaron y esperan al worker, db = procesados cuyo punto aún no llega a PostgreSQL */
 const vis = { qIn: 0, q: 0, db: 0 };
 function take(a) { if (!a || a.taken) return; a.taken = true; if (a.arrived) vis.q -= a.n; }
+const shownDepth = () => Math.max(0, Math.round(Math.max(vis.q, (state.depth || 0) - vis.qIn)));
 function syncVisNums() {
   if (!state.m) return;
   setNum("tDb", Math.max(0, Math.round(state.m.orders.PROCESSED - vis.db)), v => fmt(v) + " procesados");
-  setNum("tDepth", Math.max(0, Math.round(Math.max(vis.q, (state.depth || 0) - vis.qIn))));
+  setNum("tDepth", shownDepth());
+  if (!$("rkPop").hidden && performance.now() - rk.last > 100) { rk.last = performance.now(); rkSync(); }   // el almacén va al ritmo de las cajas
 }
 function stepParticles(dt) {
   if (!state.m) return;
@@ -1308,11 +1694,155 @@ function stepParticles(dt) {
     const p = parts[i], f = flows[p.key];
     p.s += dt / DUR;   // velocidad normal: la cámara lenta es solo para «1 pedido»
     if (p.s >= p.die) { p.c.remove(); parts.splice(i, 1); p.done?.(); continue; }
-    const pt = f.path.getPointAtLength(p.s * f.len);
-    p.c.setAttribute("cx", pt.x); p.c.setAttribute("cy", pt.y);
+    placeBox(p.c, f, p.s);
     p.c.setAttribute("opacity", p.die < 1 ? 1 - p.s / p.die * .6 : 1);
   }
 }
+
+/* ================= almacén de RabbitMQ: los dos extremos de la fila FIFO ================= */
+/* RabbitMQ no deja ver qué mensajes tiene sin sacarlos: los ids salen de PostgreSQL (pedidos publicados y sin terminar, en
+   orden de publicación) y la cantidad de RabbitMQ. A la derecha el inicio (próximos en salir), arriba el final (recién
+   llegados) y un conector con lo que queda entre ambos; si la fila cabe completa, se ve toda sin conector.
+   Cámara lenta: un worker rápido termina los pedidos antes de que se vean, así que los ya terminados se quedan un momento
+   al frente y salen de a uno (rk.ghosts). Los contadores siempre son reales y un aviso indica cuándo se está ralentizando */
+const RK_DOCK = 2, RK_ROW = 58, RK_MIN_COL = 60, RK_BOX = 62, RK_MOVE = 420, RK_HOLD = 1200, RK_PACE = 650, RK_ARRIVE = 3000, RK_MAX_GHOSTS = 12;
+const rk = { boxes: new Map(), dock: [], ghosts: [], enter: [], seen: new Set(), shown: new Set(), nums: new Map(), cols: 8, head: 4, tail: 16, last: 0, nextOut: 0 };
+function rkLayout() {
+  const rack = $("rkRack"), cols = Math.max(4, Math.floor(rack.clientWidth / RK_MIN_COL));
+  rk.cols = cols;
+  rk.head = cols >= 6 ? 4 : 2;                                                   // 4 del inicio; si no hay espacio, 2
+  rk.tail = cols >= 6 ? Math.min(16, Math.max(12, cols * 2)) : Math.min(8, cols * 2);   // siempre más que del inicio
+  rack.style.height = (1 + Math.ceil(rk.tail / cols)) * RK_ROW + "px";
+  rack.style.setProperty("--rk-bay", rack.clientWidth / cols * (cols % 3 ? 4 : 3) + "px");
+  const s = $("rkStage").getBoundingClientRect(), r = rack.getBoundingClientRect(), o = $("rkOut").getBoundingClientRect(), n = $("rkIn").getBoundingClientRect();
+  rk.cw = r.width / cols; rk.rx = r.left - s.left; rk.rb = r.bottom - s.top;
+  rk.inAt = { x: n.left - s.left + n.width / 2 - RK_BOX / 2, y: n.top - s.top + n.height - 54 };
+  rk.outX = o.left - s.left; rk.outY = o.top - s.top; rk.outW = o.width;
+  const g = $("rkGap"), gapW = (cols - rk.head) * rk.cw;
+  g.style.left = rk.rx + 6 + "px"; g.style.top = rk.rb - RK_ROW + 3 + "px"; g.style.width = gapW - 10 + "px";
+  rk.gapAt = { x: rk.rx + gapW / 2 - RK_BOX / 2, y: rk.rb - RK_ROW + 5 };
+}
+/* el lugar 0 (el primero en salir) va abajo a la derecha; la fila serpentea por los estantes hacia arriba */
+function rkSlot(i) {
+  const row = Math.floor(i / rk.cols), k = i % rk.cols, col = row % 2 ? k : rk.cols - 1 - k;
+  return { x: rk.rx + col * rk.cw + (rk.cw - RK_BOX) / 2, y: rk.rb - (row + 1) * RK_ROW + 5 };
+}
+const rkDockSlot = i => ({ x: rk.outX + (rk.outW - RK_BOX) / 2, y: rk.outY + 64 + i * 50 });
+const rkTag = id => rk.nums.has(id) ? "#" + rk.nums.get(id) : "…";   // el número llega con los datos del outbox
+const rkMove = (b, p) => { b.el.style.transform = `translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px)`; };
+function rkNew(id, at) {
+  const el = document.createElement("div"), b = { id, el };
+  el.className = "rk-box"; el.title = "Pedido " + id;
+  el.innerHTML = `<svg class="pkg" viewBox="-11 -9 22 18" aria-hidden="true">${boxMarkup(1)}</svg><span>${rkTag(id)}</span>`;
+  rkMove(b, at); $("rkStage").appendChild(el); rk.boxes.set(id, b);
+  return b;
+}
+/* sale del almacén: hacia el worker (se desliza a la derecha) o, si queda oculta, se apaga dentro del conector */
+function rkLeave(b, into) {
+  rk.boxes.delete(b.id);
+  if (into) rkMove(b, into); else b.el.style.transform += " translateX(46px)";
+  b.el.classList.add("out");
+  setTimeout(() => b.el.remove(), RK_MOVE);
+}
+function rkTakeToWorker(b) {
+  rk.boxes.delete(b.id);
+  b.el.classList.remove("front"); b.el.classList.add("busy"); rkMove(b, rkDockSlot(0));
+  setTimeout(() => { b.el.style.transform += " translateX(46px)"; b.el.classList.add("out"); setTimeout(() => b.el.remove(), RK_MOVE); }, RK_MOVE);
+}
+/* lista real conocida: ids de los dos extremos, sin los que RabbitMQ ya no tiene (mensajes perdidos o en espera de reintento) */
+function rkReal(w, depth) {
+  const drop = Math.max(0, w.count - depth), count = w.count - drop;
+  const head = w.head.slice(drop), tail = count < w.tail.length ? w.tail.slice(w.tail.length - count) : w.tail;
+  const ids = [...head]; for (const id of tail) if (!ids.includes(id)) ids.push(id);
+  return { count, ids };
+}
+function rkSync(quiet = false) {
+  const m = state.m; if (!m) return;
+  if ($("rkRack").clientWidth !== rk.w) {   // cambió el ancho: las mismas cajas se reacomodan, sin animarse
+    $("rkStage").classList.add("rk-still");
+    rkLayout(); rk.w = $("rkRack").clientWidth; rkPlace(rk.view || { dock: [], front: [], back: [], hidden: 0 });
+    void $("rkStage").offsetWidth; $("rkStage").classList.remove("rk-still");
+  }
+  const q = m.queue, w = m.queue_window;
+  $("rkDown").hidden = !!q;
+  $("rkPop").classList.toggle("stale", !q);
+  if (!q || !w) return;   // sin broker: se quedan a la vista los últimos valores conocidos
+  const now = performance.now(), real = rkReal(w, q.ready + q.unacked), realSet = new Set(real.ids);
+  for (const [id, n] of Object.entries(w.numbers)) rk.nums.set(id, n);
+  // number: posición del pedido en la fila, ya sin los eventos de correo intercalados en el outbox
+  for (const e of m.outbox_recent || []) rk.nums.set(e.aggregate_id, e.number ?? (e.id - w.first_event + 1));
+  if (rk.nums.size > 5000) rk.nums = new Map(Object.entries(w.numbers));
+  // llegadas: entran al almacén cuando su caja de la cinta llega a la cola. Incluye los que el worker ya terminó (m.recent)
+  const fresh = [...(m.recent || [])].reverse().filter(o => o.status !== "PENDING").map(o => o.id).concat(w.tail);
+  for (const id of fresh) {
+    if (rk.seen.has(id)) continue;
+    rk.seen.add(id);
+    if (quiet) continue;
+    rk.enter.push({ id, at: now + RK_ARRIVE });
+  }
+  if (rk.seen.size > 5000) rk.seen = new Set(fresh);
+  const waiting = new Set(rk.enter.filter(e => e.at > now).map(e => e.id));
+  for (const e of rk.enter) if (e.at <= now && !realSet.has(e.id) && !rk.boxes.has(e.id)) { rk.ghosts.push(e.id); rkNew(e.id, rk.inAt); }
+  rk.enter = rk.enter.filter(e => e.at > now);
+  // lo que estaba a la vista y ya no está en la fila real: si estaba en el andén, se confirmó; si no, espera su turno al frente
+  for (const b of rk.dock.splice(0)) if (realSet.has(b.id)) rk.dock.push(b); else rkLeave(b);
+  const before = rk.boxes;
+  for (const id of before.keys()) if (!realSet.has(id) && !rk.ghosts.includes(id)) rk.ghosts.push(id);
+  rk.ghosts = rk.ghosts.filter(id => before.has(id));
+  while (rk.ghosts.length > RK_MAX_GHOSTS) { const b = before.get(rk.ghosts.shift()); if (b) rkLeave(b); }   // vaciado masivo: no se queda atrás
+  // la caja resaltada se va al worker y la siguiente pasa al frente
+  if (!rk.ghosts.length) rk.nextOut = Math.max(rk.nextOut, 0);
+  if (rk.ghosts.length && now >= rk.nextOut) {
+    if (rk.nextOut < now - RK_HOLD) rk.nextOut = now + RK_HOLD;   // la primera de la tanda se deja ver antes de salir
+    else { rkTakeToWorker(before.get(rk.ghosts.shift())); rk.nextOut = now + RK_PACE; }
+  }
+  // lo que se muestra: fantasmas al frente + fila real sin los que aún vienen en la cinta
+  const realIds = real.ids.filter(id => !waiting.has(id)), realCount = Math.max(0, real.count - waiting.size);
+  const wantDock = rk.ghosts.length ? 0 : Math.min(q.unacked, RK_DOCK, realIds.length);
+  const dockIds = realIds.slice(0, wantDock), line = [...rk.ghosts, ...realIds.slice(wantDock)];
+  const n = rk.ghosts.length + realCount - wantDock;
+  const fits = n <= rk.head + rk.tail;
+  const view = fits ? { dock: dockIds, front: line, back: [], hidden: 0 }
+    : { dock: dockIds, front: line.slice(0, rk.head), back: line.slice(-rk.tail), hidden: n - rk.head - rk.tail,
+        from: line[rk.head], to: line[line.length - rk.tail - 1] };
+  rkPlace(view, quiet);
+  $("rkEmpty").hidden = n > 0 || wantDock > 0;
+  $("rkSlow").hidden = !rk.ghosts.length;
+  const up = svcState("worker", m) === "up";
+  $("rkOutSub").textContent = up ? `${fmt(q.unacked)} en proceso` : "caído: la fila espera";
+  $("rkOut").classList.toggle("off", !up);
+  $("rkReady").textContent = fmt(q.ready); $("rkUnack").textContent = fmt(q.unacked);
+  $("rkDisk").textContent = fmt(q.persistent); $("rkMem").textContent = fmt(q.volatile);
+}
+/* lleva cada caja a su lugar según su id: las nuevas entran por Llegada, o salen del conector si estaban ocultas */
+function rkPlace(view, quiet) {
+  rk.view = view;
+  const slots = new Map();
+  view.front.forEach((id, i) => slots.set(id, rkSlot(i)));
+  view.back.forEach((id, j) => slots.set(id, rkSlot(rk.cols + j)));   // desde el estante de arriba, a continuación del conector
+  view.dock.forEach((id, i) => slots.set(id, rkDockSlot(i)));
+  for (const [id, b] of [...rk.boxes]) if (!slots.has(id)) rkLeave(b, view.hidden ? rk.gapAt : null);
+  for (const [id, p] of slots) {
+    const b = rk.boxes.get(id) || rkNew(id, quiet ? p : view.hidden && view.front.includes(id) ? rk.gapAt : rk.inAt);
+    rkMove(b, p);
+  }
+  rk.dock = view.dock.map(id => rk.boxes.get(id));
+  rk.boxes.forEach((b, id) => { const tag = b.el.lastChild; if (tag.textContent !== rkTag(id)) tag.textContent = rkTag(id); const inDock = view.dock.includes(id); b.el.classList.toggle("busy", inDock); b.el.classList.toggle("front", id === view.front[0]); });
+  rk.shown = new Set(slots.keys());
+  const g = $("rkGap"); g.hidden = !view.hidden;
+  if (view.hidden) {
+    $("rkGapN").textContent = `${fmt(view.hidden)} ${view.hidden === 1 ? "pedido oculto" : "pedidos ocultos"}`;
+    $("rkGapR").textContent = `${rkTag(view.from)} … ${rkTag(view.to)}`;
+  }
+}
+function rkRebuild() {
+  rk.boxes.forEach(b => b.el.remove()); rk.boxes.clear();
+  rk.dock = []; rk.ghosts = []; rk.enter = []; rk.shown = new Set(); rk.seen = new Set(); rk.view = null; rk.nextOut = 0;
+  $("rkStage").classList.add("rk-still");
+  rkLayout(); rk.w = $("rkRack").clientWidth; rkSync(true);
+  void $("rkStage").offsetWidth; $("rkStage").classList.remove("rk-still");
+}
+const rkFloat = makePop($("rkPop"), $("nQ"), rkRebuild);
 
 /* ================= bucle ================= */
 let tPrev = performance.now();
@@ -1334,10 +1864,14 @@ async function poll() {
     render(await r.json());
   } catch {
     $("apiPill").className = "live off"; $("apiTx").textContent = "API sin respuesta";
-  } finally { polling = false; if (pollAgain) { pollAgain = false; poll(); } }
+  } finally {
+    polling = false;
+    if (pollAgain) { pollAgain = false; poll(); }
+    else if (Object.keys(reviving).some(isReviving)) setTimeout(poll, 300);   // levantando un servicio: se nota al instante
+  }
 }
 updateRateLabel();
-poll(); setInterval(poll, 1000);
+poll(); setInterval(poll, POLL_MS);
 loadDlq(); setInterval(loadDlq, 3000);
 fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(u => u && ($("whoName").textContent = u.email)).catch(() => {});
 async function logout() { await fetch("/api/auth/logout", { method: "POST" }).catch(() => {}); location.href = "/login?next=/panel&admin=1"; }

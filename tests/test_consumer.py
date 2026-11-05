@@ -83,6 +83,7 @@ def test_exhausted_retries_marks_failed_and_dead_letters():
 def test_db_down_while_marking_failed_requeues_instead_of_crashing():
     svc, _ = make()
     order = svc.create_order("a@b.com", POISON)
+    svc.relay_outbox()
     def db_down(_):
         raise psycopg.OperationalError("PostgreSQL caído")
     svc.mark_failed = db_down

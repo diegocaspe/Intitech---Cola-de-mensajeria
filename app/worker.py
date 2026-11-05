@@ -7,7 +7,7 @@ from app.services.order_service import OrderService
 from app.utils.control import ControlStore
 from app.messaging.rabbitmq import OrderConsumer, RabbitOrderPublisher
 from app.database.connection import create_pool, init_schema
-from app.repositories.postgres_repository import PostgresOrderRepository, PostgresOutbox
+from app.repositories.postgres_repository import PostgresOrderRepository, PostgresOutbox, PostgresUserRepository
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(threadName)s] %(message)s")
 logging.getLogger("psycopg.pool").setLevel(logging.ERROR)
@@ -15,10 +15,13 @@ log = logging.getLogger("worker")
 
 
 def main() -> None:
+    config.require_env("worker")
     pool = create_pool(config.DATABASE_URL, max_size=config.MAX_WORKERS + 2)
     init_schema(pool)
     control = ControlStore()
-    service = OrderService(PostgresOrderRepository(pool), RabbitOrderPublisher(), PostgresOutbox(pool))
+    # con el repositorio de usuarios, al confirmar el pedido de un cliente real se pide su comprobante por correo
+    service = OrderService(PostgresOrderRepository(pool), RabbitOrderPublisher(), PostgresOutbox(pool),
+                           PostgresUserRepository(pool))
     consumer = OrderConsumer(service, control)
     running: list[tuple[threading.Thread, threading.Event]] = []
 

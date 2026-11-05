@@ -1,11 +1,26 @@
+# Secretos: el .env real nunca se sube; la plantilla .env.example sí
+.env
+.env.*
+!.env.example
+
 # Python
 __pycache__/
 *.pyc
+venv/
 .venv/
 .pytest_cache/
 
-# Datos locales generados al ejecutar (la base de datos real vive en el contenedor de PostgreSQL)
+# Logs
+*.log
+
+# Bases de datos locales y datos generados al ejecutar (la base de datos real vive en el contenedor de PostgreSQL)
 data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Imágenes subidas por usuarios (si algún día se agregan)
+uploads/
 
 # Herramientas del editor / asistente
 .impeccable/

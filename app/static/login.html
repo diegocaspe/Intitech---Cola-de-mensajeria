@@ -85,6 +85,10 @@ form{display:flex;flex-direction:column;gap:16px}
 .ok .tick{width:72px;height:72px;border-radius:50%;background:var(--green-50);color:var(--inti-green);display:flex;align-items:center;justify-content:center;animation:inti-pop var(--dur-slow) var(--ease-bounce)}
 .ok .tick .i{width:36px;height:36px}
 .legal{font-size:12px;color:var(--fg-3);text-align:center}
+.tabs[hidden],form[hidden]{display:none}
+.forgot{align-self:flex-end;margin-top:-6px;border:0;background:none;padding:0;font:inherit;font-size:14px;font-weight:700;color:var(--fg-link);cursor:pointer}
+.forgot:hover{text-decoration:underline;color:var(--fg-link-hover)}.forgot[hidden]{display:none}
+.note.good{background:var(--success-bg);color:var(--green-700)}
 @media (max-width:960px){
 .page{grid-template-columns:1fr}
 .brand{padding:20px 20px 24px;gap:16px}
@@ -127,18 +131,20 @@ form{display:flex;flex-direction:column;gap:16px}
       <div class="tabs" role="tablist" data-tab="login"><span class="pill"></span>
         <button type="button" role="tab" id="tLogin" aria-selected="true" onclick="mode('login')">Iniciar sesión</button>
         <button type="button" role="tab" id="tReg" aria-selected="false" onclick="mode('register')">Crear cuenta</button></div>
+      <div class="note good" id="doneNote" hidden><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-circle-check"/></svg><span id="doneTx"></span></div>
       <div class="alert" id="err" role="alert"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-circle-alert"/></svg><span id="errTx"></span></div>
       <form id="form" onsubmit="return submitForm(event)" novalidate>
         <div class="field" id="fName" data-f="name" hidden><label for="name">Nombre</label>
           <div class="ctl"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-user"/></svg><input id="name" autocomplete="given-name" maxlength="60" placeholder="Ej. Lucía"></div>
           <span class="msg"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-circle-alert"/></svg><span></span></span></div>
-        <div class="field" data-f="email"><label for="email">Correo electrónico</label>
+        <div class="field" id="fEmail" data-f="email"><label for="email">Correo electrónico</label>
           <div class="ctl"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-mail"/></svg><input id="email" type="email" autocomplete="email" inputmode="email" maxlength="120" placeholder="tucorreo@gmail.com" required></div>
           <span class="msg"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-circle-alert"/></svg><span></span></span></div>
-        <div class="field" data-f="password"><label for="password">Contraseña</label>
+        <div class="field" id="fPw" data-f="password"><label for="password" id="pwLbl">Contraseña</label>
           <div class="ctl"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-lock"/></svg><input id="password" class="pw" type="password" autocomplete="current-password" maxlength="128" placeholder="Tu contraseña" required>
             <button type="button" class="eye" id="pwBtn" onclick="togglePw()" aria-label="Mostrar contraseña" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-eye"/></svg></button></div>
           <span class="msg"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-circle-alert"/></svg><span></span></span><span class="hint" id="pwHint" hidden>Usa al menos 8 caracteres.</span></div>
+        <button type="button" class="forgot" id="forgotBtn" onclick="mode('forgot')">¿Olvidaste tu contraseña?</button>
         <button class="btn" id="btn" type="submit"><span class="spin"></span><span id="btnTx">Ingresar</span></button>
       </form>
       <div class="ok" id="ok"><span class="tick"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-check"/></svg></span><h2 style="font-size:26px">¡Listo!</h2><p class="sub">Te estamos llevando…</p></div>
@@ -158,24 +164,58 @@ const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const next = (params.get("next") || "/").startsWith("/") ? (params.get("next") || "/") : "/";
 let current = "login";
+// enlace del correo de recuperación: /login?reset=<token>. Se quita de la barra de direcciones al leerlo
+const resetToken = params.get("reset");
+if (resetToken) { params.delete("reset"); history.replaceState(null, "", "/login" + (params.toString() ? "?" + params : "")); }
+const TEXTS = {
+  login: ["¡Hola de nuevo!", "Ingresa para comprar y ver tus pedidos.", "Ingresar"],
+  register: ["Crea tu cuenta", "Solo toma unos segundos. Mínimo 8 caracteres de contraseña.", "Crear cuenta"],
+  forgot: ["Recupera tu contraseña", "Escribe el correo de tu cuenta y te enviaremos un enlace para crear una nueva.", "Enviarme el enlace"],
+  reset: ["Crea una contraseña nueva", "Elige una contraseña de al menos 8 caracteres.", "Guardar contraseña"],
+};
 if (params.get("admin")) $("adminNote").hidden = false;
-if (params.get("modo") === "registro") mode("register"); else mode("login");
+if (resetToken) mode("reset"); else if (params.get("modo") === "registro") mode("register"); else mode("login");
 
 function mode(m) {
   current = m;
-  const reg = m === "register";
-  document.querySelector(".tabs").dataset.tab = m;
+  const reg = m === "register", tabbed = m === "login" || m === "register", newPw = reg || m === "reset";
+  document.querySelector(".tabs").hidden = !tabbed; $("form").hidden = false; $("doneNote").hidden = true;
+  if (tabbed) document.querySelector(".tabs").dataset.tab = m;
   $("tLogin").setAttribute("aria-selected", !reg); $("tReg").setAttribute("aria-selected", reg);
-  $("fName").hidden = !reg; $("pwHint").hidden = !reg;
-  $("title").textContent = reg ? "Crea tu cuenta" : "¡Hola de nuevo!";
-  $("subtitle").textContent = reg ? "Solo toma unos segundos. Mínimo 8 caracteres de contraseña." : "Ingresa para comprar y ver tus pedidos.";
-  $("btnTx").textContent = reg ? "Crear cuenta" : "Ingresar";
-  $("password").autocomplete = reg ? "new-password" : "current-password";
-  $("password").placeholder = reg ? "Mínimo 8 caracteres" : "Tu contraseña";
+  $("fName").hidden = !reg; $("pwHint").hidden = !newPw;
+  $("fEmail").hidden = m === "reset"; $("fPw").hidden = m === "forgot"; $("forgotBtn").hidden = m !== "login";
+  $("pwLbl").textContent = m === "reset" ? "Contraseña nueva" : "Contraseña";
+  [$("title").textContent, $("subtitle").textContent, $("btnTx").textContent] = TEXTS[m];
+  $("password").autocomplete = newPw ? "new-password" : "current-password";
+  $("password").placeholder = newPw ? "Mínimo 8 caracteres" : "Tu contraseña";
   $("switch").innerHTML = reg ? '¿Ya tienes cuenta? <button type="button" onclick="mode(\'login\')">Inicia sesión</button>'
-    : '¿No tienes cuenta? <button type="button" onclick="mode(\'register\')">Créala en 1 minuto</button>';
+    : m === "login" ? '¿No tienes cuenta? <button type="button" onclick="mode(\'register\')">Créala en 1 minuto</button>'
+    : '<button type="button" onclick="mode(\'login\')">Volver a iniciar sesión</button>';
   setErr("");
   document.querySelectorAll(".field").forEach(f => f.classList.remove("err"));
+}
+function done(msg) {   // muestra el resultado en lugar del formulario
+  $("form").hidden = true; $("doneTx").textContent = msg; $("doneNote").hidden = false;
+}
+async function submitRecovery() {
+  const reset = current === "reset";
+  const body = reset ? { token: resetToken || "", password: $("password").value } : { email: $("email").value.trim() };
+  if (reset && body.password.length < 8) { fieldErr("password", "Usa al menos 8 caracteres"); setErr("Revisa la contraseña"); return; }
+  if (!reset && !body.email) { fieldErr("email", "Escribe tu correo"); setErr("Completa todos los campos"); return; }
+  busy(true); setErr("");
+  try {
+    const r = await fetch(reset ? "/api/auth/reset" : "/api/auth/forgot",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(typeof d.detail === "string" ? d.detail : "Revisa los datos ingresados");
+    if (reset) { mode("login"); done("¡Contraseña actualizada! Ya puedes ingresar con tu contraseña nueva."); $("form").hidden = false; }
+    else done(d.message + " Revisa también la carpeta de spam. El enlace vence en 60 minutos.");
+  } catch (err) {
+    setErr(err.message === "Failed to fetch" ? "Sin conexión con la tienda" : err.message);
+    if (reset && /venci|usó|válido/.test(err.message))
+      $("switch").innerHTML = '<button type="button" onclick="mode(\'forgot\')">Pedir un enlace nuevo</button>';
+  }
+  busy(false);
 }
 function togglePw() {
   const p = $("password"), show = p.type === "password";
@@ -195,6 +235,7 @@ function busy(on) { $("btn").disabled = on; $("btn").classList.toggle("loading",
 async function submitForm(e) {
   e.preventDefault();
   document.querySelectorAll(".field").forEach(f => f.classList.remove("err"));
+  if (current === "forgot" || current === "reset") { submitRecovery(); return false; }
   const body = { email: $("email").value.trim(), password: $("password").value };
   if (current === "register") body.name = $("name").value.trim();
   if (current === "register" && !body.name) fieldErr("name", "Escribe tu nombre");
@@ -219,7 +260,7 @@ async function submitForm(e) {
   }
   return false;
 }
-fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(u => {
+if (!resetToken) fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(u => {
   if (u && !(next.startsWith("/panel") && u.role !== "admin")) location.href = next;   // ya tiene sesión
 });
 </script>

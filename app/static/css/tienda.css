@@ -553,3 +553,16 @@ a.cat-tile{text-decoration:none}
 .modal.open{transform:none}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+
+/* ---------- aviso flotante y verificación de correo ---------- */
+.notice{position:fixed;left:50%;top:20px;transform:translateX(-50%);z-index:300;display:flex;align-items:flex-start;gap:10px;max-width:min(92vw,520px);padding:14px 18px;border-radius:16px;background:#fff;border:1.5px solid var(--border-1);box-shadow:var(--shadow-l);font-size:15px;line-height:1.4;color:var(--fg-1);animation:notice-in var(--dur-slow) var(--ease-out)}
+.notice .i{flex:none;margin-top:1px}
+.notice.ok{border-color:var(--green-500)} .notice.ok .i{color:var(--green-600)}
+.notice.warn{border-color:var(--yellow-500)} .notice.warn .i{color:var(--yellow-700)}
+.notice.out{opacity:0;transform:translate(-50%,-8px);transition:opacity var(--dur-slow) var(--ease-out),transform var(--dur-slow) var(--ease-out)}
+@keyframes notice-in{from{opacity:0;transform:translate(-50%,-8px)}}
+@media (prefers-reduced-motion:reduce){.notice{animation:none}.notice.out{transition:none}}
+.verify-alert{margin:4px 0 16px;background:var(--info-bg);color:var(--fg-1);font-weight:600}
+.verify-alert .i{flex:none;color:var(--inti-blue);margin-top:2px}
+.verify-alert .linkbtn{display:inline;padding:0;border:0;background:none;font:inherit;font-weight:800;color:var(--fg-link);text-decoration:underline;cursor:pointer}
+.verify-alert .linkbtn:disabled{color:var(--fg-2);text-decoration:none;cursor:default}
