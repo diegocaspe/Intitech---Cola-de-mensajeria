@@ -1,3 +1,6 @@
+import hmac
+import json
+import random
 import threading
 import time
 from contextlib import asynccontextmanager
@@ -8,6 +11,7 @@ from typing import Literal
 
 import psycopg
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from psycopg_pool import PoolTimeout
@@ -17,7 +21,8 @@ from app import config
 from app.services.auth_service import AuthError, AuthService
 from app.services.checkout_service import CheckoutError, CheckoutService
 from app.services.events import EventLog
-from app.services.order_service import OrderService
+from app.services.order_service import POISON_SKU, OrderService
+from app.services.scenarios import SCENARIOS, TEST_DOMAIN, DbUnavailable, ScenarioError, ScenarioRunner
 from app.services.simulator import TrafficSimulator
 from app.models.order import OrderStatus
 from app.utils.control import ControlStore
@@ -25,12 +30,15 @@ from app.utils.docker_control import DockerControl
 from app.messaging.management import QueueMonitor
 from app.messaging.lab import PersistenceLab
 from app.messaging.rabbitmq import DeadLetterInspector, RabbitOrderPublisher, purge_queues
-from app.repositories.catalog_repository import InMemoryProductRepository
 from app.database.connection import create_pool, init_schema
-from app.repositories.postgres_repository import (PostgresOrderRepository, PostgresOutbox, PostgresSentEmails,
-                                                  PostgresUserRepository)
+from app.repositories.postgres_repository import (PostgresOrderRepository, PostgresOutbox, PostgresProductRepository,
+                                                  PostgresSentEmails, PostgresUserRepository)
 from app.models.email import TokenResult
+from app.utils.rate_limit import LoginRateLimiter
 from app.utils.security import PasswordHasher, TokenSigner
+from app.models.yape import SinMontosYape, SinStockYape, YapeError
+from app.repositories.yape_postgres import PostgresYapeRepository
+from app.services.yape_service import YapeService
 
 # --- composición de dependencias -------------------------------------------
 config.require_env("api")   # antes de abrir conexiones: si falta un secreto, error claro en vez de un fallo raro
@@ -46,6 +54,7 @@ auth = AuthService(PostgresUserRepository(pool), PasswordHasher(), PostgresOutbo
                    reset_throttle_s=config.RESET_THROTTLE_S)
 sent_emails = PostgresSentEmails(pool)
 tokens = TokenSigner(config.SECRET_KEY)
+login_limiter = LoginRateLimiter(config.LOGIN_MAX_FAILS, config.LOGIN_WINDOW_S)
 
 
 class DbWatcher:
@@ -139,28 +148,39 @@ class DbWatcher:
 
 
 db_watch = DbWatcher()
-products = InMemoryProductRepository()
+# Catálogo y stock desde la tabla products (catalogo.json solo es la semilla). Zona Yape real: con la zona desactivada
+# (secreto ausente o corto) sus productos ni se muestran
+products = PostgresProductRepository(pool, precio_yape=config.YAPE["precio_base"], incluir_yape=config.YAPE["enabled"])
 checkout_service = CheckoutService(products, service)
+yape = YapeService(PostgresYapeRepository(pool), service.repo, products, config.YAPE)
+# el webhook cuenta TODAS sus peticiones (válidas o no): como mucho YAPE_WEBHOOK_PER_MIN por minuto
+webhook_limiter = LoginRateLimiter(config.YAPE_WEBHOOK_PER_MIN, 60)
 simulator = TrafficSimulator(service, events, products)
 docker = DockerControl()
 monitor = QueueMonitor()
 dlq = DeadLetterInspector()
 dlq_emails = DeadLetterInspector(email=True)
+dlq_pagos = DeadLetterInspector(pagos=True)
 lab = PersistenceLab(docker, events)
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_schema(pool)
+    simulator.set_poison(bool(control.get()["poison"]))   # tras reiniciar la API, el simulador sigue al interruptor
     auth.ensure_admin(config.ADMIN_EMAIL, config.ADMIN_PASSWORD)
     db_watch.start()
     events.add("info", "Sistema listo. Todo lo que ves está respaldado por RabbitMQ + PostgreSQL.")
+    if not yape.enabled:   # solo el motivo (nombra la variable, nunca su valor)
+        events.add("warn", f"Zona Yape real desactivada: {config.YAPE['problem']}", "wallet")
     yield
 
 
 TAGS = [
     {"name": "Usuarios", "description": "Registro, inicio y cierre de sesión, verificación del correo y recuperación de contraseña."},
     {"name": "Tienda", "description": "Lo que usa la tienda del cliente: catálogo, compra y seguimiento del pedido."},
+    {"name": "Zona Yape real", "description": "Productos que se pagan con Yape de verdad: checkout con monto único, pantalla de pago en vivo y el webhook que recibe las notificaciones de Yape desde MacroDroid."},
+    {"name": "Yape (admin)", "description": "Pagos Yape en vivo: pedidos esperando pago, notificaciones, asignación manual y simulación."},
     {"name": "Pedidos (admin)", "description": "Consulta y gestión directa de pedidos."},
     {"name": "Panel (admin)", "description": "Métricas, pedidos fallidos (DLQ), reconciliación y reinicio de la demo."},
     {"name": "Simulador (admin)", "description": "Genera tráfico de prueba: goteo, ráfagas o un Black Friday completo."},
@@ -173,10 +193,15 @@ STATIC = Path(__file__).parent.parent / "static"   # app/static
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 
+DB_DOWN_DETAIL = "Servicio no disponible, intenta en unos segundos."
+
+
 @app.exception_handler(psycopg.OperationalError)
 @app.exception_handler(PoolTimeout)
 def db_unavailable(_: Request, __: Exception):
-    return JSONResponse({"detail": "Estamos con alta demanda. Intenta de nuevo en unos segundos."}, status_code=503)
+    # PostgreSQL caído: el pedido NO se acepta (no hay dónde guardarlo con su evento). Mejor un 503 claro que
+    # aceptar algo que se podría perder
+    return JSONResponse({"detail": DB_DOWN_DETAIL}, status_code=503)
 
 
 # --- sesión -----------------------------------------------------------------
@@ -251,7 +276,7 @@ def _start_session(user) -> JSONResponse:
     info = {"id": user.id, "name": user.name, "email": user.email, "role": user.role.value}
     resp = JSONResponse(info)
     resp.set_cookie(SESSION_COOKIE, tokens.sign(info, config.SESSION_DAYS * 86400),
-                    max_age=config.SESSION_DAYS * 86400, httponly=True, samesite="lax")
+                    max_age=config.SESSION_DAYS * 86400, httponly=True, samesite="lax", secure=config.COOKIE_SECURE)
     return resp
 
 
@@ -267,11 +292,21 @@ def register(body: RegisterIn):
     return resp
 
 
-@app.post("/api/auth/login", tags=["Usuarios"], summary="Iniciar sesión", description="Valida correo y contraseña y entrega la cookie de sesión.")
-def login(body: LoginIn):
+@app.post("/api/auth/login", tags=["Usuarios"], summary="Iniciar sesión",
+          description="Valida correo y contraseña y entrega la cookie de sesión. Contra la fuerza bruta: tras "
+                      f"{config.LOGIN_MAX_FAILS} intentos fallidos en {config.LOGIN_WINDOW_S} s desde una misma IP "
+                      "responde 429 (con la cabecera Retry-After) hasta que pase la ventana.",
+          responses={429: {"description": "Demasiados intentos fallidos desde esta IP"}})
+def login(body: LoginIn, request: Request):
+    ip = request.client.host if request.client else "?"   # IP real: la API se publica sin proxy delante
+    wait = login_limiter.retry_after(ip)
+    if wait:
+        raise HTTPException(429, f"Demasiados intentos fallidos. Espera {wait} s e inténtalo de nuevo.",
+                            headers={"Retry-After": str(wait)})
     try:
         user = auth.authenticate(body.email, body.password)
     except AuthError as exc:
+        login_limiter.fail(ip)
         raise HTTPException(401, str(exc))
     return _start_session(user)
 
@@ -279,7 +314,7 @@ def login(body: LoginIn):
 @app.post("/api/auth/logout", tags=["Usuarios"], summary="Cerrar sesión")
 def logout():
     resp = JSONResponse({"ok": True})
-    resp.delete_cookie(SESSION_COOKIE)
+    resp.delete_cookie(SESSION_COOKIE, httponly=True, samesite="lax", secure=config.COOKIE_SECURE)
     return resp
 
 
@@ -330,10 +365,16 @@ def reset_password(body: ResetIn):
 
 
 # --- API de la tienda -------------------------------------------------------
-@app.get("/api/products", tags=["Tienda"], summary="Catálogo de productos", description="Los 100 productos con precio, descuento, stock e imagen.")
+@app.get("/api/products", tags=["Tienda"], summary="Catálogo de productos", description="Los productos con precio, descuento, stock e imagen. El stock sale de la tabla products (el worker lo descuenta al confirmar cada pedido). Los de la Zona Yape real llevan pago_yape_real=true y su stock descuenta además los pedidos pendientes de pago (solo si la zona está activa).")
 def list_products():
-    return [{**asdict(p), "discount_pct": p.discount_pct, "image": f"/static/img/{p.image}"}
-            for p in products.all()]
+    stock = {}
+    if yape.enabled:
+        try:   # el catálogo se sirve aunque la BD esté caída: entonces muestra el último stock conocido
+            stock = yape.stock_disponible()
+        except (psycopg.Error, PoolTimeout):
+            pass
+    return [{**asdict(p), "discount_pct": p.discount_pct, "image": f"/static/img/{p.image}",
+             "stock": stock.get(p.sku, p.stock)} for p in products.all()]
 
 
 class CartLine(BaseModel):
@@ -393,6 +434,179 @@ def store_qr(request: Request):
     return Response(img.to_string(), media_type="image/svg+xml")
 
 
+# --- Zona Yape real ---------------------------------------------------------
+YAPE_QR = STATIC / "img" / "yape_qr.png"   # el QR de Yape del dueño (si no existe, la pantalla muestra un recuadro)
+_queue_cache = {"t": 0.0, "stats": None}
+_queue_lock = threading.Lock()
+
+
+def _queue_stats() -> dict | None:
+    """Estadísticas de RabbitMQ con caché de 1 s: cada celular consulta su pantalla de pago cada segundo."""
+    with _queue_lock:
+        if time.monotonic() - _queue_cache["t"] > 1.0:
+            _queue_cache["stats"], _queue_cache["t"] = monitor.stats(), time.monotonic()
+        return _queue_cache["stats"]
+
+
+def _need_yape():
+    if not yape.enabled:
+        raise HTTPException(503, "La Zona Yape real no está disponible en este momento")
+
+
+class YapeCheckoutIn(BaseModel):
+    sku: str = Field(max_length=60)
+
+
+@app.get("/api/yape/config", tags=["Zona Yape real"], summary="Configuración pública de la Zona Yape",
+         description="Si la zona está activa, el titular de la cuenta Yape, el rango de montos, los minutos para pagar y si el QR está configurado (static/img/yape_qr.png). Nunca incluye el secreto.")
+def yape_config():
+    s = config.YAPE
+    return {"enabled": yape.enabled, "titular": s["titular"] if yape.enabled else None, "minutos": s["minutos"],
+            "monto_min": s["monto_min"], "monto_max": s["monto_max"], "qr": YAPE_QR.exists()}
+
+
+@app.post("/api/yape/checkout", status_code=201, tags=["Zona Yape real"], summary="Iniciar un pago con Yape real",
+          description="Crea un pedido pendiente_pago_yape de 1 unidad del producto con un MONTO ÚNICO entre YAPE_MONTO_MIN y "
+                      "YAPE_MONTO_MAX que ningún otro pedido vigente usa, y reserva el stock por YAPE_MINUTOS_EXPIRA minutos. "
+                      "Requiere sesión. Si la base de datos no responde o no quedan montos libres responde 503 (alta demanda) "
+                      "y no crea nada.",
+          responses={409: {"description": "Sin stock"}, 503: {"description": "Alta demanda: reintenta en unos segundos"}})
+def yape_checkout(body: YapeCheckoutIn, user: dict = Depends(require_user)):
+    _need_yape()
+    try:
+        pedido = yape.checkout(user["email"], user["name"], body.sku)
+    except SinMontosYape:
+        raise HTTPException(503, "Estamos con alta demanda. Intenta de nuevo en unos segundos.")
+    except SinStockYape as exc:
+        raise HTTPException(409, str(exc))
+    except YapeError as exc:
+        raise HTTPException(400, str(exc))
+    events.add("info", f"Zona Yape: {user['name']} va a yapear S/ {pedido.monto} ({pedido.producto})", "wallet")
+    return yape.estado_cliente(pedido.id, user["email"], _queue_stats() is not None)
+
+
+@app.get("/api/yape/pedidos/{pedido_id}", tags=["Zona Yape real"], summary="Pantalla de pago en vivo",
+         description="Estado del pago para el cliente; la tienda lo consulta cada segundo. fase: esperando_yapeo, en_cola "
+                     "(con posicion), procesando, pago_registrado (RabbitMQ caído tras recibir el pago), confirmado, expirado o "
+                     "sin_stock (el pago llegó tarde y otro cliente se llevó la última unidad: se devuelve).")
+def yape_estado(pedido_id: str, user: dict = Depends(require_user)):
+    st = yape.estado_cliente(pedido_id[:60], None if user["role"] == "admin" else user["email"],
+                             _queue_stats() is not None)
+    if not st:
+        raise HTTPException(404, "Pedido no encontrado")
+    return st
+
+
+def _leer_cuerpo(raw: bytes) -> tuple[str, str]:
+    """JSON {titulo, texto} (los campos extra se ignoran). Si el JSON llega roto (p. ej. comillas sin escapar dentro
+    del texto de la notificación), se guarda el cuerpo entero como texto: así la notificación nunca se pierde."""
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:   # algunos clientes mandan Latin-1/cp1252: "envió" no debe llegar como "envi�"
+        text = raw.decode("cp1252", "replace")
+    try:
+        data = json.loads(text)
+    except ValueError:
+        return "", text
+    if not isinstance(data, dict):
+        return "", text
+    pick = lambda *keys: next((str(data[k]) for k in keys if data.get(k) not in (None, "")), "")
+    return pick("titulo", "title"), pick("texto", "text", "mensaje")
+
+
+@app.post("/api/pagos/yape/notificacion", tags=["Zona Yape real"], summary="Webhook de MacroDroid (notificación de Yape)",
+          description="Recibe cada notificación de Yape que reenvía MacroDroid. Exige la cabecera X-Yape-Secret igual a "
+                      "YAPE_WEBHOOK_SECRET (401 si no coincide) y como mucho 60 peticiones por minuto (429). Guarda SIEMPRE "
+                      "el texto crudo y, en la misma transacción, el evento pago.yape_recibido en el outbox; responde 200 solo "
+                      "si se guardó y 503 si la base de datos no responde (MacroDroid debe reintentar). La misma notificación "
+                      "(título + texto) en el mismo minuto se guarda una sola vez (200 con duplicada=true). No procesa el pago: "
+                      "lo hace el worker desde la cola pagos.",
+          responses={401: {"description": "Falta X-Yape-Secret o no coincide"}, 429: {"description": "Más de 60 por minuto"},
+                     503: {"description": "Base de datos no disponible o zona desactivada: reintentar"}},
+          # el cuerpo se lee a mano (para no perder notificaciones con JSON roto): aquí solo se documenta
+          openapi_extra={
+              "parameters": [{"name": "X-Yape-Secret", "in": "header", "required": True, "schema": {"type": "string"},
+                              "description": "Igual a YAPE_WEBHOOK_SECRET"}],
+              "requestBody": {"required": True, "content": {"application/json": {"schema": {
+                  "type": "object", "additionalProperties": True, "required": ["texto"],
+                  "properties": {"titulo": {"type": "string", "maxLength": 500, "example": "Confirmación de Pago"},
+                                 "texto": {"type": "string", "maxLength": 4000,
+                                           "example": "Yape! JUAN PEREZ te envió un pago por S/ 1.37"}}}}}}})
+async def yape_webhook(request: Request):
+    _need_yape()
+    wait = webhook_limiter.retry_after("webhook")
+    if wait:
+        raise HTTPException(429, f"Demasiadas notificaciones. Espera {wait} s.", headers={"Retry-After": str(wait)})
+    webhook_limiter.fail("webhook")
+    given = request.headers.get("x-yape-secret", "")
+    if not hmac.compare_digest(given.encode(), config.YAPE["secret"].encode()):   # tiempo constante; nunca se registra
+        raise HTTPException(401, "Secreto inválido")
+    titulo, texto = _leer_cuerpo((await request.body())[:20000])
+    if not (titulo + texto).strip():
+        raise HTTPException(400, "Falta el texto de la notificación")
+    try:
+        notif_id, nueva = await run_in_threadpool(yape.recibir, titulo, texto)
+    except (psycopg.Error, PoolTimeout):
+        raise HTTPException(503, "Base de datos no disponible: reintenta en unos segundos")
+    if nueva:   # sin el texto: el contenido de la notificación solo lo ve el administrador en su sección del panel
+        events.add("info", f"Llegó una notificación de Yape (#{notif_id}): guardada y en camino a la cola de pagos", "wallet")
+    return {"ok": True, "id": notif_id, "duplicada": not nueva}
+
+
+@app.get("/api/yape/admin/panel", tags=["Yape (admin)"], summary="Pagos Yape en vivo",
+         description="Pedidos esperando pago (monto y tiempo restante), notificaciones con su texto crudo, estado y etapa "
+                     "(notificacion → outbox → cola_pagos → worker → confirmado) y los contadores de las colas pagos y pagos.dlq.")
+def yape_panel(_: dict = Depends(require_admin)):
+    q = _queue_stats()
+    return {"enabled": yape.enabled, "problem": config.YAPE["problem"], "titular": config.YAPE["titular"],
+            "qr": YAPE_QR.exists(), "queue": q["pagos"] if q else None, **yape.panel()}
+
+
+class AsignarIn(BaseModel):
+    pedido_id: str = Field(max_length=60)
+
+
+@app.post("/api/yape/admin/notificaciones/{notificacion_id}/asignar", tags=["Yape (admin)"], summary="Asignar a un pedido",
+          description="Asocia a mano una notificación sin_coincidencia (o ignorada) a un pedido Yape pendiente o expirado. "
+                      "El pedido queda pagado y sigue el flujo normal.")
+def yape_asignar(notificacion_id: int, body: AsignarIn, _: dict = Depends(require_admin)):
+    try:
+        yape.asignar(notificacion_id, body.pedido_id)
+    except YapeError as exc:
+        raise HTTPException(409, str(exc))
+    events.add("ok", f"Pago Yape #{notificacion_id} asignado a mano al pedido {body.pedido_id[:8]}", "wallet")
+    return {"ok": True}
+
+
+@app.post("/api/yape/admin/notificaciones/{notificacion_id}/rechazar", tags=["Yape (admin)"], summary="Rechazar una notificación",
+          description="Marca como rechazada una notificación sin_coincidencia o ignorada (queda guardada, con su texto).")
+def yape_rechazar(notificacion_id: int, _: dict = Depends(require_admin)):
+    try:
+        yape.rechazar(notificacion_id)
+    except YapeError as exc:
+        raise HTTPException(409, str(exc))
+    events.add("warn", f"Notificación Yape #{notificacion_id} rechazada por el administrador", "wallet")
+    return {"ok": True}
+
+
+class SimularIn(BaseModel):
+    pedido_id: str | None = Field(None, max_length=60)
+    monto: Decimal | None = Field(None, gt=0, max_digits=8, decimal_places=2)
+
+
+@app.post("/api/yape/admin/simular", tags=["Yape (admin)"], summary="Simular una notificación de Yape",
+          description="Para probar sin dinero real: crea una notificación marcada como simulada con el monto del pedido "
+                      "indicado (o el monto dado) y la manda por el mismo camino que una real (outbox → cola pagos → worker).")
+def yape_simular(body: SimularIn, _: dict = Depends(require_admin)):
+    _need_yape()
+    try:
+        notif_id, monto = yape.simular(body.pedido_id, body.monto)
+    except YapeError as exc:
+        raise HTTPException(400, str(exc))
+    events.add("info", f"Notificación Yape SIMULADA #{notif_id} por S/ {monto}", "wallet")
+    return {"ok": True, "id": notif_id, "monto": monto}
+
+
 # --- API de pedidos ---------------------------------------------------------
 class ItemIn(BaseModel):
     sku: str
@@ -410,7 +624,7 @@ def create_order(body: OrderIn, _: dict = Depends(require_admin)):
     return _out(service.create_order(body.customer_email, [i.model_dump() for i in body.items]))
 
 
-@app.get("/orders", tags=["Pedidos (admin)"], summary="Listar pedidos", description="Filtra opcionalmente por estado: PENDING, PUBLISHED, PROCESSED o FAILED.")
+@app.get("/orders", tags=["Pedidos (admin)"], summary="Listar pedidos", description="Filtra opcionalmente por estado: PENDING, PUBLISHED, PROCESSED, FAILED o REJECTED (rechazado por negocio: sin stock o pago rechazado).")
 def list_orders(status: OrderStatus | None = None, limit: int = 100, _: dict = Depends(require_admin)):
     return [_out(o) for o in service.repo.list(status, limit)]
 
@@ -453,8 +667,9 @@ def metrics(_: dict = Depends(require_admin)):
         "services": _services(q),
         "sim": simulator.snapshot(),
         "control": {"workers": ctl["workers"], "slow": ctl["worker_delay"] >= config.SLOW_DELAY,
-                    "persistent": ctl["persistent"]},
+                    "persistent": ctl["persistent"], "poison": bool(ctl["poison"])},
         "lab": lab.state,
+        "scenarios": scenarios.state,   # escenario automático en curso y el último resultado de cada uno
         "events": events.latest()[:25],
     }
 
@@ -463,18 +678,19 @@ def metrics(_: dict = Depends(require_admin)):
 class DlqAction(BaseModel):
     order_ids: list[str] | None = None   # None = todos
     email_ids: list[str] | None = None   # con queue=correos
+    notificacion_ids: list[int] | None = None   # con queue=pagos
 
 
-DlqQueue = Literal["pedidos", "correos"]
+DlqQueue = Literal["pedidos", "correos", "pagos"]
 
 
-@app.get("/api/dlq", tags=["Panel (admin)"], summary="Ver una DLQ", description="Mensajes que agotaron sus 3 reintentos, con el error y la hora. queue=pedidos (por defecto) o queue=correos (correos que no se pudieron enviar: tipo y destinatario, sin el contenido).")
+@app.get("/api/dlq", tags=["Panel (admin)"], summary="Ver una DLQ", description="Mensajes que agotaron sus 3 reintentos, con el error y la hora. queue=pedidos (por defecto), queue=correos (correos que no se pudieron enviar: tipo y destinatario, sin el contenido) o queue=pagos (notificaciones de Yape, por notificacion_id).")
 def dlq_list(queue: DlqQueue = "pedidos", _: dict = Depends(require_admin)):
     try:
-        items = (dlq_emails if queue == "correos" else dlq).peek(50)
+        items = {"correos": dlq_emails, "pagos": dlq_pagos}.get(queue, dlq).peek(50)
     except ConnectionError:
         raise HTTPException(503, "RabbitMQ no disponible")
-    if queue == "correos":
+    if queue in ("correos", "pagos"):
         return items
     for it in items:                              # se enriquece con los datos del pedido
         try:
@@ -487,19 +703,29 @@ def dlq_list(queue: DlqQueue = "pedidos", _: dict = Depends(require_admin)):
 
 @app.post("/api/dlq/reprocess", tags=["Panel (admin)"], summary="Reprocesar desde la DLQ", description="Devuelve a la cola principal los mensajes elegidos (o todos). queue=correos reenvía correos a la cola del mailer: los que ya salieron no se repiten (idempotencia por email_id).")
 def dlq_reprocess(body: DlqAction, queue: DlqQueue = "pedidos", _: dict = Depends(require_admin)):
+    if queue == "pagos":   # el worker los procesa de nuevo; uno ya procesado no se repite (idempotencia)
+        done = dlq_pagos.reprocess(set(body.notificacion_ids) if body.notificacion_ids else None)
+        events.add("info", f"DLQ de pagos: {len(done)} notificación(es) devueltas a la cola «pagos»", "inbox")
+        return {"reprocessed": len(done)}
     if queue == "correos":
         done = dlq_emails.reprocess(set(body.email_ids) if body.email_ids else None)
         events.add("info", f"DLQ de correos: {len(done)} correo(s) devueltos a la cola del mailer", "inbox")
         return {"reprocessed": len(done)}
+    # cada mensaje vuelve a la cola principal con retries=0 y sin los x-death anteriores (ver DeadLetterInspector)
     done = dlq.reprocess(set(body.order_ids) if body.order_ids else None)
     for order_id in done:
-        service.mark_retrying(order_id)
-    events.add("info", f"DLQ: {len(done)} mensaje(s) devueltos a la cola para reprocesar", "inbox")
+        service.mark_retrying(order_id)   # FAILED → en cola; uno ya confirmado o rechazado no se toca
+    still = " Ojo: «Pedidos venenosos» sigue activo, los de prueba volverán a fallar." if control.get()["poison"] else ""
+    events.add("info", f"DLQ: {len(done)} mensaje(s) devueltos a la cola para reprocesar.{still}", "inbox")
     return {"reprocessed": len(done)}
 
 
 @app.post("/api/dlq/discard", tags=["Panel (admin)"], summary="Descartar de la DLQ", description="Elimina de la DLQ los mensajes elegidos (o todos). queue=pedidos (por defecto) o queue=correos.")
 def dlq_discard(body: DlqAction, queue: DlqQueue = "pedidos", _: dict = Depends(require_admin)):
+    if queue == "pagos":   # el texto crudo sigue en yape_notificaciones: solo sale de la cola
+        done = dlq_pagos.discard(set(body.notificacion_ids) if body.notificacion_ids else None)
+        events.add("warn", f"DLQ de pagos: {len(done)} mensaje(s) descartados (la notificación sigue guardada)", "inbox")
+        return {"discarded": len(done)}
     if queue == "correos":
         done = dlq_emails.discard(set(body.email_ids) if body.email_ids else None)
         events.add("warn", f"DLQ de correos: {len(done)} correo(s) descartados (no se enviarán)", "inbox")
@@ -568,8 +794,30 @@ def sim_burst(body: BurstIn, _: dict = Depends(require_admin)):
     return {"ok": True}
 
 
-@app.post("/api/reset", tags=["Panel (admin)"], summary="Reiniciar la demo", description="Vacía la base de datos y las colas, y restablece la configuración.")
+@app.get("/api/stock", tags=["Panel (admin)"], summary="Stock por producto", description="Stock actual de cada producto (tabla products) junto al stock inicial de catalogo.json y, en la Zona Yape, las unidades reservadas por pedidos pendientes de pago.")
+def stock_list(_: dict = Depends(require_admin)):
+    initial = products.initial_stock()
+    reserved = {}
+    if yape.enabled:
+        try:
+            reserved = yape.repo.reservados(yape.clock())
+        except (psycopg.Error, PoolTimeout):
+            pass
+    return [{"sku": p.sku, "name": p.name, "category": p.category, "stock": p.stock, "initial": initial.get(p.sku),
+             "reserved": reserved.get(p.sku, 0)} for p in products.all()]
+
+
+@app.post("/api/stock/reset", tags=["Panel (admin)"], summary="Restablecer stock", description="Vuelve a poner el stock de todos los productos según catalogo.json (para reiniciar la demo antes de la exposición). No toca pedidos ni colas.")
+def stock_reset(_: dict = Depends(require_admin)):
+    n = products.restore_stock()
+    events.add("ok", f"Stock restablecido según catalogo.json ({n} productos)", "package")
+    return {"restored": n}
+
+
+@app.post("/api/reset", tags=["Panel (admin)"], summary="Reiniciar la demo", description="Vacía la base de datos (incluidos los pedidos Yape y sus notificaciones) y todas las colas (pedidos, correos y pagos), restablece el stock según catalogo.json y la configuración.")
 def reset(_: dict = Depends(require_admin)):
+    if scenarios.running:
+        raise HTTPException(409, "Hay un escenario automático en curso: detenlo antes de reiniciar la demo")
     simulator.stop()
     time.sleep(1.5)                  # deja terminar lo que estaba en vuelo (simulador y workers)
     try:
@@ -577,6 +825,8 @@ def reset(_: dict = Depends(require_admin)):
     except Exception:
         pass
     service.repo.clear()
+    yape.repo.clear()                # pedidos Yape y notificaciones
+    products.restore_stock()         # sin pedidos, el stock vuelve al de catalogo.json
     time.sleep(0.5)
     try:
         purge_queues()               # por si algún mensaje en vuelo fue devuelto a la cola
@@ -584,7 +834,7 @@ def reset(_: dict = Depends(require_admin)):
         pass
     simulator.reset_counters()
     control.reset()
-    events.add("info", "Demo reiniciada: base de datos y colas vacías")
+    events.add("info", "Demo reiniciada: base de datos y colas vacías, stock restablecido")
     return {"ok": True}
 
 
@@ -598,11 +848,17 @@ def _need_docker():
         raise HTTPException(503, "Docker no está disponible desde la API (falta montar el socket)")
 
 
-@app.post("/api/chaos/{action}", tags=["Sabotajes (admin)"], summary="Sabotear o recuperar", description="Valores de action. Caídas: kill-worker, kill-relay, kill-mailer, crash-broker, crash-db. Recuperar: revive-worker, revive-relay, revive-mailer, revive-broker, revive-db, recover (todo). Worker lento: slow-on / slow-off. Pedidos con error: poison (uno), poison-on / poison-off. Persistencia: persist-on / persist-off. Escalar: workers-up / workers-down.")
+@app.post("/api/chaos/{action}", tags=["Sabotajes (admin)"], summary="Sabotear o recuperar", description="Valores de action. Caídas: kill-worker, kill-relay, kill-mailer, crash-broker, crash-db. Recuperar: revive-worker, revive-relay, revive-mailer, revive-broker, revive-db, recover (todo). Worker lento: slow-on / slow-off. Pedidos venenosos: poison-on / poison-off. Persistencia: persist-on / persist-off. Escalar: workers-up / workers-down.")
 def chaos(action: str, _: dict = Depends(require_admin)):
     if action in ("kill-worker", "kill-relay", "kill-mailer", "crash-broker", "crash-db", "recover", "revive-worker",
                   "revive-relay", "revive-mailer", "revive-broker", "revive-db"):
         _need_docker()
+    run_chaos(action)
+    return {"ok": True}
+
+
+def run_chaos(action: str) -> None:
+    """Un sabotaje o su recuperación. Lo usan los botones del panel y los escenarios automáticos (el mismo código)."""
     if action == "kill-mailer":
         docker.kill("mailer")
         events.add("bad", "SABOTAJE: el mailer cayó. Los correos esperan en la cola (en disco) y saldrán al recuperarlo", "skull")
@@ -629,7 +885,7 @@ def chaos(action: str, _: dict = Depends(require_admin)):
     elif action == "recover":
         started = [s for s in ("postgres", "rabbitmq", "relay", "worker", "mailer")
                    if docker.start(s) or (s == "rabbitmq" and _revive_broker_app())]
-        control.set(worker_delay=config.WORKER_DELAY)
+        control.set(worker_delay=config.WORKER_DELAY, poison=False)
         simulator.set_poison(False)
         events.add("ok", "Recuperación: " + (", ".join(started) + " reiniciado(s)" if started else "todo estaba en pie"), "wrench")
     elif action == "slow-on":
@@ -639,15 +895,14 @@ def chaos(action: str, _: dict = Depends(require_admin)):
         control.set(worker_delay=config.WORKER_DELAY)
         events.add("ok", "Workers de nuevo a velocidad normal")
     elif action == "poison-on":
+        # el simulador marca 1 de cada 5 pedidos de prueba; el worker los hace fallar SOLO mientras el modo siga activo
+        control.set(poison=True)
         simulator.set_poison(True)
-        events.add("warn", "SABOTAJE: 1 de cada 5 pedidos simulados será venenoso (falla siempre → reintentos → DLQ)", "flask")
+        events.add("warn", "SABOTAJE: 1 de cada 5 pedidos de prueba fallará (reintentos 2 s → 5 s → 10 s → DLQ)", "flask")
     elif action == "poison-off":
+        control.set(poison=False)
         simulator.set_poison(False)
-        events.add("ok", "Pedidos venenosos desactivados")
-    elif action == "poison":
-        for _ in range(5):
-            service.create_order("saboteador@mail.com", [{"sku": "FAIL", "quantity": 1, "unit_price": 9.9}])
-        events.add("warn", "SABOTAJE: 5 pedidos venenosos enviados (siempre fallan)", "flask")
+        events.add("ok", "Pedidos venenosos desactivados: al reprocesar la DLQ, esos pedidos se completan")
     elif action == "persist-off":
         control.set(persistent=False)
         events.add("bad", "SABOTAJE: persistencia APAGADA. Los pedidos nuevos viajan en una cola solo en memoria", "disk")
@@ -661,4 +916,122 @@ def chaos(action: str, _: dict = Depends(require_admin)):
         events.add("info", f"Escalado: {n} worker(s) deseados")
     else:
         raise HTTPException(404, "Acción desconocida")
-    return {"ok": True}
+
+
+# --- escenarios automáticos -------------------------------------------------
+class LiveScenarioOps:
+    """Lo que el orquestador de escenarios puede hacer, con los MISMOS sabotajes de los botones (run_chaos), y lo que
+    puede leer (colas, contenedores, BD). Solo crea y sigue pedidos de prueba: nunca toca pedidos de clientes ni de Yape."""
+    KILL = {"worker": "kill-worker", "rabbitmq": "crash-broker", "postgres": "crash-db"}
+    REVIVE = {"worker": "revive-worker", "rabbitmq": "revive-broker", "postgres": "revive-db"}
+
+    def __init__(self):
+        # stock que queda para los pedidos de prueba de este escenario: se lee al primer pedido y se descuenta lo enviado,
+        # así el escenario nunca pide más de lo que hay (el cuadre espera que todos se procesen)
+        self._stock: dict[str, int] | None = None
+
+    def recover(self) -> None:
+        simulator.stop()                  # sin tráfico simulado: el cuadre solo cuenta los pedidos del escenario
+        run_chaos("recover")              # levanta lo caído, velocidad normal, venenosos apagado
+        control.set(persistent=True)
+        self._stock = None                # el próximo escenario vuelve a leer el stock
+
+    def kill(self, service_name: str) -> None:
+        run_chaos(self.KILL[service_name])
+
+    def revive(self, service_name: str) -> None:
+        run_chaos(self.REVIVE[service_name])
+
+    def set_persistent(self, on: bool) -> None:
+        run_chaos("persist-on" if on else "persist-off")
+
+    def set_poison(self, on: bool) -> None:
+        run_chaos("poison-on" if on else "poison-off")
+
+    def set_worker_delay(self, seconds: float) -> None:
+        control.set(worker_delay=seconds)
+
+    def create_test_order(self, email: str, poison: bool = False) -> str:
+        """Mismo camino que un pedido de la API (pedido + evento en una transacción). Productos normales del catálogo
+        que aún tienen stock, nunca de la Zona Yape; el venenoso usa el SKU de prueba que falla solo con el modo activo."""
+        if poison:
+            items = [{"sku": POISON_SKU, "quantity": 1, "unit_price": Decimal("9.90")}]
+        else:
+            catalog = [p for p in products.all() if not p.pago_yape_real]
+            if self._stock is None:
+                self._stock = {p.sku: p.stock for p in catalog}
+            with_stock = [p for p in catalog if self._stock.get(p.sku, 0) > 0]
+            if not with_stock:
+                raise ScenarioError("No queda stock para los pedidos de prueba: pulsa «Restablecer stock» en el panel")
+            p = random.choice(with_stock)
+            self._stock[p.sku] -= 1
+            items = [{"sku": p.sku, "quantity": 1, "unit_price": p.price}]
+        try:
+            return service.create_order(email, items).id
+        except (psycopg.OperationalError, PoolTimeout):   # la API respondería 503 «Servicio no disponible»
+            raise DbUnavailable()
+
+    def snapshot(self) -> dict:
+        q, snap, st = monitor.stats(), db_watch.snapshot, docker.status() or {}
+        return {"broker_up": q is not None, "db_up": snap["db_up"], "worker_up": st.get("worker") == "running",
+                "consumers": q["consumers"] if q else 0, "depth": q["ready"] + q["unacked"] if q else None,
+                "retrying": q["retrying"] if q else None, "retry_stages": q["retry_stages"] if q else None,
+                "dlq": q["dlq"] if q else None, "in_disk": q["persistent"] if q else None,
+                "in_memory": q["volatile"] if q else None, "outbox": snap["outbox_pending"]}
+
+    def statuses(self, ids: list[str]) -> dict[str, str]:
+        try:
+            return service.repo.statuses(ids)
+        except (psycopg.Error, PoolTimeout):
+            raise DbUnavailable()
+
+    def reconcile(self, ids: list[str]) -> int:
+        """Como «Reconciliar desde la BD», pero solo con los pedidos del escenario."""
+        sent = 0
+        for order_id, status in self.statuses(ids).items():
+            if status == OrderStatus.PUBLISHED.value:
+                publisher.publish_order_created(order_id)
+                sent += 1
+        events.add("ok", f"Reconciliación: {sent} pedido(s) recuperados desde PostgreSQL y reenviados", "database")
+        return sent
+
+    def reprocess_dlq(self, ids: list[str]) -> int:
+        done = dlq.reprocess(set(ids))
+        for order_id in done:
+            service.mark_retrying(order_id)
+        events.add("info", f"DLQ: {len(done)} mensaje(s) devueltos a la cola para reprocesar", "inbox")
+        return len(done)
+
+    def clean_test_dlq(self) -> int:
+        """Descarta de la DLQ solo los mensajes de pedidos de prueba de escenarios anteriores."""
+        ids = [it["order_id"] for it in dlq.peek(1000) if it.get("order_id")]
+        test = {i for i in ids if (o := service.get_order(i)) and o.customer_email.endswith("@" + TEST_DOMAIN)}
+        return len(dlq.discard(test)) if test else 0
+
+
+scenarios = ScenarioRunner(LiveScenarioOps(), events)
+
+
+class ScenarioIn(BaseModel):
+    speed: Literal["expo", "rapido"] = "expo"   # expo: cada estado se mantiene 6 s; rapido: 2 s
+    count: Literal[300, 500] = 300              # solo Black Friday
+
+
+@app.post("/api/scenarios/{n}/run", tags=["Sabotajes (admin)"], summary="Ejecutar un escenario automático",
+          description="Corre solo toda la secuencia del escenario n (1 Black Friday, 2 Matar al worker, 3 Tirar RabbitMQ, "
+                      "4 Prueba de persistencia, 5 Pedidos venenosos, 6 Tirar PostgreSQL) con pedidos de prueba. "
+                      "Su avance (pasos, narración, resumen) aparece en /api/metrics → scenarios. 409 si ya corre otro.",
+          responses={409: {"description": "Ya hay un escenario en curso"}})
+def scenario_run(n: int, body: ScenarioIn, _: dict = Depends(require_admin)):
+    _need_docker()
+    if n not in SCENARIOS:
+        raise HTTPException(404, "Escenario desconocido")
+    if not scenarios.start(n, body.speed, body.count):
+        raise HTTPException(409, "Ya hay un escenario en curso: espera a que termine o pulsa Detener")
+    return scenarios.state
+
+
+@app.post("/api/scenarios/stop", tags=["Sabotajes (admin)"], summary="Detener el escenario en curso",
+          description="Corta el escenario y ejecuta «Recuperar todo».")
+def scenario_stop(_: dict = Depends(require_admin)):
+    return {"stopped": scenarios.stop()}

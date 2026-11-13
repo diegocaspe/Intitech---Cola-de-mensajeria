@@ -7,3 +7,7 @@ venv
 # los secretos llegan como variables de entorno, nunca dentro de la imagen
 .env
 .env.*
+
+# scripts de despliegue y temporales de subida: no van dentro de la imagen
+deploy
+*.tar.gz

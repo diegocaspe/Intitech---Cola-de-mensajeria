@@ -91,7 +91,7 @@
   /* ---------- layout ---------- */
   .layout { padding:24px 32px 32px; }
   .main { display:flex; flex-direction:column; gap:24px; min-width:0; }
-  .flow-row { display:grid; grid-template-columns:minmax(0,1fr) 420px; gap:24px; align-items:stretch; }
+  .flow-row { display:grid; grid-template-columns:minmax(0,65fr) minmax(380px,35fr); gap:24px; align-items:start; }
   .flow-row > .card:first-child { display:flex; flex-direction:column; justify-content:space-between; }
   .card { color:#fff; background:var(--n-800); border:1.5px solid var(--n-700); border-radius:24px; padding:24px; min-width:0; }
   .card h2 { margin:0 0 18px; font-family:var(--font-display); font-weight:600; font-size:22px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -220,10 +220,62 @@
   .mstat.bad { background:var(--red-600); border-color:var(--red-600); } .mstat.bad .k, .mstat.bad .d, .mstat.bad .v { color:#fff; }
   .dlq-tabs { margin:-4px 0 14px; }
   .dlq .to { font-size:13px; color:var(--text2); word-break:break-all; }
+
+  /* Stock por producto (tabla products) */
+  .stock-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  @media (max-width:760px) { .stock-grid { grid-template-columns:minmax(0,1fr); } }
+  .stock-tbl { max-height:420px; overflow:auto; padding-right:4px; }
+  .stock-tbl td.n { font-family:var(--font-mono); font-weight:700; text-align:right; white-space:nowrap; }
+  .stock-tbl th.n { text-align:right; }
+  .stock-tbl td .sku { display:block; font-family:var(--font-mono); font-size:12px; color:var(--n-400); }
+  .stock-tbl tr.low td.n.cur { color:var(--inti-yellow); }
+  .stock-tbl tr.out td.n.cur { color:#F08A8D; }
+
+  /* Pagos Yape en vivo */
+  .yp-grid { grid-template-columns:repeat(5,minmax(0,1fr)); }
+  @media (max-width:900px) { .yp-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  .yp-banner { display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:14px; margin:-4px 0 14px; font-weight:700; font-size:14px; }
+  .yp-banner.bad { background:rgba(229,72,77,.14); border:1.5px solid rgba(229,72,77,.5); color:#F7B4B6; }
+  .yp-banner.warn { background:rgba(255,201,60,.1); border:1.5px solid rgba(255,201,60,.45); color:var(--inti-yellow); }
+  .yp-bar { display:flex; gap:8px; justify-content:space-between; align-items:center; flex-wrap:wrap; margin:16px 0 12px; }
+  .yp-bar small { color:var(--n-400); font-weight:700; }
+  .yp-cols { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,3fr); gap:20px; }
+  @media (max-width:1100px) { .yp-cols { grid-template-columns:minmax(0,1fr); } }
+  .yp-cols h3 { font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--n-300); margin:0 0 10px; }
+  .yp-w td.cd { font-family:var(--font-mono); font-weight:700; color:var(--inti-yellow); white-space:nowrap; }
+  .yp-w td.cd.low { color:#F08A8D; }
+  .yp-w .amt, .yp-n .amt { font-family:var(--font-display); font-weight:600; color:#E7B6F2; }
+  .yp-list { display:flex; flex-direction:column; gap:10px; max-height:560px; overflow:auto; padding-right:4px; }
+  .yp-n { padding:12px 14px; border-radius:14px; background:var(--n-850); border:1.5px solid var(--n-700); display:flex; flex-direction:column; gap:8px; }
+  .yp-n.st-sin_coincidencia { border-color:rgba(255,201,60,.55); }
+  .yp-n-h { display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:14px; }
+  .yp-n-h .t { color:var(--n-400); font-family:var(--font-mono); font-size:13px; }
+  .yb { display:inline-flex; align-items:center; height:22px; padding:0 9px; border-radius:999px; font-size:12px; font-weight:800; letter-spacing:.02em; }
+  .yb-recibida { background:rgba(35,87,245,.22); color:var(--blue-300); }
+  .yb-asociada { background:rgba(18,183,106,.2); color:var(--green-300); }
+  .yb-sin_coincidencia { background:rgba(255,201,60,.18); color:var(--inti-yellow); }
+  .yb-ignorada, .yb-rechazada { background:rgba(142,152,175,.18); color:var(--n-200); }
+  .yb-simulada { background:rgba(116,35,132,.45); color:#F1D2F8; }
+  .yp-raw { margin:0; padding:8px 10px; border-radius:10px; background:#0F1420; color:var(--text2); font-family:var(--font-mono); font-size:12.5px; white-space:pre-wrap; word-break:break-word; max-height:110px; overflow:auto; }
+  .yp-det { font-size:13px; color:var(--n-400); font-weight:700; }
+  .yp-stages { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; }
+  .yp-stages span { display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:800; color:var(--n-500); text-align:center; }
+  .yp-stages i { width:100%; height:6px; border-radius:6px; background:var(--n-700); }
+  .yp-stages .done { color:var(--green-300); } .yp-stages .done i { background:var(--green-500); }
+  .yp-stages .active { color:var(--inti-yellow); } .yp-stages .active i { background:var(--inti-yellow); animation:ypPulse 1s ease-in-out infinite alternate; }
+  .yp-stages .stop { color:var(--n-300); } .yp-stages .stop i { background:repeating-linear-gradient(45deg,var(--n-600) 0 4px,transparent 4px 8px); }
+  @keyframes ypPulse { from { opacity:.45; } to { opacity:1; } }
+  @media (prefers-reduced-motion:reduce) { .yp-stages .active i { animation:none; } }
+  .yp-act { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .yp-act select { height:32px; border-radius:10px; border:1.5px solid var(--n-700); background:var(--n-800); color:var(--text); font:inherit; font-size:13px; padding:0 8px; max-width:260px; }
+  .yp-guion { margin-top:16px; border-radius:14px; border:1.5px dashed var(--n-600); padding:12px 16px; }
+  .yp-guion summary { cursor:pointer; font-weight:800; }
+  .yp-guion ol { margin:10px 0 0; padding-left:20px; line-height:1.6; color:var(--text2); }
+  .yp-guion b { color:var(--text); }
   @media (max-width:760px) { .mail-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
   .badge { display:inline-flex; gap:6px; align-items:center; height:28px; padding:0 12px; border-radius:999px; font-size:13px; font-weight:800; letter-spacing:.02em; white-space:nowrap; }
   .b-PENDING { background:rgba(142,152,175,.18); color:var(--n-200); } .b-PUBLISHED { background:rgba(35,87,245,.22); color:var(--blue-300); }
-  .b-PROCESSED { background:rgba(18,183,106,.18); color:var(--green-300); } .b-FAILED { background:rgba(229,72,77,.2); color:#F08A8D; }
+  .b-PROCESSED { background:rgba(18,183,106,.18); color:var(--green-300); } .b-FAILED { background:rgba(229,72,77,.2); color:#F08A8D; } .b-REJECTED { background:rgba(255,201,60,.16); color:var(--inti-yellow); }
   #log { list-style:none; margin:0; padding:0; max-height:360px; overflow:auto; font-size:15px; }
   #log li { display:grid; grid-template-columns:72px 28px minmax(0,1fr); gap:10px; align-items:start; padding:10px 0; border-top:1.5px solid var(--n-700); }
   #log li:first-child { border-top:0; }
@@ -262,18 +314,89 @@
   .foot { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:4px; color:var(--n-500); font-size:14px; }
   #toast { position:fixed; left:50%; bottom:28px; transform:translateX(-50%); z-index:90; display:none; align-items:center; gap:12px; padding:14px 20px; border-radius:16px; background:#fff; color:var(--inti-night); font-weight:700; box-shadow:0 20px 48px rgba(0,0,0,.4); animation:inti-rise var(--dur-base) var(--ease-out); }
 
-  /* ---------- autosabotaje: mosaico junto al recorrido ---------- */
-  .sabotage { display:flex; flex-direction:column; }
-  .sab-grid { display:flex; flex-direction:column; gap:8px; }
-  .sab-foot { display:flex; flex-direction:column; gap:10px; margin-top:auto; padding-top:14px; }
-  .abtn.sab { display:grid; grid-template-columns:36px minmax(0,1fr); column-gap:12px; row-gap:2px; align-content:center; padding:12px 14px; transition:transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out), background 200ms, border-color 200ms; }
-  .abtn.sab b { font-size:16px; line-height:1.2; }
-  .abtn.sab > span:last-child { line-height:1.3; }
-  .abtn.sab:hover:not(:disabled) { transform:translateX(4px); box-shadow:0 12px 24px -14px rgba(229,72,77,.9); }
-  .abtn.sab:active:not(:disabled) { transform:translateY(0) scale(var(--press-scale)); box-shadow:none; }
-  .sab-ic { grid-row:span 2; width:36px; height:36px; border-radius:12px; background:rgba(229,72,77,.16); color:#F08A8D !important; display:flex; align-items:center; justify-content:center; transition:transform 300ms var(--ease-bounce), background 200ms; }
-  .abtn.sab:hover .sab-ic { transform:rotate(-8deg) scale(1.1); background:rgba(229,72,77,.3); }
-  .abtn.sab.on .sab-ic { background:rgba(255,255,255,.2); color:#fff !important; }
+  /* ---------- autosabotaje: columna de escenarios automáticos junto al recorrido ---------- */
+  .sabotage.auto { display:flex; flex-direction:column; gap:14px; padding:20px; }
+  .sabotage.auto h2 { margin:0; }
+  .heal-mini { margin-left:auto; border-color:var(--green-700); background:var(--green-700); }
+  .heal-mini:hover { background:#085C35; }
+  .heal-mini.busy svg { animation:spin 900ms linear infinite; }
+  .auto-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:13px; font-weight:700; color:var(--n-300); }
+  .auto-bar .seg button { height:30px; font-size:12px; padding:0 10px; }
+  .auto-list { display:flex; flex-direction:column; gap:10px; }
+  .sc { position:relative; display:flex; flex-direction:column; padding:10px 12px; border-radius:16px; background:var(--n-850); border:1.5px solid rgba(229,72,77,.3); transition:border-color 200ms, background 200ms; }
+  .sc:hover { border-color:rgba(229,72,77,.6); }
+  .sc.is-run { border-color:var(--inti-yellow); background:#22201A; }
+  .sc-h { display:grid; grid-template-columns:auto minmax(0,1fr) auto auto auto; align-items:center; gap:8px; }
+  .sc-n { width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:800; background:var(--n-700); color:var(--n-300); }
+  .sc.is-run .sc-n { background:var(--inti-yellow); color:var(--inti-night); }
+  .sc-t { display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; }
+  .sc-t h3 { margin:0; font-family:var(--font-display); font-weight:600; font-size:16px; line-height:1.2; }
+  .mini-seg { padding:2px; border-radius:9px; } .mini-seg button { height:24px; padding:0 8px; font-size:12px; border-radius:7px; }
+  .sc-st { white-space:nowrap; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; background:rgba(255,255,255,.06); color:var(--n-300); }
+  .sc-st.ok { background:rgba(18,183,106,.16); color:var(--green-300); }
+  .sc-st.act { background:rgba(255,201,60,.16); color:var(--inti-yellow); }
+  .sc-st.down { background:var(--red-600); color:#fff; }
+  .sc-st.busy { background:rgba(255,201,60,.16); color:var(--inti-yellow); animation:pulse-st 1s ease-in-out infinite alternate; }
+  @keyframes pulse-st { to { opacity:.55; } }
+  .sc-q { width:26px; height:26px; border-radius:50%; border:1.5px solid var(--n-600); background:none; color:var(--n-300); font-weight:800; font-size:13px; cursor:help; }
+  .sc-q:hover, .sc-q[aria-expanded="true"] { border-color:var(--n-300); color:#fff; }
+  .sc-run { display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 12px; border-radius:10px; border:0; background:var(--inti-yellow); color:var(--inti-night); font-family:var(--font-display); font-weight:700; font-size:14px; white-space:nowrap; transition:transform var(--dur-instant) var(--ease-out), opacity 150ms; }
+  .sc-run:hover:not(:disabled) { background:var(--yellow-300); }
+  .sc-run:active:not(:disabled) { transform:scale(var(--press-scale)); }
+  .sc-run:disabled { opacity:.3; cursor:not-allowed; }
+  .sc-run.stop { background:var(--red-600); color:#fff; }
+  /* pasos del escenario: ✔ terminado · ● en curso (con la narración) · ○ pendiente */
+  .sc-body { margin-top:10px; padding-top:10px; border-top:1px solid var(--n-700); display:flex; flex-direction:column; gap:8px; }
+  .sc-body[hidden] { display:none; }   /* display:flex anularía el atributo hidden */
+  .sc-steps { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:4px; }
+  .sc-steps li { display:grid; grid-template-columns:18px minmax(0,1fr); gap:6px; font-size:13px; font-weight:600; color:var(--n-400); line-height:1.35; }
+  .sc-steps li::before { content:"○"; text-align:center; }
+  .sc-steps li.done { color:var(--n-300); } .sc-steps li.done::before { content:"✔"; color:var(--green-300); }
+  .sc-steps li.active { color:#fff; font-weight:700; } .sc-steps li.active::before { content:"●"; color:var(--inti-yellow); animation:pulse-st .7s ease-in-out infinite alternate; }
+  .sc-steps li.error { color:#F08A8D; } .sc-steps li.error::before { content:"✖"; color:var(--red-500); }
+  .sc-steps .nar { grid-column:2; margin-top:2px; padding:6px 10px; border-radius:10px; background:rgba(255,201,60,.1); color:var(--inti-yellow); font-weight:700; }
+  .sc-sum { padding:10px 12px; border-radius:12px; background:rgba(18,183,106,.1); border:1px solid rgba(18,183,106,.35); font-size:13px; font-weight:600; color:var(--n-300); }
+  .sc-sum b { color:#fff; } .sc-sum .eq { display:block; font-size:15px; color:var(--green-300); font-weight:800; margin-bottom:4px; }
+  .sc-sum ul { margin:4px 0 0; padding-left:18px; }
+  .sc-err { padding:10px 12px; border-radius:12px; background:rgba(229,72,77,.14); border:1px solid rgba(229,72,77,.5); color:#F08A8D; font-size:13px; font-weight:700; }
+  .sc-foot { display:flex; justify-content:flex-end; }
+  .linkbtn.sm { font-size:12px; }
+  /* ventana explicativa: ENCIMA de la tarjeta (nunca tapa sus botones); con poco espacio arriba, debajo */
+  .sc-tip { position:absolute; left:0; right:0; bottom:calc(100% + 10px); z-index:40; padding:14px 16px; border-radius:16px; background:#0E1320; border:1.5px solid var(--n-600); box-shadow:0 18px 40px rgba(0,0,0,.55); opacity:0; visibility:hidden; transform:translateY(4px); transition:opacity 150ms var(--ease-out), transform 150ms var(--ease-out), visibility 0s 150ms; pointer-events:none; }
+  .sc-tip::after { content:""; position:absolute; left:28px; top:100%; border:8px solid transparent; border-top-color:var(--n-600); }
+  .sc.tip-below .sc-tip { bottom:auto; top:calc(100% + 10px); transform:translateY(-4px); }
+  .sc.tip-below .sc-tip::after { top:auto; bottom:100%; border-top-color:transparent; border-bottom-color:var(--n-600); }
+  .sc-tip dl { margin:0; display:grid; gap:4px; }
+  .sc-tip dt { font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--inti-yellow); }
+  .sc-tip dt:not(:first-child) { margin-top:6px; }
+  .sc-tip dd { margin:0; font-size:14px; line-height:1.45; color:#fff; }
+  @media (hover:hover) { .sc:has(.sc-h:hover):not(.tip-off) .sc-tip { opacity:1; visibility:visible; transform:none; transition-delay:0s; } }
+  .sc.tip-open .sc-tip, .sc:has(.sc-h :focus-visible):not(.tip-off) .sc-tip { opacity:1; visibility:visible; transform:none; transition-delay:0s; }
+  /* controles manuales (plegados) */
+  .manual { border-top:1px dashed rgba(229,72,77,.4); padding-top:10px; }
+  .manual summary { cursor:pointer; display:flex; align-items:center; gap:8px; font-weight:700; font-size:14px; color:var(--n-300); list-style:none; }
+  .manual summary::-webkit-details-marker { display:none; }
+  .manual summary::after { content:"▸"; margin-left:auto; transition:transform 150ms; } .manual[open] summary::after { transform:rotate(90deg); }
+  .mrow { display:grid; grid-template-columns:96px auto minmax(0,1fr); align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--n-700); font-size:14px; }
+  .mrow .sc-m { grid-column:1 / -1; }
+  .mrow-p { grid-template-columns:1fr; }
+  .mbtns { display:flex; gap:6px; }
+  .sc-btn { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:34px; padding:0 10px; border-radius:10px; border:1.5px solid; font-family:var(--font-display); font-weight:600; font-size:13px; color:#fff; transition:background 150ms, border-color 150ms, opacity 150ms; }
+  .sc-btn.danger { background:rgba(229,72,77,.12); border-color:rgba(229,72,77,.55); }
+  .sc-btn.danger:hover:not(:disabled) { background:var(--red-600); border-color:var(--red-600); }
+  .sc-btn.heal { background:rgba(18,183,106,.1); border-color:rgba(18,183,106,.5); }
+  .sc-btn.heal:hover:not(:disabled) { background:var(--green-700); border-color:var(--green-700); }
+  .sc-btn:disabled { opacity:.35; cursor:not-allowed; }
+  .sc-btn.busy { cursor:progress; opacity:.7; }
+  .sc-m { margin:0; font-size:12px; font-weight:700; color:var(--n-300); }
+  .sc-m b { color:#fff; } .sc-m.warn { color:var(--inti-yellow); }
+  .sc-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  /* el diagrama resalta el componente que el escenario está tocando */
+  /* celular: la pastilla de estado baja a una segunda línea para que el título no se parta */
+  @media (max-width:480px) { .sc-h { grid-template-columns:auto minmax(0,1fr) auto auto; } .sc-h .sc-st { grid-column:2; grid-row:2; justify-self:start; } .sc-h .sc-q { grid-column:3; grid-row:1; } .sc-h .sc-run { grid-column:4; grid-row:1; } }
+  .node.focus rect.box { stroke:var(--inti-yellow); stroke-width:4; animation:focus-glow 1s ease-in-out infinite alternate; }
+  .node.focus.down rect.box { stroke:var(--red-500); }
+  @keyframes focus-glow { from { filter:drop-shadow(0 0 0 rgba(255,201,60,0)); } to { filter:drop-shadow(0 0 10px rgba(255,201,60,.8)); } }
   /* ---------- calentamiento (tráfico bajo) ---------- */
   .pipe-foot { display:flex; flex-direction:column; align-items:center; gap:14px; }
   .pipe-foot .legend { justify-content:center; }
@@ -393,7 +516,7 @@
   .st-PENDING { background:rgba(255,201,60,.16); color:var(--inti-yellow); }
   .st-PUBLISHED { background:rgba(35,87,245,.24); color:var(--blue-300); }
   .st-PROCESSED { background:rgba(18,183,106,.18); color:var(--green-300); }
-  .st-FAILED { background:rgba(229,72,77,.2); color:#F08A8D; }
+  .st-FAILED { background:rgba(229,72,77,.2); color:#F08A8D; } .st-REJECTED { background:rgba(255,201,60,.16); color:var(--inti-yellow); }
   .dbp-wait { color:var(--inti-yellow); font-weight:800; }
   .dbp-ok { color:var(--green-300); font-weight:800; }
   .dbp-wait .i, .dbp-ok .i { width:13px; height:13px; vertical-align:-2px; }
@@ -472,7 +595,7 @@
     .rk-in { min-height:82px; } .rk-out { min-height:150px; }
   }
   @media (max-width:1680px) { .top-title, .admin span:last-child { display:none; } }
-  @media (max-width:1500px) { .kpis { grid-template-columns:repeat(4,minmax(0,1fr)); } .kpi.rev { grid-column:span 2; } .flow-row { grid-template-columns:minmax(0,1fr) 380px; } .warm-t small { display:none; } }
+  @media (max-width:1500px) { .kpis { grid-template-columns:repeat(4,minmax(0,1fr)); } .kpi.rev { grid-column:span 2; } .warm-t small { display:none; } }
   @media (max-width:1180px) { .flow-row { grid-template-columns:1fr; } .two, .charts { grid-template-columns:1fr; } .top-title { display:none; } }
   @media (max-width:760px) { .kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } .kpi .v { font-size:36px; } .top { padding:10px 16px; gap:12px; } .wordmark { display:none; }
     .layout, .banners { padding-left:16px; padding-right:16px; } .admin span:last-child { display:none; } .exp-row { grid-template-columns:1fr; } }
@@ -513,6 +636,7 @@
     </div>
     <span class="admin"><span class="avatar"><img src="/static/assets/logo/mark-night.svg" alt=""></span><span id="whoName">Administrador</span></span>
     <a class="btn ghost s" href="/" target="_blank"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-external-link"/></svg>Ver tienda</a>
+    <a class="btn ghost s" id="rmqLink" href="/rabbitmq/" target="_blank" rel="noopener" title="Panel de RabbitMQ (solo lectura). Pide la clave de Caddy y luego el usuario de monitoreo"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-rabbit"/></svg>Ver colas en RabbitMQ</a>
     <button class="btn ghost s" onclick="logout()"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-log-out"/></svg>Cerrar sesión</button>
   </div>
 </header>
@@ -642,23 +766,114 @@
       </div>
     </section>
 
-      <section class="card sabotage">
-        <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-bomb"/></svg>Autosabotaje <span class="danger-tag">Zona de peligro</span></h2>
-        <div class="sab-grid">
-          <button class="abtn danger sab" id="bKillW" onclick="sab(this, 'kill-worker', 'revive-worker')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-user-x"/></svg></span><b>Matar al worker</b><span id="killSub">Contenedor eliminado a mitad de un pedido</span></button>
-          <button class="abtn danger sab" id="bKillR" onclick="sab(this, 'kill-relay', 'revive-relay')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-truck"/></svg></span><b>Tirar relay</b><span id="killRSub">Deja de publicar: el outbox acumula</span></button>
-          <button class="abtn danger sab" id="bKillM" onclick="sab(this, 'kill-mailer', 'revive-mailer')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-mail"/></svg></span><b>Matar mailer</b><span id="killMSub">Los correos esperan en la cola</span></button>
-          <button class="abtn danger sab" id="bCrash" onclick="sab(this, 'crash-broker', 'revive-broker')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-unplug"/></svg></span><b>Tirar RabbitMQ</b><span id="crashSub">Se corta el broker</span></button>
-          <button class="abtn danger sab" id="bCrashDb" onclick="sab(this, 'crash-db', 'revive-db')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-database-zap"/></svg></span><b>Tirar PostgreSQL</b><span id="crashDbSub">La BD cae en plena venta</span></button>
-          <button class="abtn danger sab" id="bSlow" onclick="sab(this, 'slow-on', 'slow-off')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-snail"/></svg></span><b>Workers lentos</b><span id="slowSub">Un servicio externo se degrada</span></button>
-          <button class="abtn danger sab" id="bPoison" onclick="sab(this, 'poison-on', 'poison-off')"><span class="sab-ic"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-skull"/></svg></span><b>Pedidos venenosos</b><span id="poisonSub">1 de cada 5 pedidos falla: reintentos → DLQ</span></button>
+      <aside class="card sabotage auto" aria-labelledby="sabH">
+        <h2 id="sabH"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-bomb"/></svg>Autosabotaje
+          <button class="mini heal-mini" onclick="recoverAll(this)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-life-buoy"/></svg>Recuperar todo</button></h2>
+        <div class="auto-bar">
+          <span>Velocidad</span>
+          <div class="seg" id="spdAuto" role="radiogroup" aria-label="Pausa entre estados">
+            <button role="radio" aria-checked="true" data-s="expo" onclick="setAutoSpeed('expo')">Expo (pausas de 6 s)</button><button role="radio" aria-checked="false" data-s="rapido" onclick="setAutoSpeed('rapido')">Rápido (pausas de 2 s)</button>
+          </div>
         </div>
-        <div class="sab-foot">
-          <button class="toggle" id="bPersist" role="switch" aria-checked="true" onclick="chaos(state.control.persistent ? 'persist-off' : 'persist-on')"><span><b id="persistLbl">Persistencia encendida</b><small id="persistSub">Mensajes y colas durables en disco</small></span><span class="sw"></span></button>
-          <button class="abtn heal big" onclick="busy(this, chaos('recover'))"><b><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-life-buoy"/></svg> Recuperar todo</b><span>Levanta lo caído y normaliza la velocidad</span></button>
+        <div class="auto-list">
+          <article class="sc" id="sc1">
+            <header class="sc-h"><span class="sc-n">1</span>
+              <div class="sc-t"><h3>Black Friday</h3>
+                <div class="seg mini-seg" id="bfSeg" role="radiogroup" aria-label="Pedidos de la ráfaga"><button role="radio" aria-checked="true" data-n="300" onclick="setBfN(300)">300</button><button role="radio" aria-checked="false" data-n="500" onclick="setBfN(500)">500</button></div></div>
+              <span class="sc-st" id="st1">Listo</span>
+              <button class="sc-q" aria-label="Qué hace Black Friday" aria-describedby="tip1" aria-expanded="false">?</button>
+              <button class="sc-run" id="run1" onclick="runScenario(1)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
+            <div class="sc-body" id="body1" hidden></div>
+            <div class="sc-tip" role="tooltip" id="tip1"><dl>
+              <dt>Qué hace</dt><dd>envía cientos de pedidos al mismo tiempo, como en una oferta masiva.</dd>
+              <dt>Qué vas a ver</dt><dd>la API responde al instante, la cola sube rápido y los workers la vacían poco a poco.</dd>
+              <dt>Qué demuestra</dt><dd>la cola separa recibir el pedido de procesarlo; la tienda no se traba ante un pico.</dd></dl></div>
+          </article>
+          <article class="sc" id="sc2">
+            <header class="sc-h"><span class="sc-n">2</span><div class="sc-t"><h3>Matar al worker</h3></div>
+              <span class="sc-st" id="st2">Listo</span>
+              <button class="sc-q" aria-label="Qué hace Matar al worker" aria-describedby="tip2" aria-expanded="false">?</button>
+              <button class="sc-run" id="run2" onclick="runScenario(2)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
+            <div class="sc-body" id="body2" hidden></div>
+            <div class="sc-tip" role="tooltip" id="tip2"><dl>
+              <dt>Qué hace</dt><dd>apaga el programa que procesa los pedidos, justo a mitad de uno.</dd>
+              <dt>Qué vas a ver</dt><dd>el pedido a medias vuelve a la cola y, al revivir el worker, se termina.</dd>
+              <dt>Qué demuestra</dt><dd>RabbitMQ solo borra un mensaje cuando el worker confirma (ack); nada se pierde.</dd></dl></div>
+          </article>
+          <article class="sc" id="sc3">
+            <header class="sc-h"><span class="sc-n">3</span><div class="sc-t"><h3>Tirar RabbitMQ</h3></div>
+              <span class="sc-st" id="st3">Listo</span>
+              <button class="sc-q" aria-label="Qué hace Tirar RabbitMQ" aria-describedby="tip3" aria-expanded="false">?</button>
+              <button class="sc-run" id="run3" onclick="runScenario(3)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
+            <div class="sc-body" id="body3" hidden></div>
+            <div class="sc-tip" role="tooltip" id="tip3"><dl>
+              <dt>Qué hace</dt><dd>apaga la cola de mensajería.</dd>
+              <dt>Qué vas a ver</dt><dd>la tienda sigue vendiendo y sube "outbox pendientes"; al revivir RabbitMQ, se envían todos.</dd>
+              <dt>Qué demuestra</dt><dd>el patrón outbox guarda los pedidos en la base hasta que la cola vuelve.</dd></dl></div>
+          </article>
+          <article class="sc" id="sc4">
+            <header class="sc-h"><span class="sc-n">4</span><div class="sc-t"><h3>Prueba de persistencia</h3></div>
+              <span class="sc-st" id="st4">Listo</span>
+              <button class="sc-q" aria-label="Qué hace la Prueba de persistencia" aria-describedby="tip4" aria-expanded="false">?</button>
+              <button class="sc-run" id="run4" onclick="runScenario(4)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
+            <div class="sc-body" id="body4" hidden></div>
+            <div class="sc-tip" role="tooltip" id="tip4"><dl>
+              <dt>Qué hace</dt><dd>compara una cola que guarda los mensajes solo en memoria con una que los guarda en disco.</dd>
+              <dt>Qué vas a ver</dt><dd>sin persistencia, al caer RabbitMQ la cola vuelve vacía; con persistencia, vuelve intacta.</dd>
+              <dt>Qué demuestra</dt><dd>la persistencia hace que los mensajes sobrevivan a una caída. Usar solo con pedidos de prueba.</dd></dl></div>
+          </article>
+          <article class="sc" id="sc5">
+            <header class="sc-h"><span class="sc-n">5</span><div class="sc-t"><h3>Pedidos venenosos</h3></div>
+              <span class="sc-st" id="st5">Listo</span>
+              <button class="sc-q" aria-label="Qué hace Pedidos venenosos" aria-describedby="tip5" aria-expanded="false">?</button>
+              <button class="sc-run" id="run5" onclick="runScenario(5)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
+            <div class="sc-body" id="body5" hidden></div>
+            <div class="sc-tip" role="tooltip" id="tip5"><dl>
+              <dt>Qué hace</dt><dd>hace que 1 de cada 5 pedidos falle a propósito.</dd>
+              <dt>Qué vas a ver</dt><dd>el pedido malo se reintenta (2 s, 5 s, 10 s) y termina en la DLQ; los demás siguen.</dd>
+              <dt>Qué demuestra</dt><dd>un pedido defectuoso no bloquea la fila; se aparta para revisarlo después.</dd></dl></div>
+          </article>
+          <article class="sc" id="sc6">
+            <header class="sc-h"><span class="sc-n">6</span><div class="sc-t"><h3>Tirar PostgreSQL</h3></div>
+              <span class="sc-st" id="st6">Listo</span>
+              <button class="sc-q" aria-label="Qué hace Tirar PostgreSQL" aria-describedby="tip6" aria-expanded="false">?</button>
+              <button class="sc-run" id="run6" onclick="runScenario(6)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
+            <div class="sc-body" id="body6" hidden></div>
+            <div class="sc-tip" role="tooltip" id="tip6"><dl>
+              <dt>Qué hace</dt><dd>apaga la base de datos.</dd>
+              <dt>Qué vas a ver</dt><dd>los pedidos nuevos se rechazan con un aviso claro; los que ya estaban en la cola esperan.</dd>
+              <dt>Qué demuestra</dt><dd>el sistema conoce su límite y falla de forma segura, sin perder pedidos aceptados.</dd></dl></div>
+          </article>
         </div>
-      </section>
+
+        <!-- por si el profesor pide repetir algo a mano: los mismos sabotajes, uno por uno -->
+        <details class="manual" id="manual">
+          <summary><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-sliders-horizontal"/></svg>Controles manuales</summary>
+          <div class="mrow"><b>Ráfaga</b><span></span><div class="mbtns">
+            <button class="sc-btn danger" onclick="busy(this, post('/api/sim/burst', { count: 300 }))">300 pedidos</button>
+            <button class="sc-btn danger" onclick="busy(this, post('/api/sim/burst', { count: 500 }))">500 pedidos</button></div></div>
+          <div class="mrow"><b>Worker</b><span class="sc-st" id="stW">En pie</span><div class="mbtns">
+            <button class="sc-btn danger" id="bKillW" onclick="act(this, 'kill-worker')">Matar</button>
+            <button class="sc-btn heal" id="bRevW" onclick="act(this, 'revive-worker', 'worker')">Revivir</button></div></div>
+          <div class="mrow"><b>RabbitMQ</b><span class="sc-st" id="stQ">En pie</span><div class="mbtns">
+            <button class="sc-btn danger" id="bCrash" onclick="act(this, 'crash-broker')">Tirar</button>
+            <button class="sc-btn heal" id="bRevQ" onclick="act(this, 'revive-broker', 'rabbitmq')">Revivir</button></div>
+            <p class="sc-m" id="mQ">outbox: 0 pendientes</p></div>
+          <div class="mrow"><b>PostgreSQL</b><span class="sc-st" id="stDb">En pie</span><div class="mbtns">
+            <button class="sc-btn danger" id="bCrashDb" onclick="act(this, 'crash-db')">Tirar</button>
+            <button class="sc-btn heal" id="bRevDb" onclick="act(this, 'revive-db', 'postgres')">Revivir</button></div></div>
+          <div class="mrow"><b>Venenosos</b><span class="sc-st" id="stV">Apagado</span><div class="mbtns">
+            <button class="sc-btn danger" id="bPoison" onclick="act(this, 'poison-on')">Activar</button>
+            <button class="sc-btn heal" id="bPoisonOff" onclick="act(this, 'poison-off')">Desactivar</button></div>
+            <p class="sc-m" id="mV">0 en reintento · 0 en la DLQ</p></div>
+          <div class="mrow mrow-p">
+            <button class="toggle" id="bPersist" role="switch" aria-checked="true" onclick="chaos(state.control.persistent ? 'persist-off' : 'persist-on')"><span><b id="persistLbl">Persistencia encendida</b><small id="persistSub">Mensajes y colas durables en disco</small></span><span class="sw"></span></button>
+            <div class="sc-row"><p class="sc-m" id="mP">En cola: 0 en disco</p>
+              <button class="mini" id="bRecon" onclick="busy(this, post('/api/reconcile'))"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-wrench"/></svg>Reconciliar desde la BD</button></div></div>
+        </details>
+      </aside>
     </div>
+
     <div class="charts">
       <section class="card">
         <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-layers"/></svg>Mensajes esperando en la cola <small>últimos 90 s</small></h2>
@@ -681,6 +896,47 @@
       </div>
     </section>
 
+
+    <section class="card yape" id="yapeCard" aria-labelledby="yapeH">
+      <h2 id="yapeH"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-wallet"/></svg>Pagos Yape en vivo <small>notificación → outbox → cola «pagos» → worker → pedido confirmado</small></h2>
+      <div id="ypBanner"></div>
+      <div class="mail-grid yp-grid">
+        <div class="mstat" id="ypWaitC"><span class="k">Esperando pago</span><b class="v num" id="ypWait">0</b><span class="d">pedidos con monto reservado</span></div>
+        <div class="mstat" id="ypQC"><span class="k">Cola «pagos»</span><b class="v num" id="ypQ">—</b><span class="d">notificaciones por procesar</span></div>
+        <div class="mstat" id="ypRetryC"><span class="k">Reintentando</span><b class="v num" id="ypRetry">—</b><span class="d">esperan 2 s, 5 s o 10 s</span></div>
+        <div class="mstat" id="ypDlqC"><span class="k">pagos.dlq</span><b class="v num" id="ypDlq">—</b><span class="d">tras 3 reintentos</span></div>
+        <div class="mstat" id="ypConsC"><span class="k">Worker de pagos</span><b class="v" id="ypCons">—</b><span class="d" id="ypConsD">consumidor de «pagos»</span></div>
+      </div>
+      <div class="yp-bar"><small>Montos únicos: cada pedido espera un monto distinto; el pago se asocia por ese monto.</small>
+        <button class="mini warn" onclick="ypSimular()"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-flask-conical"/></svg>Simular notificación Yape</button></div>
+      <div class="yp-cols">
+        <div><h3>Esperando pago</h3><div id="ypWaitList"><div class="empty">Cargando…</div></div></div>
+        <div><h3>Notificaciones · orden de llegada (la más reciente arriba)</h3><div class="yp-list" id="ypNotifs"><div class="empty">Cargando…</div></div></div>
+      </div>
+      <details class="yp-guion">
+        <summary>Guion: Yape real + sabotaje</summary>
+        <ol>
+          <li>Alguien del público abre la <b>Zona Yape real</b>, elige un producto y yapea el monto exacto que le muestra su pantalla.</li>
+          <li>Pulsa <b>Matar al worker</b> justo después: su pantalla queda en <b>«Pago recibido ✓, en cola»</b> y aquí la notificación se detiene en «Cola pagos».</li>
+          <li>Pulsa <b>Recuperar todo</b>: el worker vuelve, asocia el pago y su pantalla pasa a <b>«Pedido confirmado»</b> (y le llega el comprobante).</li>
+          <li><b>Variante RabbitMQ</b>: <b>Tirar RabbitMQ</b> antes del yapeo. El webhook responde 200 igual, la notificación se acumula en el <b>outbox</b> y el cliente ve «Pago registrado ✓, esperando procesamiento». Al recuperar, el relay la publica.</li>
+          <li><b>Variante PostgreSQL</b>: <b>Tirar PostgreSQL</b>. El webhook responde <b>503</b> y MacroDroid reintenta; el cliente ve «Esperando confirmación de tu pago, no vuelvas a yapear». Al recuperar, el siguiente reintento entra y el pago se asocia. Si la BD estuvo caída más que el plazo del pedido, el pago queda «sin coincidencia» (nunca se pierde) y se asigna a mano con «Asignar a pedido».</li>
+        </ol>
+      </details>
+    </section>
+
+    <section class="card" id="stockCard" aria-labelledby="stockH">
+      <h2 id="stockH"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-package"/></svg>Stock por producto <small>tabla products · el worker lo descuenta al confirmar cada pedido</small></h2>
+      <div class="mail-grid stock-grid">
+        <div class="mstat"><span class="k">Unidades en stock</span><b class="v num" id="stUnits">—</b><span class="d" id="stUnitsD">de las iniciales</span></div>
+        <div class="mstat good"><span class="k">Vendidas</span><b class="v num" id="stSold">—</b><span class="d">descontadas de forma atómica</span></div>
+        <div class="mstat" id="stOutC"><span class="k">Agotados</span><b class="v num" id="stOut">—</b><span class="d">sus pedidos quedan rechazados</span></div>
+      </div>
+      <div class="yp-bar"><small>Los menos disponibles primero. «Restablecer stock» vuelve a los valores de catalogo.json (no toca pedidos ni colas).</small>
+        <button class="mini warn" id="bStockReset" onclick="resetStock(this)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-rotate-ccw"/></svg>Restablecer stock</button></div>
+      <div class="stock-tbl" id="stockList"><div class="empty">Cargando…</div></div>
+    </section>
+
     <div class="two">
       <section class="card">
         <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-flask-conical"/></svg>Experimento de persistencia <small>RabbitMQ cae de verdad</small></h2>
@@ -691,7 +947,7 @@
       <section class="card">
         <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-inbox"/></svg>Mensajes fallidos (DLQ) <small id="dlqCount"></small></h2>
         <div class="seg dlq-tabs" id="dlqTabs" role="radiogroup" aria-label="Qué DLQ mostrar">
-          <button role="radio" aria-checked="true" data-q="pedidos" onclick="dlqTab('pedidos')">Pedidos</button><button role="radio" aria-checked="false" data-q="correos" onclick="dlqTab('correos')">Correos</button>
+          <button role="radio" aria-checked="true" data-q="pedidos" onclick="dlqTab('pedidos')">Pedidos</button><button role="radio" aria-checked="false" data-q="correos" onclick="dlqTab('correos')">Correos</button><button role="radio" aria-checked="false" data-q="pagos" onclick="dlqTab('pagos')">Pagos Yape</button>
         </div>
         <div id="dlqList"><div class="empty">Cargando…</div></div>
       </section>
@@ -763,29 +1019,115 @@ const chaos = a => post("/api/chaos/" + a);
 /* el botón muestra que trabaja hasta que la API responde */
 async function busy(btn, p) {
   btn.classList.add("busy"); btn.setAttribute("aria-busy", "true");
-  try { await p; } finally {
-    btn.removeAttribute("aria-busy");
-    if (!isReviving(btn.id)) btn.classList.remove("busy");   // si está levantando un servicio, sabState lo quita al volver
+  try { await p; } finally { btn.removeAttribute("aria-busy"); btn.classList.remove("busy"); }
+}
+
+/* ---------- autosabotaje: 6 tarjetas ---------- */
+/* Al revivir un servicio, su tarjeta muestra "LEVANTANDO…" hasta que responde de verdad (RabbitMQ tarda unos s) */
+const reviving = {};   // servicio → hasta cuándo (ms) se espera que vuelva
+const isReviving = svc => Date.now() < (reviving[svc] || 0);
+function act(btn, action, revive) {
+  if (btn.disabled || btn.classList.contains("busy")) return;
+  if (revive) reviving[revive] = Date.now() + 30000;
+  busy(btn, chaos(action));
+}
+let bfN = 300;   // pedidos de la ráfaga Black Friday
+function setBfN(n) { bfN = n; document.querySelectorAll("#bfSeg button").forEach(b => b.setAttribute("aria-checked", +b.dataset.n === n)); }
+/* pastilla de estado: texto + tono (ok, act, down, busy) */
+function pill(id, txt, tone) { $(id).textContent = txt; $(id).className = "sc-st" + (tone ? " " + tone : ""); }
+/* control manual de un servicio: con él caído solo se puede revivir, y al revés */
+function svcRow(pillId, kill, rev, svc, st, downTx) {
+  const down = st === "down";
+  if (!down) delete reviving[svc];
+  const lifting = down && isReviving(svc);
+  pill(pillId, lifting ? "Levantando…" : down ? downTx : "En pie", lifting ? "busy" : down ? "down" : "ok");
+  $(kill).disabled = down;
+  $(rev).disabled = !down || lifting;
+}
+
+/* ---------- escenarios automáticos: un botón «Ejecutar» corre toda la secuencia en el servidor ---------- */
+let autoSpeed = "expo";
+try { if (localStorage.getItem("autoSpeed") === "rapido") autoSpeed = "rapido"; } catch {}
+function setAutoSpeed(v) {
+  autoSpeed = v;
+  try { localStorage.setItem("autoSpeed", v); } catch {}
+  document.querySelectorAll("#spdAuto button").forEach(b => b.setAttribute("aria-checked", b.dataset.s === v));
+}
+setAutoSpeed(autoSpeed);
+const hiddenRuns = new Set();   // tarjetas terminadas que el presentador plegó
+async function runScenario(n) {
+  const sc = state.m?.scenarios;
+  if (sc?.running === n) return post("/api/scenarios/stop");      // el mismo botón es «Detener» mientras corre
+  if (sc?.running) return;
+  hiddenRuns.delete(n);
+  await busy($("run" + n), post(`/api/scenarios/${n}/run`, { speed: autoSpeed, count: bfN }));
+}
+/* con un escenario en curso, «Recuperar todo» lo detiene primero (el orquestador recupera al cortar) */
+function recoverAll(btn) { busy(btn, state.m?.scenarios?.running ? post("/api/scenarios/stop") : chaos("recover")); }
+function hideRun(n) { hiddenRuns.add(n); if (state.m) renderScenarios(state.m); }
+const FOCUS_NODES = ["nApi", "nQ", "nDb", "nWork", "nRelay", "nRetry", "nDlq"];
+function renderScenarios(m) {
+  const sc = m.scenarios || { running: null, runs: {} }, running = sc.running;
+  const focus = running ? sc.runs[running]?.focus : null;
+  FOCUS_NODES.forEach(id => $(id).classList.toggle("focus", id === focus));
+  for (let n = 1; n <= 6; n++) {
+    const run = sc.runs[n], btn = $("run" + n), card = $("sc" + n), body = $("body" + n), mine = running === n;
+    card.classList.toggle("is-run", mine);
+    btn.disabled = !!running && !mine;
+    btn.classList.toggle("stop", mine);
+    btn.innerHTML = mine ? `${icon("stop")}Detener` : `${icon("play")}Ejecutar`;
+    const st = mine ? ["Ejecutando", "busy"] : !run ? ["Listo", ""] : run.status === "ok" ? ["✔ Correcto", "ok"]
+      : run.status === "stopped" ? ["Detenido", "act"] : ["✖ Error", "down"];
+    pill("st" + n, st[0], st[1]);
+    const show = run && (mine || (sc.last === n && !hiddenRuns.has(n)));   // compactas salvo la que corre o la última
+    body.hidden = !show;
+    if (!show) continue;
+    const key = JSON.stringify(run);
+    if (body._key === key) continue;   // sin cambios: no se repinta (no parpadea ni pierde el foco)
+    body._key = key;
+    const steps = run.steps.map(s => `<li class="${s.st}">${esc(s.text)}${s.st === "active" && run.narration
+      ? `<span class="nar">${esc(run.narration)}</span>` : ""}</li>`).join("");
+    let out = `<ol class="sc-steps" aria-live="polite">${steps}</ol>`;
+    const s = run.summary;
+    if (s) out += `<div class="sc-sum"><span class="eq">${fmt(s.sent)} enviados = ${fmt(s.processed)} procesados + ${fmt(s.rejected)} rechazados + ${fmt(s.dlq)} en DLQ ${s.balanced ? "✓" : "✗"}</span>`
+      + `<ul>${s.rejected_503 ? `<li><b>${s.rejected_503}</b> pedidos nuevos rechazados con aviso (HTTP 503)</li>` : ""}`
+      + s.lines.map(l => `<li>${esc(l)}</li>`).join("") + `<li>Duración: ${s.elapsed_s.toLocaleString("es-PE")} s</li></ul></div>`;
+    if (run.error) out += `<div class="sc-err">${icon("circle-alert")} ${esc(run.error)}. Se ejecutó «Recuperar todo».</div>`;
+    if (run.status === "stopped") out += `<div class="sc-err">Detenido: se ejecutó «Recuperar todo».</div>`;
+    if (!mine) out += `<div class="sc-foot"><button class="linkbtn sm" onclick="hideRun(${n})">Ocultar</button></div>`;
+    body.innerHTML = out;
   }
+  $("bfSeg").querySelectorAll("button").forEach(b => b.disabled = !!running);
 }
-/* sabotaje como interruptor: si está activo, el mismo botón lo deshace. Al deshacerlo, el botón sigue ocupado
-   ("LEVANTANDO…") hasta que el servicio responde de verdad, y no acepta otro clic que lo vuelva a tirar */
-const reviving = {};   // id del botón → hasta cuándo (ms) se espera que el servicio vuelva
-const isReviving = id => Date.now() < (reviving[id] || 0);
-const sab = (btn, on, off) => {
-  if (btn.classList.contains("busy") || isReviving(btn.id)) return;
-  const undo = btn.classList.contains("on");
-  if (undo) { reviving[btn.id] = Date.now() + 30000; btn.querySelector("span:last-child").textContent = "LEVANTANDO…"; }
-  busy(btn, chaos(undo ? off : on));
-};
-/* refleja en el botón si su servicio está caído, y si se está levantando */
-function sabState(id, subId, down, downTx, idleTx) {
-  if (!down) delete reviving[id];
-  const rev = down && isReviving(id);
-  $(id).classList.toggle("on", down);
-  $(id).classList.toggle("busy", rev || $(id).getAttribute("aria-busy") === "true");
-  $(subId).textContent = rev ? "LEVANTANDO…" : down ? downTx : idleTx;
+/* ventana explicativa: mouse (CSS :hover), teclado (:focus-visible) y toque (botón «?»). Escape la cierra */
+function placeTip(card) {
+  const tip = card.querySelector(".sc-tip");
+  card.classList.remove("tip-below");
+  if (card.getBoundingClientRect().top - tip.offsetHeight - 16 < 64) card.classList.add("tip-below");   // 64: cabecera fija
 }
+function setTip(card, open) {
+  card.classList.toggle("tip-open", open);
+  card.querySelector(".sc-q").setAttribute("aria-expanded", open);
+  if (open) placeTip(card);
+}
+document.querySelectorAll(".sc").forEach(card => {
+  card.addEventListener("mouseenter", () => { card.classList.remove("tip-off"); placeTip(card); });
+  card.addEventListener("mouseleave", () => setTip(card, false));
+  card.addEventListener("focusin", () => { card.classList.remove("tip-off"); placeTip(card); });
+  card.addEventListener("focusout", e => { if (!card.contains(e.relatedTarget)) setTip(card, false); });
+  card.querySelector(".sc-q").addEventListener("click", e => {
+    e.stopPropagation();
+    const open = !card.classList.contains("tip-open");
+    document.querySelectorAll(".sc.tip-open").forEach(c => c !== card && setTip(c, false));
+    card.classList.toggle("tip-off", !open);   // cerrarla con el «?» la cierra aunque el foco siga dentro
+    setTip(card, open);
+  });
+});
+document.addEventListener("click", e => { if (!e.target.closest(".sc")) document.querySelectorAll(".sc.tip-open").forEach(c => setTip(c, false)); });
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  document.querySelectorAll(".sc").forEach(c => { if (c.matches(".tip-open, :hover, :focus-within")) { setTip(c, false); c.classList.add("tip-off"); } });
+});
 const rateVal = () => +$("rate").value;
 /* desplegable Black Friday (simulación de tráfico) en la cabecera */
 function toggleBf(open = $("bfPop").hidden) { $("bfPop").hidden = !open; $("bfBtn").setAttribute("aria-expanded", open); }
@@ -816,7 +1158,7 @@ function setWarm(r) {
 function toggleWarm() { state.m && warmOn(state.m.sim) ? post("/api/sim/stop") : post("/api/sim/start", { mode: "manual", rate: warmRate }); }
 function toggleDay() { state.m?.sim.running && state.m.sim.mode === "day" ? post("/api/sim/stop") : post("/api/sim/start", { mode: "day", rate: rateVal() }); }
 function toggleConst() { state.m?.sim.running && state.m.sim.mode === "manual" ? post("/api/sim/stop") : post("/api/sim/start", { mode: "manual", rate: rateVal() }); }
-function resetDemo() { if (confirm("¿Vaciar la base de datos y las colas?")) { hist.depth.length = hist.recv.length = hist.proc.length = 0; state.maxDepth = 0; post("/api/reset"); } }
+function resetDemo() { if (confirm("¿Vaciar la base de datos y las colas, y restablecer el stock?")) { hist.depth.length = hist.recv.length = hist.proc.length = 0; state.maxDepth = 0; post("/api/reset"); } }
 let rateTimer;
 $("rate").addEventListener("input", () => {
   updateRateLabel();
@@ -947,23 +1289,8 @@ function render(m) {
   $("btnDay").classList.toggle("pop", !dayRun); $("btnDay").classList.toggle("stop", dayRun);
   $("btnConst").innerHTML = constRun ? `<b>${icon("stop")} Detener</b><span>corta el tráfico</span>` : `<b>${icon("play")} Constante</b><span>ritmo fijo</span>`;
   $("btnConst").classList.toggle("stop", constRun);
-  sabState("bKillW", "killSub", workSt === "down", "CAÍDO · pulsa para levantarlo", "Contenedor eliminado a mitad de un pedido");
-  sabState("bKillR", "killRSub", relaySt === "down", "CAÍDO · pulsa para levantarlo", "Deja de publicar: el outbox acumula");
-  const mailSt = svcState("mailer", m);
-  sabState("bKillM", "killMSub", mailSt === "down", "CAÍDO · pulsa para levantarlo", "Los correos esperan en la cola");
-  renderMail(m, mailSt);
-  sabState("bCrash", "crashSub", brokerSt === "down", "CAÍDO · pulsa para levantarlo", "Se corta el broker");
-  sabState("bCrashDb", "crashDbSub", dbSt === "down", "CAÍDA · pulsa para levantarla", "La BD cae en plena venta");
-  $("bSlow").classList.toggle("on", m.control.slow);
-  $("bPersist").setAttribute("aria-checked", m.control.persistent);
-  $("persistLbl").textContent = m.control.persistent ? "Persistencia encendida" : "Persistencia APAGADA";
-  $("persistSub").textContent = m.control.persistent ? "Pulsa para dejar los mensajes solo en memoria" : "ACTIVO · pulsa para volver a escribir en disco";
-  $("slowSub").textContent = m.control.slow ? "ACTIVO · pulsa para normalizar" : "Un servicio externo se degrada";
-  const retrying = q ? q.retrying : 0;
-  $("bPoison").classList.toggle("on", sim.poison);
-  $("poisonSub").textContent = !sim.poison ? "1 de cada 5 pedidos falla: reintentos → DLQ"
-    : retrying > 0 ? `ACTIVO · ${retrying} en reintento · pulsa para apagar`
-    : sim.running ? "ACTIVO · 1 de cada 5 pedidos fallará" : "ACTIVO · envía pedidos para verlo";
+  renderMail(m, svcState("mailer", m));
+  renderSabotage(m, depth, { workSt, brokerSt, dbSt });
   updateRateLabel();
 
   renderNarrator(m, depth);
@@ -972,6 +1299,27 @@ function render(m) {
   renderLog(m.events);
   if (!$("dbPop").hidden) updateDbPop(m);
   drawAll();
+}
+
+/* controles manuales (plegados): estado real de cada servicio */
+function renderSabotage(m, depth, { workSt, brokerSt, dbSt }) {
+  const q = m.queue, o = m.orders, ctl = m.control;
+  svcRow("stW", "bKillW", "bRevW", "worker", workSt, "Caído");
+  svcRow("stQ", "bCrash", "bRevQ", "rabbitmq", brokerSt, "Caído");
+  $("mQ").innerHTML = `outbox: <b>${fmt(m.outbox_pending)}</b> ${m.outbox_pending === 1 ? "pendiente" : "pendientes"}`;
+  $("mQ").classList.toggle("warn", m.outbox_pending > 0);
+  svcRow("stDb", "bCrashDb", "bRevDb", "postgres", dbSt, "Caída");
+  pill("stV", ctl.poison ? "Activo" : "Apagado", ctl.poison ? "act" : "ok");
+  $("bPoison").disabled = ctl.poison; $("bPoisonOff").disabled = !ctl.poison;
+  $("mV").innerHTML = `<b>${fmt(q ? q.retrying : 0)}</b> en reintento · <b>${fmt(Math.max(o.FAILED, q?.dlq || 0))}</b> en la DLQ`;
+  $("bPersist").setAttribute("aria-checked", ctl.persistent);
+  $("persistLbl").textContent = ctl.persistent ? "Persistencia encendida" : "Persistencia APAGADA";
+  $("persistSub").textContent = ctl.persistent ? "Pulsa para dejar los mensajes solo en memoria" : "Pulsa para volver a escribir en disco";
+  $("mP").innerHTML = q ? `En cola: <b>${fmt(q.persistent)}</b> en disco · <b>${fmt(q.volatile)}</b> en memoria`
+    : "RabbitMQ caído: lo que estaba solo en memoria se pierde";
+  $("bRecon").classList.toggle("warn", m.lost > 0);
+  $("bRecon").lastChild.textContent = m.lost > 0 ? `Reconciliar ${fmt(m.lost)} desde la BD` : "Reconciliar desde la BD";
+  renderScenarios(m);
 }
 
 /* correos pendientes = eventos aún en el outbox + mensajes en la cola «correos» y en sus colas de reintento */
@@ -1054,7 +1402,7 @@ function renderNarrator(m, depth) {
   $("narrTx").innerHTML = esc(tx) + (sub ? `<small>${esc(sub)}</small>` : "");
 }
 
-const ST = { PENDING: ["clock", "Pendiente"], PUBLISHED: ["arrow", "En cola"], PROCESSED: ["check", "Procesado"], FAILED: ["x", "Fallido"] };
+const ST = { PENDING: ["clock", "Pendiente"], PUBLISHED: ["arrow", "En cola"], PROCESSED: ["check", "Procesado"], FAILED: ["x", "Fallido"], REJECTED: ["minus", "Rechazado"] };
 function renderLab(lab) {
   if (!lab) return;
   $("bLab").disabled = lab.running;
@@ -1090,6 +1438,17 @@ async function loadDlq() {
     if (!r.ok) { $("dlqList").innerHTML = `<div class="empty">RabbitMQ no disponible en este momento</div>`; return; }
     const items = await r.json();
     $("dlqCount").textContent = items.length ? `${items.length} mensaje(s)` : "";
+    if (queue === "pagos") {
+      $("dlqList").innerHTML = !items.length
+        ? `<div class="empty">Sin pagos fallidos. Si una notificación de Yape falla 3 veces (2 s, 5 s, 10 s), llega aquí. Su texto sigue guardado en la BD.</div>`
+        : `<div class="dlq-head"><button class="mini warn" onclick="dlqAct('reprocess')">${icon("rotate-ccw")} Reprocesar todos</button><button class="mini bad" onclick="dlqAct('discard')">${icon("trash-2")} Descartar todos</button></div>
+          <table class="dlq"><tr><th>Notificación</th><th>Error</th><th>Intentos</th><th>Llegó</th><th></th></tr>` +
+          items.map(it => `<tr><td class="num">#${esc(it.notificacion_id ?? "?")}</td>
+            <td class="err">${esc(it.error)}</td><td class="num">${it.retries}</td>
+            <td class="num">${it.dead_at ? new Date(it.dead_at).toLocaleTimeString("es", { hour12: false }) : "—"}</td>
+            <td class="act"><button class="mini warn" onclick="dlqAct('reprocess','${esc(it.notificacion_id)}')">Reprocesar</button><button class="mini bad" onclick="dlqAct('discard','${esc(it.notificacion_id)}')">Descartar</button></td></tr>`).join("") + `</table>`;
+      return;
+    }
     if (queue === "correos") {
       $("dlqList").innerHTML = !items.length
         ? `<div class="empty">Sin correos fallidos. Si Gmail rechaza un envío 3 veces seguidas (2 s, 5 s, 10 s), el correo llega aquí.</div>`
@@ -1114,8 +1473,145 @@ async function loadDlq() {
 async function dlqAct(action, id) {
   if (!id && action === "discard" && !confirm("¿Descartar definitivamente todos los mensajes de la DLQ?")) return;
   const ids = id ? [id] : null;
-  await post(`/api/dlq/${action}?queue=${dlqQueue}`, dlqQueue === "correos" ? { email_ids: ids } : { order_ids: ids });
+  await post(`/api/dlq/${action}?queue=${dlqQueue}`, dlqQueue === "correos" ? { email_ids: ids }
+    : dlqQueue === "pagos" ? { notificacion_ids: ids && ids.map(Number) } : { order_ids: ids });
   loadDlq();
+}
+
+/* ================= Pagos Yape en vivo ================= */
+const YP_ST = { recibida: "recibida", asociada: "asociada", sin_coincidencia: "sin coincidencia", ignorada: "ignorada", rechazada: "rechazada" };
+const YP_STAGES = ["Notificación", "Outbox", "Cola pagos", "Worker", "Confirmado"];
+const YP_AT = { outbox: 1, cola_pagos: 2, worker: 3, confirmado: 5, fin: 3 };
+const ypState = { last: null, dbDown: false, fetchedAt: 0 };
+const ypSoles = v => "S/ " + Number(v).toFixed(2);
+const ypTime = iso => new Date(iso).toLocaleTimeString("es", { hour12: false });
+
+async function loadYape() {
+  try {
+    const r = await fetch("/api/yape/admin/panel");
+    if (r.status === 401 || r.status === 403) return;
+    if (!r.ok) { ypState.dbDown = true; renderYape(ypState.last); return; }
+    ypState.dbDown = false; ypState.fetchedAt = Date.now();
+    renderYape(await r.json());
+  } catch { ypState.dbDown = true; renderYape(ypState.last); }
+}
+
+function ypStages(etapa) {
+  const at = YP_AT[etapa] ?? 1;
+  return `<div class="yp-stages" aria-label="Etapa: ${esc(etapa)}">` + YP_STAGES.map((l, i) => {
+    const c = etapa === "fin" && i === 3 ? "stop" : i < at ? "done" : i === at ? "active" : "";
+    return `<span class="${c}"><i></i>${l}</span>`;
+  }).join("") + `</div>`;
+}
+
+function renderYape(d) {
+  const banner = [];
+  if (ypState.dbDown) banner.push(`<div class="yp-banner warn">${icon("database-zap")}<span>PostgreSQL no responde: se muestran los últimos datos conocidos. El webhook responde 503 y MacroDroid reintenta.</span></div>`);
+  if (d && !d.enabled) banner.push(`<div class="yp-banner bad">${icon("triangle-alert")}<span>Zona Yape real desactivada: ${esc(d.problem || "")}. El resto de la tienda funciona normal. Configura YAPE_WEBHOOK_SECRET (32+ caracteres) en el .env y reinicia la api.</span></div>`);
+  else if (d && !d.qr) banner.push(`<div class="yp-banner warn">${icon("info")}<span>Falta el QR de Yape (app/static/img/yape_qr.png): el cliente ve «QR no configurado», pero puede yapear al titular ${esc(d.titular)}.</span></div>`);
+  $("ypBanner").innerHTML = banner.join("");
+  if (!d) return;
+  ypState.last = d;
+  const q = d.queue;
+  setNum("ypWait", d.pendientes.length);
+  $("ypQ").textContent = q ? fmt(q.queued) : "—";
+  $("ypRetry").textContent = q ? fmt(q.retrying) : "—";
+  $("ypDlq").textContent = q ? fmt(q.dlq) : "—";
+  $("ypDlqC").className = "mstat" + (q && q.dlq > 0 ? " warn" : "");
+  $("ypQC").className = "mstat" + (q && q.queued > 0 && !q.consumers ? " warn" : "");
+  $("ypCons").textContent = !q ? "Sin broker" : q.consumers ? "Activo" : "Caído";
+  $("ypConsD").textContent = !q ? "RabbitMQ no responde: los pagos esperan en el outbox" : q.consumers ? "consumiendo «pagos»" : "los pagos esperan en la cola (en disco)";
+  $("ypConsC").className = "mstat" + (!q || !q.consumers ? " bad" : " good");
+
+  $("ypWaitList").innerHTML = !d.pendientes.length ? `<div class="empty">Ningún pedido esperando pago.</div>`
+    : `<table class="yp-w"><tr><th>Cliente</th><th>Monto</th><th>Queda</th><th></th></tr>` + d.pendientes.map(p =>
+      `<tr><td>${esc(p.cliente)}<br><span class="to" style="color:var(--n-400);font-size:12px">${esc(p.producto)}</span></td>
+        <td class="amt num">${ypSoles(p.monto)}</td><td class="cd" data-dl="${ypState.fetchedAt + p.segundos_restantes * 1000}">--:--</td>
+        <td class="act"><button class="mini" onclick="ypSimular('${esc(p.id)}')" title="Notificación simulada con este monto">Simular pago</button></td></tr>`).join("") + `</table>`;
+
+  // no redibujar mientras el administrador elige un pedido en un desplegable
+  if ($("ypNotifs").contains(document.activeElement) && document.activeElement.tagName === "SELECT") return;
+  const opts = d.asignables.map(p => `<option value="${esc(p.id)}">${ypSoles(p.monto)} · ${esc(p.cliente)} · ${p.estado === "expirado" ? "expirado" : "pendiente"} · ${esc(p.id.slice(0, 8))}</option>`).join("");
+  $("ypNotifs").innerHTML = !d.notificaciones.length ? `<div class="empty">Aún no llegan notificaciones. Yapea desde un celular o usa «Simular notificación Yape».</div>`
+    : d.notificaciones.map(n => {
+      const revisable = n.estado === "sin_coincidencia" || n.estado === "ignorada";
+      return `<div class="yp-n st-${n.estado}">
+        <div class="yp-n-h"><b>#${n.id}</b><span class="t">${ypTime(n.recibida_en)}</span><span class="yb yb-${n.estado}">${YP_ST[n.estado] || n.estado}</span>
+          ${n.simulada ? `<span class="yb yb-simulada">simulada</span>` : ""}${n.monto != null ? `<span class="amt">${ypSoles(n.monto)}</span>` : ""}
+          ${n.pagador ? `<span style="color:var(--text2)">de ${esc(n.pagador)}</span>` : ""}</div>
+        ${ypStages(n.etapa)}
+        <pre class="yp-raw">${n.titulo ? esc(n.titulo) + "\n" : ""}${esc(n.texto)}</pre>
+        ${n.detalle || n.pedido_id ? `<div class="yp-det">${esc(n.detalle || "")}${n.pedido_id ? ` · pedido ${esc(n.pedido_id.slice(0, 8))}` : ""}</div>` : ""}
+        ${revisable ? `<div class="yp-act">${opts ? `<select id="ypSel${n.id}" aria-label="Pedido al que asignar la notificación #${n.id}">${opts}</select>
+            <button class="mini warn" onclick="ypAsignar(${n.id})">Asignar a pedido</button>` : `<span class="yp-det">No hay pedidos pendientes o expirados a los que asignarla.</span>`}
+          <button class="mini bad" onclick="ypRechazar(${n.id})">Rechazar</button></div>` : ""}
+      </div>`;
+    }).join("");
+}
+
+function ypTick() {
+  document.querySelectorAll("#ypWaitList [data-dl]").forEach(el => {
+    const s = Math.max(0, Math.round((+el.dataset.dl - Date.now()) / 1000));
+    el.textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+    el.classList.toggle("low", s <= 60);
+  });
+}
+
+async function ypSimular(pedidoId) {
+  let body = { pedido_id: pedidoId };
+  if (!pedidoId) {
+    const v = prompt("Monto de la notificación simulada (por ejemplo 1.37). Debe coincidir con un pedido esperando pago para asociarse:",
+      ypState.last?.pendientes?.[0]?.monto ?? "1.37");
+    if (v === null) return;
+    const monto = Number(String(v).replace(",", "."));
+    if (!(monto > 0)) { toast("Monto inválido"); return; }
+    body = { monto: monto.toFixed(2) };
+  }
+  await post("/api/yape/admin/simular", body);
+  loadYape();
+}
+async function ypAsignar(id) {
+  const sel = $("ypSel" + id); if (!sel) return;
+  if (!confirm(`¿Asignar la notificación #${id} al pedido ${sel.value.slice(0, 8)}? El pedido quedará pagado.`)) return;
+  await post(`/api/yape/admin/notificaciones/${id}/asignar`, { pedido_id: sel.value });
+  loadYape();
+}
+async function ypRechazar(id) {
+  if (!confirm(`¿Rechazar la notificación #${id}? Queda guardada con su texto, pero no se asocia a ningún pedido.`)) return;
+  await post(`/api/yape/admin/notificaciones/${id}/rechazar`);
+  loadYape();
+}
+
+/* ================= stock por producto (tabla products) ================= */
+async function loadStock() {
+  try {
+    const r = await fetch("/api/stock");
+    if (!r.ok) return;   // 401/403: el poll general ya lleva al login; BD caída: se conservan los últimos datos
+    renderStock(await r.json());
+  } catch {}
+}
+function renderStock(list) {
+  const units = list.reduce((s, p) => s + p.stock, 0), initial = list.reduce((s, p) => s + (p.initial ?? p.stock), 0);
+  const out = list.filter(p => p.stock - p.reserved <= 0).length;
+  $("stUnits").textContent = fmt(units);
+  $("stUnitsD").textContent = `de ${fmt(initial)} iniciales`;
+  $("stSold").textContent = fmt(Math.max(0, initial - units));
+  $("stOut").textContent = fmt(out);
+  $("stOutC").className = "mstat" + (out ? " warn" : "");
+  const rows = [...list].sort((a, b) => (a.stock - a.reserved) - (b.stock - b.reserved) || a.name.localeCompare(b.name));
+  $("stockList").innerHTML = !rows.length ? `<div class="empty">La tabla products está vacía.</div>`
+    : `<table><tr><th>Producto</th><th>Categoría</th><th class="n">Stock</th><th class="n">Inicial</th></tr>` + rows.map(p => {
+      const free = p.stock - p.reserved;
+      const cls = free <= 0 ? "out" : free <= 3 ? "low" : "";
+      return `<tr class="${cls}"><td>${esc(p.name)}<span class="sku">${esc(p.sku)}</span></td><td>${esc(p.category)}</td>
+        <td class="n cur">${fmt(p.stock)}${p.reserved ? ` <span title="reservadas por pedidos Yape pendientes de pago">(−${p.reserved})</span>` : ""}</td>
+        <td class="n">${p.initial == null ? "—" : fmt(p.initial)}</td></tr>`;
+    }).join("") + `</table>`;
+}
+async function resetStock(btn) {
+  if (!confirm("¿Restablecer el stock de todos los productos según catalogo.json? Los pedidos y las colas no se tocan.")) return;
+  await busy(btn, post("/api/stock/reset"));
+  loadStock();
 }
 
 function renderOrders(list) {
@@ -1133,7 +1629,7 @@ function renderLog(ev) {
 
 /* ================= detalle de PostgreSQL (tablas orders y outbox) ================= */
 /* clic en la caja PostgreSQL = se abre hasta la X, Escape u otro clic en la caja */
-const DB_ST = { PENDING: "guardado, aún no llega a RabbitMQ", PUBLISHED: "en la cola de RabbitMQ", PROCESSED: "procesado por el worker", FAILED: "fue a la DLQ" };
+const DB_ST = { PENDING: "guardado, aún no llega a RabbitMQ", PUBLISHED: "en la cola de RabbitMQ", PROCESSED: "procesado por el worker", FAILED: "fue a la DLQ", REJECTED: "rechazado (sin stock): resultado final, sin DLQ" };
 const hms = iso => new Date(iso).toLocaleTimeString("es-PE", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
 const soles = n => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const dbp = { pinned: false };
@@ -1583,7 +2079,7 @@ function gate(id) { const g = gates.get(id); return g && performance.now() < g.u
 function shownStatus(o) {
   const g = gate(o.id); if (!g) return o.status;
   if (!(g.saved || g.pub || g.proc)) return null;   // su bolita aún no llega a la BD: la fila todavía no aparece
-  if (o.status === "PROCESSED") return g.proc ? "PROCESSED" : g.pub ? "PUBLISHED" : "PENDING";
+  if (o.status === "PROCESSED" || o.status === "REJECTED") return g.proc ? o.status : g.pub ? "PUBLISHED" : "PENDING";
   if (o.status === "FAILED") return (g.fail ?? g.pub) ? "FAILED" : g.pub ? "PUBLISHED" : "PENDING";   // fail: llegó a la DLQ
   if (o.status === "PUBLISHED") return g.pub || g.proc ? o.status : "PENDING";
   return o.status;
@@ -1626,7 +2122,7 @@ async function runTracer(tr) {
     await move(tr, "dlq"); openGate(tr.id, "fail");                  // ⑤ en la DLQ: FAILED
     return endTracer(tr);
   }
-  await until(tr, () => tr.real === "PROCESSED");                    // espera a que un worker lo procese (sabotajes incluidos)
+  await until(tr, () => tr.real === "PROCESSED" || tr.real === "REJECTED");   // espera a que un worker lo procese (sabotajes incluidos)
   await move(tr, "work");
   await move(tr, "db"); openGate(tr.id, "proc");                     // ④ confirmado en PostgreSQL: PROCESSED
   endTracer(tr);
@@ -1657,9 +2153,9 @@ function trackTracers(m) {
   for (const tr of tracers) {
     if (!tr.id) continue;
     const o = (m.recent || []).find(o => o.id === tr.id);
-    if (o) { tr.real = o.status; tr.poison = o.items.some(s => s.endsWith(" FAIL")); continue; }
+    if (o) { tr.real = o.status; tr.poison = o.items.some(s => s.endsWith(" FAIL")) && !!state.control.poison; continue; }   // solo falla con el modo activo
     fetch("/orders/" + tr.id).then(r => { if (r.status === 404) tr.gone = true; return r.ok ? r.json() : null; })
-      .then(o => { if (o) { tr.real = o.status; tr.poison = o.items.some(i => i.sku === "FAIL"); } }).catch(() => {});
+      .then(o => { if (o) { tr.real = o.status; tr.poison = o.items.some(i => i.sku === "FAIL") && !!state.control.poison; } }).catch(() => {});
   }
 }
 async function onePedido() {
@@ -1873,7 +2369,11 @@ async function poll() {
 updateRateLabel();
 poll(); setInterval(poll, POLL_MS);
 loadDlq(); setInterval(loadDlq, 3000);
+loadYape(); setInterval(loadYape, 1500); setInterval(ypTick, 1000);
+loadStock(); setInterval(loadStock, 2000);
 fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(u => u && ($("whoName").textContent = u.email)).catch(() => {});
+// En el servidor (https, detrás de Caddy) el panel de RabbitMQ está en /rabbitmq/; en la laptop (http) sigue en el 15672
+if (location.protocol !== "https:") $("rmqLink").href = `http://${location.hostname}:15672/`;
 async function logout() { await fetch("/api/auth/logout", { method: "POST" }).catch(() => {}); location.href = "/login?next=/panel&admin=1"; }
 </script>
 </body>

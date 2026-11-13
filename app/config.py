@@ -10,6 +10,12 @@ RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", "5672"))
 RABBITMQ_MGMT_PORT = int(os.getenv("RABBITMQ_MGMT_PORT", "15672"))
 RABBITMQ_USER = os.getenv("RABBITMQ_USER", "")
 RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "")
+# API HTTP de management (solo la usa la api para leer los mensajes "en proceso"). En la laptop: el mismo usuario de
+# AMQP y sin prefijo. En el servidor (docker-compose.prod.yml) RABBITMQ_USER no tiene tags y no puede entrar a esa API:
+# se usa el usuario de monitoreo (solo lectura) y el prefijo /rabbitmq (management.path_prefix, detrás de Caddy).
+RABBITMQ_MGMT_USER = os.getenv("RABBITMQ_MGMT_USER") or RABBITMQ_USER
+RABBITMQ_MGMT_PASS = os.getenv("RABBITMQ_MGMT_PASS") or RABBITMQ_PASS
+RABBITMQ_MGMT_PATH_PREFIX = os.getenv("RABBITMQ_MGMT_PATH_PREFIX", "").strip().rstrip("/")
 
 # DATABASE_URL completa si se define; si no, se arma con las mismas variables que usa el contenedor de PostgreSQL
 # (quote() escapa caracteres como @ o : que romperían la URL si aparecen en la contraseña)
@@ -66,6 +72,30 @@ def require_env(process: str) -> None:
             f"[{process}] Falta configuración obligatoria: {', '.join(missing)}.\n"
             f"  Copia .env.example a .env, rellena esas variables y vuelve a levantar con: docker compose up --build"
         )
+    if process == "api":
+        weak = weak_secrets(os.environ)
+        if weak:
+            sys.exit(f"[api] Secretos inseguros en .env:\n  - " + "\n  - ".join(weak) +
+                     "\n  Genera uno aleatorio con: python -c \"import secrets; print(secrets.token_hex(32))\"")
+
+
+# Largo mínimo y valores de ejemplo que nunca deben llegar a un servidor público
+MIN_SECRET_KEY = 32
+MIN_ADMIN_PASSWORD = 10
+_PLACEHOLDERS = ("cambia", "change", "example", "ejemplo", "secret", "password", "contrasena", "contraseña",
+                 "admin", "123456", "qwerty", "tu_clave")
+
+
+def weak_secrets(env) -> list[str]:
+    """Describe los problemas de SECRET_KEY y ADMIN_PASSWORD. Solo nombra la variable: nunca muestra su valor."""
+    problems = []
+    for name, minimum in (("SECRET_KEY", MIN_SECRET_KEY), ("ADMIN_PASSWORD", MIN_ADMIN_PASSWORD)):
+        value = env.get(name, "").strip()
+        if any(p in value.lower() for p in _PLACEHOLDERS):
+            problems.append(f"{name} parece un valor de ejemplo (contiene una palabra como 'cambia', 'admin' o 'password')")
+        elif len(value) < minimum:
+            problems.append(f"{name} es muy corta: mínimo {minimum} caracteres")
+    return problems
 
 RELAY_POLL_S = float(os.getenv("RELAY_POLL_S", "0.25"))   # cada cuánto revisa el relay el outbox (rápido: el panel va a la par de la tienda)
 
@@ -109,5 +139,84 @@ MAX_WORKERS = 10
 # Simulación de un día de Black Friday comprimido en estos segundos
 DAY_SECONDS = int(os.getenv("DAY_SECONDS", "150"))
 
-# URL con la que el público entra a la tienda desde sus celulares (se muestra como QR en el panel)
-PUBLIC_URL = os.getenv("PUBLIC_URL", "").rstrip("/")
+# URL con la que el público entra a la tienda desde sus celulares (QR del panel y enlaces de los correos).
+# PUBLIC_BASE_URL (en .env, p. ej. la IP del servidor en la nube) tiene prioridad; si no está, se usa PUBLIC_URL,
+# que iniciar.ps1 rellena con la IP de la laptop en la red Wi-Fi.
+def public_url(env=os.environ) -> str:
+    return (env.get("PUBLIC_BASE_URL", "").strip() or env.get("PUBLIC_URL", "").strip()).rstrip("/")
+
+
+PUBLIC_URL = public_url()
+
+
+# Con la tienda servida por HTTPS (Caddy en el servidor) la cookie de sesión lleva Secure: el navegador nunca la envía
+# por HTTP sin cifrar. En la laptop (http://...) va sin Secure, o el navegador no la guardaría.
+def cookie_secure(env=os.environ) -> bool:
+    return env.get("PUBLIC_BASE_URL", "").strip().lower().startswith("https://")
+
+
+COOKIE_SECURE = cookie_secure()
+
+# Fuerza bruta en el login: como mucho LOGIN_MAX_FAILS intentos fallidos por IP en LOGIN_WINDOW_S segundos
+LOGIN_MAX_FAILS = int(os.getenv("LOGIN_MAX_FAILS", "5"))
+LOGIN_WINDOW_S = int(os.getenv("LOGIN_WINDOW_S", "60"))
+
+
+# --- Zona Yape real: productos baratos que se pagan con Yape de verdad -----------------------------------------------
+# La app MacroDroid del celular del dueño reenvía cada notificación de Yape al webhook POST /api/pagos/yape/notificacion
+# con la cabecera X-Yape-Secret. Sin un secreto válido (32+ caracteres, sin palabras de ejemplo) la zona se desactiva
+# sola y el resto de la tienda sigue igual.
+MIN_YAPE_SECRET = 32
+YAPE_WEBHOOK_PER_MIN = 60          # peticiones por minuto al webhook (todas, válidas o no)
+YAPE_EXPIRE_EVERY_S = 5            # cada cuánto el relay vence los pedidos Yape sin pagar
+
+
+def _money_env(env, name: str, default: str):
+    from decimal import Decimal, InvalidOperation
+    raw = env.get(name, "").strip() or default
+    try:
+        value = Decimal(raw.replace(",", "."))
+    except InvalidOperation:
+        return None
+    return value.quantize(Decimal("0.01")) if value.is_finite() else None
+
+
+def yape_settings(env=os.environ) -> dict:
+    """Configuración de la Zona Yape real. problema: por qué está desactivada (None si está activa). Nunca incluye el
+    valor del secreto, solo su nombre."""
+    secret = env.get("YAPE_WEBHOOK_SECRET", "").strip()
+    base = _money_env(env, "YAPE_PRECIO_BASE", "1.00")
+    lo = _money_env(env, "YAPE_MONTO_MIN", "1.01")
+    hi = _money_env(env, "YAPE_MONTO_MAX", "1.99")
+    try:
+        minutes = int(env.get("YAPE_MINUTOS_EXPIRA", "").strip() or "10")
+    except ValueError:
+        minutes = 0
+    problem = None
+    if not secret:
+        problem = "Falta YAPE_WEBHOOK_SECRET en el .env"
+    elif len(secret) < MIN_YAPE_SECRET:
+        problem = f"YAPE_WEBHOOK_SECRET es muy corto: mínimo {MIN_YAPE_SECRET} caracteres"
+    elif any(p in secret.lower() for p in _PLACEHOLDERS):
+        problem = "YAPE_WEBHOOK_SECRET parece un valor de ejemplo"
+    elif base is None or base <= 0:
+        problem = "YAPE_PRECIO_BASE no es un monto válido"
+    elif lo is None or hi is None or lo <= 0 or hi < lo:
+        problem = "YAPE_MONTO_MIN / YAPE_MONTO_MAX no forman un rango válido"
+    elif (hi - lo) * 100 > 5000:
+        problem = "El rango YAPE_MONTO_MIN..YAPE_MONTO_MAX tiene más de 5000 montos: redúcelo"
+    elif minutes < 1 or minutes > 120:
+        problem = "YAPE_MINUTOS_EXPIRA debe estar entre 1 y 120"
+    return {"enabled": problem is None, "problem": problem, "secret": secret,
+            "titular": env.get("YAPE_TITULAR", "").strip() or "Titular no configurado",
+            "precio_base": base, "monto_min": lo, "monto_max": hi, "minutos": minutes}
+
+
+YAPE = yape_settings()
+
+# Cola de pagos: el mismo esquema que pedidos y correos (durable, reintentos con TTL y DLQ), en su propio exchange
+PAGOS_EXCHANGE = "tienda.pagos"
+PAGOS_QUEUE = "pagos"
+PAGOS_DLQ = "pagos.dlq"
+PAGOS_ROUTING_KEY = "pago"
+PAGOS_RETRY_QUEUES = tuple(f"pagos.retry.{d}s" for d in RETRY_DELAYS)

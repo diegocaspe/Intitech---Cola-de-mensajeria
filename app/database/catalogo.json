@@ -7,7 +7,7 @@
   "list_price": 5999.0,
   "rating": 4.3,
   "reviews": 990,
-  "stock": 40,
+  "stock": 5000,
   "image": "galaxy-s24u.jpg",
   "description": "Cámara de 200 MP, S Pen integrado, pantalla de 6.8\" y Galaxy AI.",
   "related": [
@@ -26,7 +26,7 @@
   "list_price": 2999.0,
   "rating": 4.5,
   "reviews": 2714,
-  "stock": 12,
+  "stock": 5000,
   "image": "tv-sam-55q.jpg",
   "description": "Tecnología Quantum Dot con mil millones de colores.",
   "related": [
@@ -44,7 +44,7 @@
   "list_price": 4999.0,
   "rating": 4.5,
   "reviews": 391,
-  "stock": 5,
+  "stock": 5000,
   "image": "acer-nitro.jpg",
   "description": "NVIDIA GeForce RTX 4050, pantalla IPS de 144 Hz y 512 GB SSD.",
   "related": [
@@ -62,7 +62,7 @@
   "list_price": 699.0,
   "rating": 4.6,
   "reviews": 2830,
-  "stock": 20,
+  "stock": 5000,
   "image": "soundbar-kal.jpg",
   "description": "Barra de sonido 2.1 con subwoofer inalámbrico, Bluetooth y control remoto.",
   "related": [
@@ -79,7 +79,7 @@
   "list_price": 2299.0,
   "rating": 4.6,
   "reviews": 293,
-  "stock": 30,
+  "stock": 5000,
   "image": "refri-sam300.jpg",
   "description": "Tecnología No Frost sin escarcha, eficiencia A+ y 300 litros de capacidad. Acabado inox.",
   "related": [
@@ -96,7 +96,7 @@
   "list_price": 399.0,
   "rating": 4.7,
   "reviews": 1791,
-  "stock": 12,
+  "stock": 5000,
   "image": "freidora.jpg",
   "description": "Cocina sin aceite con panel táctil, 8 programas y canasta antiadherente.",
   "related": [
@@ -113,7 +113,7 @@
   "list_price": 499.0,
   "rating": 4.4,
   "reviews": 339,
-  "stock": 4,
+  "stock": 5000,
   "image": "aspiradora.jpg",
   "description": "Tecnología Direct Cyclone sin bolsa, filtro HEPA y depósito fácil de limpiar.",
   "related": [
@@ -130,7 +130,7 @@
   "list_price": 649.0,
   "rating": 4.4,
   "reviews": 600,
-  "stock": 15,
+  "stock": 5000,
   "image": "realme-c31.jpg",
   "description": "Pantalla de 6.5\", triple cámara y batería de 5000 mAh.",
   "related": [
@@ -149,7 +149,7 @@
   "list_price": 39.0,
   "rating": 4.4,
   "reviews": 2297,
-  "stock": 15,
+  "stock": 5000,
   "image": "hdmi-4k.jpg",
   "description": "Cable HDMI de alta velocidad con conectores bañados en oro. Soporta 4K y HDR.",
   "related": [
@@ -166,7 +166,7 @@
   "list_price": 249.0,
   "rating": 4.7,
   "reviews": 306,
-  "stock": 3,
+  "stock": 5000,
   "image": "headset-gamer.jpg",
   "description": "Sonido envolvente 7.1 USB, micrófono flexible e iluminación RGB.",
   "related": [
@@ -183,7 +183,7 @@
   "list_price": 199.0,
   "rating": 4.4,
   "reviews": 657,
-  "stock": 15,
+  "stock": 5000,
   "image": "mic-inal.jpg",
   "description": "Micrófono de mano inalámbrico con receptor USB plug & play. Ideal para karaoke, clases y eventos.",
   "related": [
@@ -200,7 +200,7 @@
   "list_price": 3999.0,
   "rating": 4.6,
   "reviews": 243,
-  "stock": 6,
+  "stock": 5000,
   "image": "refri-sbs.jpg",
   "description": "Dos puertas de piso a techo, panel digital y gran capacidad para toda la familia.",
   "related": [
@@ -217,7 +217,7 @@
   "list_price": 1199.0,
   "rating": 4.6,
   "reviews": 1565,
-  "stock": 4,
+  "stock": 5000,
   "image": "cocina-midea.jpg",
   "description": "Cocina de 4 quemadores con horno, encendido eléctrico y tapa de vidrio templado.",
   "related": [
@@ -234,7 +234,7 @@
   "list_price": 99.0,
   "rating": 4.6,
   "reviews": 715,
-  "stock": 12,
+  "stock": 5000,
   "image": "plancha.jpg",
   "description": "Vapor continuo, golpe de vapor y suela antiadherente.",
   "related": [
@@ -250,7 +250,7 @@
   "list_price": 799.0,
   "rating": 4.8,
   "reviews": 1180,
-  "stock": 15,
+  "stock": 5000,
   "image": "moto-g23.jpg",
   "description": "Cámara de 50 MP, pantalla de 6.5\" a 90 Hz y Android 13.",
   "related": [
@@ -269,7 +269,7 @@
   "list_price": 999.0,
   "rating": 4.9,
   "reviews": 1871,
-  "stock": 12,
+  "stock": 5000,
   "image": "tv-sam-32.jpg",
   "description": "Smart TV HD con Tizen, apps de streaming y diseño delgado.",
   "related": [
@@ -287,7 +287,7 @@
   "list_price": 2199.0,
   "rating": 4.5,
   "reviews": 2638,
-  "stock": 8,
+  "stock": 5000,
   "image": "lenovo-i3.jpg",
   "description": "Ideal para estudios y oficina: Intel Core i3, 8 GB de RAM y SSD de 256 GB.",
   "related": [
@@ -306,7 +306,7 @@
   "list_price": 499.0,
   "rating": 4.7,
   "reviews": 336,
-  "stock": 25,
+  "stock": 5000,
   "image": "mic-cond.jpg",
   "description": "Micrófono de condensador de diafragma grande para podcast, streaming y grabación de voz.",
   "related": [
@@ -323,7 +323,7 @@
   "list_price": 1399.0,
   "rating": 4.2,
   "reviews": 585,
-  "stock": 8,
+  "stock": 5000,
   "image": "congeladora.jpg",
   "description": "Congeladora de tapa superior con control de temperatura y bajo consumo.",
   "related": [
@@ -339,7 +339,7 @@
   "list_price": 349.0,
   "rating": 4.6,
   "reviews": 297,
-  "stock": 30,
+  "stock": 5000,
   "image": "microondas.jpg",
   "description": "5 niveles de potencia, temporizador de 35 minutos y función descongelar.",
   "related": [
@@ -356,7 +356,7 @@
   "list_price": 199.0,
   "rating": 4.3,
   "reviews": 2042,
-  "stock": 15,
+  "stock": 5000,
   "image": "ventilador.jpg",
   "description": "5 aspas, 3 velocidades, oscilación y altura regulable.",
   "related": [
@@ -372,7 +372,7 @@
   "list_price": 999.0,
   "rating": 4.9,
   "reviews": 2836,
-  "stock": 15,
+  "stock": 5000,
   "image": "galaxy-a16.jpg",
   "description": "Pantalla de 6.7\", conectividad 5G y funciones con inteligencia artificial.",
   "related": [
@@ -391,7 +391,7 @@
   "list_price": 1199.0,
   "rating": 4.9,
   "reviews": 1533,
-  "stock": 4,
+  "stock": 5000,
   "image": "tv-his-40.jpg",
   "description": "Full HD con sintonizador digital y Natural Colour Enhancer.",
   "related": [
@@ -409,7 +409,7 @@
   "list_price": 2699.0,
   "rating": 4.9,
   "reviews": 2506,
-  "stock": 12,
+  "stock": 5000,
   "image": "lenovo-v15.jpg",
   "description": "Pantalla Full HD de 15.6\", Intel Core i5 y SSD de 512 GB.",
   "related": [
@@ -428,7 +428,7 @@
   "list_price": 899.0,
   "rating": 4.3,
   "reviews": 2427,
-  "stock": 3,
+  "stock": 5000,
   "image": "tocadiscos.jpg",
   "description": "Reproduce tus vinilos en 33 y 45 RPM y transmite el sonido por Bluetooth a tus parlantes.",
   "related": [
@@ -445,7 +445,7 @@
   "list_price": 1799.0,
   "rating": 4.5,
   "reviews": 2254,
-  "stock": 4,
+  "stock": 5000,
   "image": "lavadora-13.jpg",
   "description": "Lavado inteligente con un solo toque, pulsador de chorro de agua y limpieza automática. Eficiencia A.",
   "related": [
@@ -462,7 +462,7 @@
   "list_price": 399.0,
   "rating": 4.2,
   "reviews": 883,
-  "stock": 20,
+  "stock": 5000,
   "image": "horno-40.jpg",
   "description": "Horno con temporizador, control de temperatura y bandeja incluida. Ideal para pizzas y postres.",
   "related": [
@@ -479,7 +479,7 @@
   "list_price": 1899.0,
   "rating": 4.2,
   "reviews": 2777,
-  "stock": 4,
+  "stock": 5000,
   "image": "aire-12k.jpg",
   "description": "Frío rápido, función deshumidificador, modo sleep y control remoto.",
   "related": [
@@ -495,7 +495,7 @@
   "list_price": 1199.0,
   "rating": 4.9,
   "reviews": 658,
-  "stock": 4,
+  "stock": 5000,
   "image": "galaxy-a17.jpg",
   "description": "Pantalla de 6.7\", 256 GB de almacenamiento, Android 15 y batería de 5000 mAh.",
   "related": [
@@ -514,7 +514,7 @@
   "list_price": 1599.0,
   "rating": 4.4,
   "reviews": 969,
-  "stock": 20,
+  "stock": 5000,
   "image": "tv-mi-43.jpg",
   "description": "4K UHD con Android TV, Google Assistant y Chromecast integrado.",
   "related": [
@@ -532,7 +532,7 @@
   "list_price": 2899.0,
   "rating": 4.5,
   "reviews": 512,
-  "stock": 20,
+  "stock": 5000,
   "image": "hp15-r5.jpg",
   "description": "AMD Ryzen 5 serie 7000, 16 GB de RAM y gráficos Radeon.",
   "related": [
@@ -551,7 +551,7 @@
   "list_price": 89.0,
   "rating": 4.8,
   "reviews": 919,
-  "stock": 3,
+  "stock": 5000,
   "image": "radio-amfm.jpg",
   "description": "Radio clásica AM/FM con antena telescópica, correa y gran parlante frontal.",
   "related": [
@@ -567,7 +567,7 @@
   "list_price": 2999.0,
   "rating": 4.6,
   "reviews": 2334,
-  "stock": 40,
+  "stock": 5000,
   "image": "lavaseca.jpg",
   "description": "Lava y seca en un solo equipo. Motor inverter silencioso y múltiples programas.",
   "related": [
@@ -583,7 +583,7 @@
   "list_price": 199.0,
   "rating": 4.5,
   "reviews": 1896,
-  "stock": 12,
+  "stock": 5000,
   "image": "licuadora.jpg",
   "description": "5 velocidades más función pulso y cuchillas de acero inoxidable.",
   "related": [
@@ -600,7 +600,7 @@
   "list_price": 499.0,
   "rating": 4.7,
   "reviews": 2387,
-  "stock": 12,
+  "stock": 5000,
   "image": "purificador.jpg",
   "description": "Filtro HEPA verdadero que elimina el 99.9% de impurezas. 4 velocidades y temporizador.",
   "related": [
@@ -617,7 +617,7 @@
   "list_price": 4999.0,
   "rating": 4.4,
   "reviews": 2026,
-  "stock": 30,
+  "stock": 5000,
   "image": "galaxy-zflip7.jpg",
   "description": "Plegable, delgado y liviano, con FlexWindow para usarlo sin abrirlo.",
   "related": [
@@ -636,7 +636,7 @@
   "list_price": 2099.0,
   "rating": 4.3,
   "reviews": 877,
-  "stock": 20,
+  "stock": 5000,
   "image": "tv-lg-50.jpg",
   "description": "4K UHD con webOS, inteligencia artificial ThinQ y HDR.",
   "related": [
@@ -654,7 +654,7 @@
   "list_price": 5999.0,
   "rating": 4.9,
   "reviews": 1948,
-  "stock": 20,
+  "stock": 5000,
   "image": "hp-oled-i7.jpg",
   "description": "Pantalla OLED 2.8K, Intel Core i7 de 10 núcleos y gráficos NVIDIA RTX.",
   "related": [
@@ -672,7 +672,7 @@
   "list_price": 39.0,
   "rating": 4.3,
   "reviews": 1752,
-  "stock": 4,
+  "stock": 5000,
   "image": "audif-cable.jpg",
   "description": "Audífonos in-ear con conector 3.5 mm, control de volumen y micrófono para llamadas.",
   "related": [
@@ -688,7 +688,7 @@
   "list_price": 3499.0,
   "rating": 4.3,
   "reviews": 2422,
-  "stock": 30,
+  "stock": 5000,
   "image": "secadora-lg.jpg",
   "description": "Gran capacidad, sensor de humedad y operación silenciosa.",
   "related": [
@@ -704,7 +704,7 @@
   "list_price": 99.0,
   "rating": 4.4,
   "reviews": 776,
-  "stock": 6,
+  "stock": 5000,
   "image": "batidora.jpg",
   "description": "Liviana y potente, con varillas de acero inoxidable desmontables.",
   "related": [
@@ -720,7 +720,7 @@
   "list_price": 699.0,
   "rating": 4.4,
   "reviews": 1474,
-  "stock": 30,
+  "stock": 5000,
   "image": "dispensador.jpg",
   "description": "Agua fría y caliente al instante, con gabinete de almacenamiento.",
   "related": [
@@ -736,7 +736,7 @@
   "list_price": 1099.0,
   "rating": 4.3,
   "reviews": 1194,
-  "stock": 3,
+  "stock": 5000,
   "image": "galaxy-a25.jpg",
   "description": "Pantalla Super AMOLED, cámara de 50 MP y conectividad 5G.",
   "related": [
@@ -755,7 +755,7 @@
   "list_price": 2199.0,
   "rating": 4.6,
   "reviews": 2539,
-  "stock": 3,
+  "stock": 5000,
   "image": "tv-mi-55.jpg",
   "description": "Pantalla 4K de 55\" con Android TV y Dolby Audio.",
   "related": [
@@ -773,7 +773,7 @@
   "list_price": 7499.0,
   "rating": 4.3,
   "reviews": 1443,
-  "stock": 8,
+  "stock": 5000,
   "image": "hp-omen.jpg",
   "description": "Intel Core i7, RTX 4060, 16 GB de RAM y 1 TB SSD para jugar en ultra.",
   "related": [
@@ -791,7 +791,7 @@
   "list_price": 149.0,
   "rating": 4.2,
   "reviews": 2356,
-  "stock": 4,
+  "stock": 5000,
   "image": "tripode-parl.jpg",
   "description": "Soporte de aluminio con altura regulable para parlantes de hasta 50 kg.",
   "related": [
@@ -808,7 +808,7 @@
   "list_price": 179.0,
   "rating": 4.3,
   "reviews": 1269,
-  "stock": 25,
+  "stock": 5000,
   "image": "cafetera.jpg",
   "description": "Jarra de vidrio de 12 tazas, filtro permanente y placa que mantiene el café caliente.",
   "related": [
@@ -825,7 +825,7 @@
   "list_price": 1999.0,
   "rating": 4.3,
   "reviews": 2229,
-  "stock": 12,
+  "stock": 5000,
   "image": "galaxy-a57.jpg",
   "description": "Pantalla AMOLED de 6.7\" a 120 Hz, procesador octa-core y batería de 5000 mAh.",
   "related": [
@@ -844,7 +844,7 @@
   "list_price": 2299.0,
   "rating": 4.8,
   "reviews": 387,
-  "stock": 40,
+  "stock": 5000,
   "image": "tv-mg-58.jpg",
   "description": "Pantalla sin bordes de 58\", Google TV y control por voz.",
   "related": [
@@ -862,7 +862,7 @@
   "list_price": 2999.0,
   "rating": 4.5,
   "reviews": 2874,
-  "stock": 5,
+  "stock": 5000,
   "image": "dell-2en1.jpg",
   "description": "Pantalla táctil que gira 360°: úsala como laptop o como tablet.",
   "related": [
@@ -881,7 +881,7 @@
   "list_price": 79.0,
   "rating": 4.9,
   "reviews": 2623,
-  "stock": 40,
+  "stock": 5000,
   "image": "conv-audio.jpg",
   "description": "Convierte la salida óptica o coaxial de tu TV a RCA o 3.5 mm para equipos de sonido.",
   "related": [
@@ -898,7 +898,7 @@
   "list_price": 149.0,
   "rating": 4.5,
   "reviews": 1446,
-  "stock": 20,
+  "stock": 5000,
   "image": "hervidor.jpg",
   "description": "Hierve agua en minutos, con indicador de nivel iluminado y apagado automático.",
   "related": [
@@ -914,7 +914,7 @@
   "list_price": 1499.0,
   "rating": 4.6,
   "reviews": 1345,
-  "stock": 5,
+  "stock": 5000,
   "image": "infinix-gt.jpg",
   "description": "Diseño gamer con luces, cámara de 108 MP y gran rendimiento para juegos.",
   "related": [
@@ -933,7 +933,7 @@
   "list_price": 3999.0,
   "rating": 4.3,
   "reviews": 1631,
-  "stock": 6,
+  "stock": 5000,
   "image": "tv-lg-65-sb.jpg",
   "description": "Pack: TV LG UHD 65\" con webOS y barra de sonido incluida.",
   "related": [
@@ -951,7 +951,7 @@
   "list_price": 3999.0,
   "rating": 4.6,
   "reviews": 880,
-  "stock": 25,
+  "stock": 5000,
   "image": "asus-zen14.jpg",
   "description": "Ultradelgada, AMD Ryzen 7 y pantalla Full HD. Incluye funda.",
   "related": [
@@ -970,7 +970,7 @@
   "list_price": 199.0,
   "rating": 4.5,
   "reviews": 1908,
-  "stock": 4,
+  "stock": 5000,
   "image": "audif-tws.jpg",
   "description": "True wireless con estuche de carga, controles táctiles y Bluetooth 5.3.",
   "related": [
@@ -987,7 +987,7 @@
   "list_price": 299.0,
   "rating": 4.7,
   "reviews": 2151,
-  "stock": 30,
+  "stock": 5000,
   "image": "unnec-mini.jpg",
   "description": "Pequeño y práctico, ideal como primer celular o equipo de respaldo.",
   "related": [
@@ -1006,7 +1006,7 @@
   "list_price": 4499.0,
   "rating": 4.5,
   "reviews": 771,
-  "stock": 15,
+  "stock": 5000,
   "image": "tv-sam-65q.jpg",
   "description": "QLED 4K 2025 con 7 años de actualizaciones y garantía de 2 años.",
   "related": [
@@ -1024,7 +1024,7 @@
   "list_price": 1299.0,
   "rating": 4.5,
   "reviews": 2866,
-  "stock": 25,
+  "stock": 5000,
   "image": "hp-chrome.jpg",
   "description": "Rápida, segura y con batería para todo el día. Ideal para estudiantes.",
   "related": [
@@ -1043,7 +1043,7 @@
   "list_price": 349.0,
   "rating": 4.8,
   "reviews": 1145,
-  "stock": 20,
+  "stock": 5000,
   "image": "audif-anc.jpg",
   "description": "Cancelación activa de ruido, 16 horas de batería y almohadillas super soft.",
   "related": [
@@ -1060,7 +1060,7 @@
   "list_price": 699.0,
   "rating": 4.7,
   "reviews": 3070,
-  "stock": 3,
+  "stock": 5000,
   "image": "xiaomi-128.jpg",
   "description": "Cámara dual de 32 MP, diseño elegante color dorado y batería de larga duración.",
   "related": [
@@ -1079,7 +1079,7 @@
   "list_price": 4999.0,
   "rating": 4.8,
   "reviews": 1401,
-  "stock": 4,
+  "stock": 5000,
   "image": "tv-tcl-65.jpg",
   "description": "QD-MiniLED con brillo extremo y contraste profundo.",
   "related": [
@@ -1097,7 +1097,7 @@
   "list_price": 2799.0,
   "rating": 4.8,
   "reviews": 3145,
-  "stock": 25,
+  "stock": 5000,
   "image": "hp15-i5-rm.jpg",
   "description": "Edición especial Real Madrid con Intel Core i5 y pantalla Full HD.",
   "related": [
@@ -1116,7 +1116,7 @@
   "list_price": 99.0,
   "rating": 4.7,
   "reviews": 1308,
-  "stock": 40,
+  "stock": 5000,
   "image": "audif-sport.jpg",
   "description": "Resisten salpicaduras y sudor, 8 horas de música y micrófono para llamadas.",
   "related": [
@@ -1132,7 +1132,7 @@
   "list_price": 4999.0,
   "rating": 4.5,
   "reviews": 2827,
-  "stock": 25,
+  "stock": 5000,
   "image": "honor-m7p.jpg",
   "description": "Triple cámara profesional, pantalla de 6.7\" y 512 GB de almacenamiento.",
   "related": [
@@ -1151,7 +1151,7 @@
   "list_price": 4299.0,
   "rating": 4.8,
   "reviews": 2996,
-  "stock": 15,
+  "stock": 5000,
   "image": "tv-sam-70.jpg",
   "description": "Pantalla gigante de 70\" con procesador Crystal 4K.",
   "related": [
@@ -1169,7 +1169,7 @@
   "list_price": 799.0,
   "rating": 4.4,
   "reviews": 2673,
-  "stock": 4,
+  "stock": 5000,
   "image": "mon-g3-24.jpg",
   "description": "Full HD a 180 Hz, 1 ms y sRGB 95% para juegos fluidos.",
   "related": [
@@ -1186,7 +1186,7 @@
   "list_price": 1299.0,
   "rating": 4.4,
   "reviews": 1620,
-  "stock": 40,
+  "stock": 5000,
   "image": "soundbar-51.jpg",
   "description": "Sistema 5.1 con subwoofer de 6.5\", satélites y Dolby Audio. HDMI, óptico y Bluetooth 5.3.",
   "related": [
@@ -1203,7 +1203,7 @@
   "list_price": 499.0,
   "rating": 4.5,
   "reviews": 1674,
-  "stock": 15,
+  "stock": 5000,
   "image": "lenovo-m8.jpg",
   "description": "Tablet compacta de 8\" ideal para niños, lectura y videos.",
   "related": [
@@ -1221,7 +1221,7 @@
   "list_price": 4999.0,
   "rating": 4.5,
   "reviews": 3084,
-  "stock": 4,
+  "stock": 5000,
   "image": "tv-tcl-75.jpg",
   "description": "Dolby Vision y Atmos, HDR10+ y control por voz manos libres.",
   "related": [
@@ -1239,7 +1239,7 @@
   "list_price": 899.0,
   "rating": 4.7,
   "reviews": 1109,
-  "stock": 25,
+  "stock": 5000,
   "image": "mon-msi-27.jpg",
   "description": "Panel IPS Full HD a 144 Hz con protección ocular y parlantes.",
   "related": [
@@ -1256,7 +1256,7 @@
   "list_price": 1999.0,
   "rating": 4.4,
   "reviews": 1931,
-  "stock": 12,
+  "stock": 5000,
   "image": "hometheater.jpg",
   "description": "Sonido envolvente 5.1 de 1000W con torres y subwoofer para una experiencia de cine.",
   "related": [
@@ -1272,7 +1272,7 @@
   "list_price": 599.0,
   "rating": 4.3,
   "reviews": 2638,
-  "stock": 15,
+  "stock": 5000,
   "image": "tablet-10.jpg",
   "description": "Pantalla IPS de 10.1\", 4 GB de RAM. Incluye funda y memoria USB de regalo.",
   "related": [
@@ -1290,7 +1290,7 @@
   "list_price": 6499.0,
   "rating": 4.7,
   "reviews": 736,
-  "stock": 5,
+  "stock": 5000,
   "image": "tv-sam-75q.jpg",
   "description": "QLED de 75\" con colores vibrantes y Smart Hub.",
   "related": [
@@ -1308,7 +1308,7 @@
   "list_price": 1599.0,
   "rating": 4.5,
   "reviews": 724,
-  "stock": 12,
+  "stock": 5000,
   "image": "mon-curvo-32.jpg",
   "description": "Curvatura 1500R, resolución 4K y parlantes integrados.",
   "related": [
@@ -1325,7 +1325,7 @@
   "list_price": 199.0,
   "rating": 4.3,
   "reviews": 519,
-  "stock": 20,
+  "stock": 5000,
   "image": "parl-steren.jpg",
   "description": "Compacto, resistente al agua y con luz LED. Hasta 10 horas de reproducción.",
   "related": [
@@ -1341,7 +1341,7 @@
   "list_price": 1099.0,
   "rating": 4.2,
   "reviews": 315,
-  "stock": 6,
+  "stock": 5000,
   "image": "lenovo-m11.jpg",
   "description": "Pantalla de 11\" a 90 Hz, 8 GB de RAM y sonido Dolby Atmos.",
   "related": [
@@ -1359,7 +1359,7 @@
   "list_price": 9999.0,
   "rating": 4.2,
   "reviews": 2459,
-  "stock": 20,
+  "stock": 5000,
   "image": "tv-sam-85q.jpg",
   "description": "La experiencia de cine definitiva: 85\" QLED 4K.",
   "related": [
@@ -1377,7 +1377,7 @@
   "list_price": 399.0,
   "rating": 4.7,
   "reviews": 2221,
-  "stock": 25,
+  "stock": 5000,
   "image": "teclado-rgb.jpg",
   "description": "Formato compacto 60%, switches mecánicos e iluminación RGB por tecla.",
   "related": [
@@ -1394,7 +1394,7 @@
   "list_price": 299.0,
   "rating": 4.2,
   "reviews": 3186,
-  "stock": 8,
+  "stock": 5000,
   "image": "parl-royq.jpg",
   "description": "Sumergible IPX7, bajos potentes y anillos de luz RGB.",
   "related": [
@@ -1410,7 +1410,7 @@
   "list_price": 119.0,
   "rating": 4.5,
   "reviews": 490,
-  "stock": 12,
+  "stock": 5000,
   "image": "cargador-25w.jpg",
   "description": "Carga súper rápida de 25W. Incluye cable USB-C a USB-C.",
   "related": [
@@ -1427,7 +1427,7 @@
   "list_price": 549.0,
   "rating": 4.8,
   "reviews": 638,
-  "stock": 30,
+  "stock": 5000,
   "image": "tv-ken-24.jpg",
   "description": "Compacto y práctico, ideal para dormitorio o cocina. HDMI y sonido estéreo.",
   "related": [
@@ -1445,7 +1445,7 @@
   "list_price": 89.0,
   "rating": 4.7,
   "reviews": 1390,
-  "stock": 40,
+  "stock": 5000,
   "image": "mouse-vert.jpg",
   "description": "Diseño vertical que reduce la tensión de la muñeca.",
   "related": [
@@ -1462,7 +1462,7 @@
   "list_price": 1499.0,
   "rating": 4.3,
   "reviews": 1054,
-  "stock": 15,
+  "stock": 5000,
   "image": "torre-blik.jpg",
   "description": "Torre para fiestas con iluminación RGB, ruedas y micrófono inalámbrico incluido.",
   "related": [
@@ -1479,7 +1479,7 @@
   "list_price": 99.0,
   "rating": 4.6,
   "reviews": 459,
-  "stock": 3,
+  "stock": 5000,
   "image": "cable-usbc-60w.jpg",
   "description": "Carga rápida de hasta 60W y transferencia de datos.",
   "related": [
@@ -1495,7 +1495,7 @@
   "list_price": 799.0,
   "rating": 4.8,
   "reviews": 1982,
-  "stock": 40,
+  "stock": 5000,
   "image": "tv-gtv-32.jpg",
   "description": "Google TV con Netflix, YouTube, Prime Video y más.",
   "related": [
@@ -1513,7 +1513,7 @@
   "list_price": 129.0,
   "rating": 4.4,
   "reviews": 3146,
-  "stock": 6,
+  "stock": 5000,
   "image": "mouse-gamer.jpg",
   "description": "Sensor de alta precisión, botones programables e iluminación RGB.",
   "related": [
@@ -1530,7 +1530,7 @@
   "list_price": 1799.0,
   "rating": 4.5,
   "reviews": 2073,
-  "stock": 4,
+  "stock": 5000,
   "image": "equipo-pana.jpg",
   "description": "Minicomponente con super woofers, grabación USB y conexión Bluetooth.",
   "related": [
@@ -1547,7 +1547,7 @@
   "list_price": 39.0,
   "rating": 4.6,
   "reviews": 2237,
-  "stock": 4,
+  "stock": 5000,
   "image": "mica-mate.jpg",
   "description": "Vidrio templado mate que reduce reflejos y huellas.",
   "related": [
@@ -1563,7 +1563,7 @@
   "list_price": 699.0,
   "rating": 4.6,
   "reviews": 127,
-  "stock": 3,
+  "stock": 5000,
   "image": "proyector.jpg",
   "description": "Proyecta hasta 120\", conexión Wi-Fi para tu celular y control remoto.",
   "related": [
@@ -1580,7 +1580,7 @@
   "list_price": 199.0,
   "rating": 4.8,
   "reviews": 1681,
-  "stock": 6,
+  "stock": 5000,
   "image": "mochila-hp.jpg",
   "description": "Compartimento acolchado para laptop de 15.6\" y bolsillos laterales.",
   "related": [
@@ -1597,7 +1597,7 @@
   "list_price": 2799.0,
   "rating": 4.3,
   "reviews": 1685,
-  "stock": 25,
+  "stock": 5000,
   "image": "xboom.jpg",
   "description": "Sonido de alta potencia, efectos de luz y funciones de karaoke y DJ.",
   "related": [
@@ -1614,7 +1614,7 @@
   "list_price": 35.0,
   "rating": 4.9,
   "reviews": 2553,
-  "stock": 3,
+  "stock": 5000,
   "image": "case-clear.jpg",
   "description": "Protección con esquinas reforzadas sin ocultar el diseño de tu celular.",
   "related": [
@@ -1630,7 +1630,7 @@
   "list_price": 129.0,
   "rating": 4.8,
   "reviews": 3015,
-  "stock": 40,
+  "stock": 5000,
   "image": "rack-tv.jpg",
   "description": "Brazo articulado con giro e inclinación. Incluye accesorios de instalación.",
   "related": [
@@ -1647,7 +1647,7 @@
   "list_price": 699.0,
   "rating": 4.3,
   "reviews": 2058,
-  "stock": 12,
+  "stock": 5000,
   "image": "ssd-1tb.jpg",
   "description": "Hasta 1050 MB/s, resistente al agua y a caídas.",
   "related": [
@@ -1664,7 +1664,7 @@
   "list_price": 99.0,
   "rating": 4.2,
   "reviews": 891,
-  "stock": 30,
+  "stock": 5000,
   "image": "powerbank-10k.jpg",
   "description": "Batería portátil de 10000 mAh con doble salida y entrada USB-C.",
   "related": [
@@ -1681,7 +1681,7 @@
   "list_price": 89.0,
   "rating": 4.3,
   "reviews": 3109,
-  "stock": 5,
+  "stock": 5000,
   "image": "antena-hd.jpg",
   "description": "Recibe canales de TV digital en alta definición sin costo mensual.",
   "related": [
@@ -1698,7 +1698,7 @@
   "list_price": 119.0,
   "rating": 4.7,
   "reviews": 154,
-  "stock": 8,
+  "stock": 5000,
   "image": "hub-usb7.jpg",
   "description": "Amplía tu laptop con puertos USB 3.0 y USB-C. Cuerpo de aluminio.",
   "related": [
@@ -1715,7 +1715,7 @@
   "list_price": 1099.0,
   "rating": 4.5,
   "reviews": 833,
-  "stock": 30,
+  "stock": 5000,
   "image": "impresora-hp.jpg",
   "description": "Imprime, copia y escanea con tanques de tinta recargables y Wi-Fi.",
   "related": [
@@ -1732,7 +1732,7 @@
   "list_price": 799.0,
   "rating": 4.9,
   "reviews": 678,
-  "stock": 25,
+  "stock": 5000,
   "image": "mon-lg-27.jpg",
   "description": "IPS Full HD a 120 Hz con HDR10 y diseño sin bordes.",
   "related": [
@@ -1740,5 +1740,117 @@
    "MOUSE-VERT",
    "TECLADO-RGB"
   ]
+ },
+ {
+  "sku": "YAPE-CASE-CLEAR",
+  "name": "Case transparente antigolpes",
+  "category": "Zona Yape real",
+  "price": 1.0,
+  "list_price": 19.0,
+  "rating": 4.9,
+  "reviews": 2553,
+  "stock": 15,
+  "image": "case-clear.jpg",
+  "description": "Protección con esquinas reforzadas sin ocultar el diseño de tu celular. Edición Zona Yape real: se paga con Yape de verdad (monto único de céntimos).",
+  "related": [],
+  "pago_yape_real": true
+ },
+ {
+  "sku": "YAPE-MICA-MATE",
+  "name": "Protector de pantalla mate antihuellas",
+  "category": "Zona Yape real",
+  "price": 1.0,
+  "list_price": 19.0,
+  "rating": 4.6,
+  "reviews": 2237,
+  "stock": 15,
+  "image": "mica-mate.jpg",
+  "description": "Vidrio templado mate que reduce reflejos y huellas. Edición Zona Yape real: se paga con Yape de verdad (monto único de céntimos).",
+  "related": [],
+  "pago_yape_real": true
+ },
+ {
+  "sku": "YAPE-CABLE-USBC-60W",
+  "name": "Cable USB-C a USB-C 60W 1 m",
+  "category": "Zona Yape real",
+  "price": 1.0,
+  "list_price": 59.0,
+  "rating": 4.6,
+  "reviews": 459,
+  "stock": 15,
+  "image": "cable-usbc-60w.jpg",
+  "description": "Carga rápida de hasta 60W y transferencia de datos. Edición Zona Yape real: se paga con Yape de verdad (monto único de céntimos).",
+  "related": [],
+  "pago_yape_real": true
+ },
+ {
+  "sku": "YAPE-AUDIF-CABLE",
+  "name": "Audífonos con cable y micrófono",
+  "category": "Zona Yape real",
+  "price": 1.0,
+  "list_price": 19.0,
+  "rating": 4.3,
+  "reviews": 1752,
+  "stock": 15,
+  "image": "audif-cable.jpg",
+  "description": "Audífonos in-ear con conector 3.5 mm, control de volumen y micrófono para llamadas. Edición Zona Yape real: se paga con Yape de verdad (monto único de céntimos).",
+  "related": [],
+  "pago_yape_real": true
+ },
+ {
+  "sku": "YAPE-CONV-AUDIO",
+  "name": "Convertidor de audio digital a analógico",
+  "category": "Zona Yape real",
+  "price": 1.0,
+  "list_price": 49.0,
+  "rating": 4.9,
+  "reviews": 2623,
+  "stock": 15,
+  "image": "conv-audio.jpg",
+  "description": "Convierte la salida óptica o coaxial de tu TV a RCA o 3.5 mm para equipos de sonido. Edición Zona Yape real: se paga con Yape de verdad (monto único de céntimos).",
+  "related": [],
+  "pago_yape_real": true
+ },
+ {
+  "sku": "YAPE-HDMI-4K",
+  "name": "Cable HDMI 4K Ultra HD 2 m",
+  "category": "Zona Yape real",
+  "price": 1.0,
+  "list_price": 22.0,
+  "rating": 4.4,
+  "reviews": 2297,
+  "stock": 15,
+  "image": "hdmi-4k.jpg",
+  "description": "Cable HDMI de alta velocidad con conectores bañados en oro. Soporta 4K y HDR. Edición Zona Yape real: se paga con Yape de verdad (monto único de céntimos).",
+  "related": [],
+  "pago_yape_real": true
+ },
+ {
+  "sku": "YAPE-MOUSE-VERT",
+  "name": "Mouse vertical ergonómico inalámbrico",
+  "category": "Zona Yape real",
+  "price": 1.0,
+  "list_price": 55.0,
+  "rating": 4.7,
+  "reviews": 1390,
+  "stock": 15,
+  "image": "mouse-vert.jpg",
+  "description": "Diseño vertical que reduce la tensión de la muñeca. Edición Zona Yape real: se paga con Yape de verdad (monto único de céntimos).",
+  "related": [],
+  "pago_yape_real": true
+ },
+ {
+  "sku": "YAPE-CARGADOR-25W",
+  "name": "Cargador Samsung 25W USB-C + cable",
+  "category": "Zona Yape real",
+  "price": 1.0,
+  "list_price": 69.0,
+  "rating": 4.5,
+  "reviews": 490,
+  "stock": 15,
+  "image": "cargador-25w.jpg",
+  "description": "Carga súper rápida de 25W. Incluye cable USB-C a USB-C. Edición Zona Yape real: se paga con Yape de verdad (monto único de céntimos).",
+  "related": [],
+  "pago_yape_real": true
  }
 ]

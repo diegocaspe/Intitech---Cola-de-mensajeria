@@ -3,15 +3,30 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import threading
 from contextlib import closing
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Callable
 
-from app.repositories.interfaces import ORDER_EVENT, Outbox, OrderRepository, SentEmailRepository, UserRepository
+from app.repositories.catalog_repository import load_products, to_product
+from app.repositories.interfaces import (ORDER_EVENT, PAGO_EVENT, Outbox, OrderRepository, ProcessResult,
+                                         ProductRepository, SentEmailRepository, UserRepository)
 from app.models.email import EmailEvent, EmailToken, TokenPurpose, TokenResult
 from app.models.order import Order, OrderItem, OrderStatus, money
+from app.models.product import Product
 from app.models.user import EmailStatus, Role, User
+
+_ORDER_COLS = "id, customer_email, items, status, created_at"
+_PRODUCT_COLS = ("sku, name, category, price, list_price, rating, reviews, stock, image, description, related, "
+                 "pago_yape_real")
+# el mismo descuento atómico que en PostgreSQL: resta solo si alcanza
+DESCONTAR_STOCK = "UPDATE products SET stock = stock - ?, updated_at = ? WHERE sku = ? AND stock >= ?"
+
+
+def descontar(c, sku: str, qty: int) -> bool:
+    """True si descontó; False si no alcanza el stock (o el SKU no existe)."""
+    return c.execute(DESCONTAR_STOCK, (qty, _now(), sku, qty)).rowcount == 1
 
 
 def _now() -> str:
@@ -33,6 +48,7 @@ class SqliteOrderRepository(OrderRepository):
     def __init__(self, db_path: str):
         self.db_path = db_path
         self._memory_conn = None
+        self._memory_lock = threading.RLock()   # la base en memoria es UNA conexión: los hilos la usan de a uno
         if db_path == ":memory:":
             self._memory_conn = sqlite3.connect(":memory:", check_same_thread=False)
         else:
@@ -50,11 +66,20 @@ class SqliteOrderRepository(OrderRepository):
         self._run("""CREATE TABLE IF NOT EXISTS outbox (
                 id INTEGER PRIMARY KEY AUTOINCREMENT, aggregate_id TEXT NOT NULL, event_type TEXT NOT NULL,
                 payload TEXT NOT NULL, created_at TEXT NOT NULL, published_at TEXT)""")
+        if "stock_descontado" not in {r[1] for r in self._run("PRAGMA table_info(orders)")}:
+            self._run("ALTER TABLE orders ADD COLUMN stock_descontado INTEGER NOT NULL DEFAULT 0")
+        # catálogo con stock real (lo llena SqliteProductRepository). Aquí porque el worker lo descuenta junto al pedido
+        self._run("""CREATE TABLE IF NOT EXISTS products (
+                sku TEXT PRIMARY KEY, name TEXT NOT NULL, category TEXT NOT NULL, price TEXT NOT NULL,
+                list_price TEXT NOT NULL, rating REAL NOT NULL DEFAULT 0, reviews INTEGER NOT NULL DEFAULT 0,
+                stock INTEGER NOT NULL CHECK (stock >= 0), image TEXT NOT NULL, description TEXT NOT NULL DEFAULT '',
+                related TEXT NOT NULL DEFAULT '[]', pago_yape_real INTEGER NOT NULL DEFAULT 0, updated_at TEXT)""")
+        self._run("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)")
 
     def _run(self, sql: str, args: tuple = ()):
         """Una conexión por operación: segura entre hilos y entre procesos (API y workers)."""
         if self._memory_conn:
-            with self._memory_conn as c:
+            with self._memory_lock, self._memory_conn as c:
                 return c.execute(sql, args).fetchall()
         with closing(sqlite3.connect(self.db_path, timeout=15)) as c:
             with c:
@@ -63,7 +88,7 @@ class SqliteOrderRepository(OrderRepository):
     def _tx(self, *statements: tuple[str, tuple]) -> None:
         """Varias sentencias en una sola transacción (todo o nada)."""
         if self._memory_conn:
-            with self._memory_conn as c:
+            with self._memory_lock, self._memory_conn as c:
                 for sql, args in statements:
                     c.execute(sql, args)
             return
@@ -74,7 +99,7 @@ class SqliteOrderRepository(OrderRepository):
 
     def save(self, order: Order) -> None:
         self._tx(
-            ("INSERT INTO orders VALUES (?,?,?,?,?)",
+            (f"INSERT INTO orders ({_ORDER_COLS}) VALUES (?,?,?,?,?)",
              (order.id, order.customer_email, json.dumps([i.to_dict() for i in order.items]),
               order.status.value, order.created_at)),
             ("INSERT INTO outbox (aggregate_id, event_type, payload, created_at) VALUES (?, 'OrderCreated', ?, ?)",
@@ -82,7 +107,7 @@ class SqliteOrderRepository(OrderRepository):
         )
 
     def get(self, order_id: str) -> Order | None:
-        rows = self._run("SELECT * FROM orders WHERE id=?", (order_id,))
+        rows = self._run(f"SELECT {_ORDER_COLS} FROM orders WHERE id=?", (order_id,))
         return self._to_order(rows[0]) if rows else None
 
     def list(self, status: OrderStatus | None = None, limit: int | None = None,
@@ -93,7 +118,7 @@ class SqliteOrderRepository(OrderRepository):
         if older_than_s:
             cutoff = datetime.now(timezone.utc) - timedelta(seconds=older_than_s)
             where.append("created_at<?"); args.append(cutoff.isoformat())
-        sql = "SELECT * FROM orders" + (" WHERE " + " AND ".join(where) if where else "")
+        sql = f"SELECT {_ORDER_COLS} FROM orders" + (" WHERE " + " AND ".join(where) if where else "")
         args = tuple(args)
         sql += " ORDER BY created_at"
         if limit:
@@ -101,11 +126,11 @@ class SqliteOrderRepository(OrderRepository):
         return [self._to_order(r) for r in self._run(sql, args)]
 
     def recent(self, limit: int) -> list[Order]:
-        rows = self._run(f"SELECT * FROM orders ORDER BY created_at DESC LIMIT {int(limit)}")
+        rows = self._run(f"SELECT {_ORDER_COLS} FROM orders ORDER BY created_at DESC LIMIT {int(limit)}")
         return [self._to_order(r) for r in rows]
 
     def list_by_email(self, email: str, limit: int) -> list[Order]:
-        rows = self._run(f"SELECT * FROM orders WHERE customer_email=? ORDER BY created_at DESC LIMIT {int(limit)}",
+        rows = self._run(f"SELECT {_ORDER_COLS} FROM orders WHERE customer_email=? ORDER BY created_at DESC LIMIT {int(limit)}",
                          (email,))
         return [self._to_order(r) for r in rows]
 
@@ -115,20 +140,36 @@ class SqliteOrderRepository(OrderRepository):
     def _write(self, fn) -> object:
         """fn(cursor) dentro de una sola transacción (todo o nada); devuelve lo que devuelva fn."""
         if self._memory_conn:
-            with self._memory_conn as c:
+            with self._memory_lock, self._memory_conn as c:
                 return fn(c)
         with closing(sqlite3.connect(self.db_path, timeout=15)) as c:
             with c:
                 return fn(c)
 
-    def mark_processed(self, order_id: str, receipt: EmailEvent | None = None) -> bool:
+    def mark_processed(self, order_id: str, receipt: EmailEvent | None = None,
+                       stock: list[tuple[str, int]] = ()) -> ProcessResult:
         def tx(c):
-            done = c.execute("UPDATE orders SET status='PROCESSED' WHERE id=? AND status<>'PROCESSED'",
-                             (order_id,)).rowcount
-            if done and receipt:
+            row = c.execute("SELECT status, stock_descontado FROM orders WHERE id=?", (order_id,)).fetchone()
+            if row is None or row[0] in ("PROCESSED", "REJECTED"):
+                return ProcessResult(None)
+            if not row[1]:
+                c.execute("SAVEPOINT stock")
+                for sku, qty in sorted(stock):
+                    if not descontar(c, sku, qty):
+                        c.execute("ROLLBACK TO stock")   # deshace los descuentos de este pedido: todo o nada
+                        c.execute("RELEASE stock")
+                        c.execute("UPDATE orders SET status='REJECTED' WHERE id=?", (order_id,))
+                        return ProcessResult(OrderStatus.REJECTED, sku)
+                c.execute("RELEASE stock")
+            c.execute("UPDATE orders SET status='PROCESSED', stock_descontado=1 WHERE id=?", (order_id,))
+            if receipt:
                 c.execute(*_email_row(receipt))
-            return bool(done)
+            return ProcessResult(OrderStatus.PROCESSED)
         return self._write(tx)
+
+    def requeue_failed(self, order_id: str) -> bool:
+        return bool(self._write(lambda c: c.execute(
+            "UPDATE orders SET status='PUBLISHED' WHERE id=? AND status='FAILED'", (order_id,)).rowcount))
 
     def mark_published(self, order_id: str) -> None:
         self._run("UPDATE orders SET status='PUBLISHED' WHERE id=? AND status='PENDING'", (order_id,))
@@ -169,6 +210,42 @@ class SqliteOrderRepository(OrderRepository):
                      id=id_, status=OrderStatus(status), created_at=created)
 
 
+class SqliteProductRepository(ProductRepository):
+    """Catálogo en la tabla products de la misma base que los pedidos (para las pruebas). `seed` hace de catalogo.json:
+    llena la tabla si está vacía y es lo que deja «Restablecer stock»."""
+
+    def __init__(self, repo: SqliteOrderRepository, seed: list[Product] | None = None):
+        self.repo = repo
+        self.seed = seed if seed is not None else load_products()
+        if not repo._run("SELECT 1 FROM products LIMIT 1"):
+            self.repo._tx(*[(f"INSERT OR IGNORE INTO products ({_PRODUCT_COLS}, updated_at) "
+                             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", self._row(p)) for p in self.seed])
+
+    @staticmethod
+    def _row(p: Product) -> tuple:
+        return (p.sku, p.name, p.category, str(p.price), str(p.list_price), p.rating, p.reviews, p.stock, p.image,
+                p.description, json.dumps(list(p.related)), int(p.pago_yape_real), _now())
+
+    def all(self) -> list[Product]:
+        cols = [c.strip() for c in _PRODUCT_COLS.split(",")]
+        rows = self.repo._run(f"SELECT {_PRODUCT_COLS} FROM products ORDER BY category, sku")
+        return [to_product({**dict(zip(cols, r)), "related": json.loads(r[10]), "pago_yape_real": bool(r[11])})
+                for r in rows]
+
+    def get(self, sku: str) -> Product | None:
+        return next((p for p in self.all() if p.sku == sku), None)
+
+    def initial_stock(self) -> dict[str, int]:
+        return {p.sku: p.stock for p in self.seed}
+
+    def restore_stock(self) -> int:
+        rows = sorted((self._row(p) for p in self.seed), key=lambda r: r[0])
+        self.repo._tx(*[(f"""INSERT INTO products ({_PRODUCT_COLS}, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+                             ON CONFLICT (sku) DO UPDATE SET stock = excluded.stock, updated_at = excluded.updated_at""",
+                         r) for r in rows])
+        return len(rows)
+
+
 class SqliteOutbox(Outbox):
     def __init__(self, repo: SqliteOrderRepository):
         self.repo = repo
@@ -191,8 +268,8 @@ class SqliteOutbox(Outbox):
         self.repo._run(*_email_row(event))
 
     def pending_email_count(self) -> int:
-        return self.repo._run("SELECT COUNT(*) FROM outbox WHERE published_at IS NULL AND event_type <> ?",
-                              (ORDER_EVENT,))[0][0]
+        return self.repo._run("SELECT COUNT(*) FROM outbox WHERE published_at IS NULL AND event_type NOT IN (?, ?)",
+                              (ORDER_EVENT, PAGO_EVENT))[0][0]
 
     def events(self, event_type: str | None = None) -> list[dict]:
         """Todos los eventos con su payload (solo para las pruebas)."""

@@ -39,7 +39,8 @@ paths:
       tags:
       - Usuarios
       summary: Iniciar sesión
-      description: Valida correo y contraseña y entrega la cookie de sesión.
+      description: 'Valida correo y contraseña y entrega la cookie de sesión. Contra la fuerza bruta: tras 5 intentos fallidos
+        en 60 s desde una misma IP responde 429 (con la cabecera Retry-After) hasta que pase la ventana.'
       operationId: login_api_auth_login_post
       requestBody:
         content:
@@ -53,6 +54,8 @@ paths:
           content:
             application/json:
               schema: {}
+        '429':
+          description: Demasiados intentos fallidos desde esta IP
         '422':
           description: Validation Error
           content:
@@ -182,7 +185,9 @@ paths:
       tags:
       - Tienda
       summary: Catálogo de productos
-      description: Los 100 productos con precio, descuento, stock e imagen.
+      description: Los productos con precio, descuento, stock e imagen. El stock sale de la tabla products (el worker lo
+        descuenta al confirmar cada pedido). Los de la Zona Yape real llevan pago_yape_real=true y su stock descuenta además
+        los pedidos pendientes de pago (solo si la zona está activa).
       operationId: list_products_api_products_get
       responses:
         '200':
@@ -281,6 +286,226 @@ paths:
           content:
             application/json:
               schema: {}
+  /api/yape/config:
+    get:
+      tags:
+      - Zona Yape real
+      summary: Configuración pública de la Zona Yape
+      description: Si la zona está activa, el titular de la cuenta Yape, el rango de montos, los minutos para pagar y si el
+        QR está configurado (static/img/yape_qr.png). Nunca incluye el secreto.
+      operationId: yape_config_api_yape_config_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/yape/checkout:
+    post:
+      tags:
+      - Zona Yape real
+      summary: Iniciar un pago con Yape real
+      description: Crea un pedido pendiente_pago_yape de 1 unidad del producto con un MONTO ÚNICO entre YAPE_MONTO_MIN y YAPE_MONTO_MAX
+        que ningún otro pedido vigente usa, y reserva el stock por YAPE_MINUTOS_EXPIRA minutos. Requiere sesión. Si la base
+        de datos no responde o no quedan montos libres responde 503 (alta demanda) y no crea nada.
+      operationId: yape_checkout_api_yape_checkout_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YapeCheckoutIn'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '409':
+          description: Sin stock
+        '503':
+          description: 'Alta demanda: reintenta en unos segundos'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/yape/pedidos/{pedido_id}:
+    get:
+      tags:
+      - Zona Yape real
+      summary: Pantalla de pago en vivo
+      description: 'Estado del pago para el cliente; la tienda lo consulta cada segundo. fase: esperando_yapeo, en_cola (con
+        posicion), procesando, pago_registrado (RabbitMQ caído tras recibir el pago), confirmado, expirado o sin_stock (el
+        pago llegó tarde y otro cliente se llevó la última unidad: se devuelve).'
+      operationId: yape_estado_api_yape_pedidos__pedido_id__get
+      parameters:
+      - name: pedido_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Pedido Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/pagos/yape/notificacion:
+    post:
+      tags:
+      - Zona Yape real
+      summary: Webhook de MacroDroid (notificación de Yape)
+      description: 'Recibe cada notificación de Yape que reenvía MacroDroid. Exige la cabecera X-Yape-Secret igual a YAPE_WEBHOOK_SECRET
+        (401 si no coincide) y como mucho 60 peticiones por minuto (429). Guarda SIEMPRE el texto crudo y, en la misma transacción,
+        el evento pago.yape_recibido en el outbox; responde 200 solo si se guardó y 503 si la base de datos no responde (MacroDroid
+        debe reintentar). La misma notificación (título + texto) en el mismo minuto se guarda una sola vez (200 con duplicada=true).
+        No procesa el pago: lo hace el worker desde la cola pagos.'
+      operationId: yape_webhook_api_pagos_yape_notificacion_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '401':
+          description: Falta X-Yape-Secret o no coincide
+        '429':
+          description: Más de 60 por minuto
+        '503':
+          description: 'Base de datos no disponible o zona desactivada: reintentar'
+      parameters:
+      - name: X-Yape-Secret
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Igual a YAPE_WEBHOOK_SECRET
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              required:
+              - texto
+              properties:
+                titulo:
+                  type: string
+                  maxLength: 500
+                  example: Confirmación de Pago
+                texto:
+                  type: string
+                  maxLength: 4000
+                  example: Yape! JUAN PEREZ te envió un pago por S/ 1.37
+  /api/yape/admin/panel:
+    get:
+      tags:
+      - Yape (admin)
+      summary: Pagos Yape en vivo
+      description: Pedidos esperando pago (monto y tiempo restante), notificaciones con su texto crudo, estado y etapa (notificacion
+        → outbox → cola_pagos → worker → confirmado) y los contadores de las colas pagos y pagos.dlq.
+      operationId: yape_panel_api_yape_admin_panel_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/yape/admin/notificaciones/{notificacion_id}/asignar:
+    post:
+      tags:
+      - Yape (admin)
+      summary: Asignar a un pedido
+      description: Asocia a mano una notificación sin_coincidencia (o ignorada) a un pedido Yape pendiente o expirado. El
+        pedido queda pagado y sigue el flujo normal.
+      operationId: yape_asignar_api_yape_admin_notificaciones__notificacion_id__asignar_post
+      parameters:
+      - name: notificacion_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Notificacion Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AsignarIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/yape/admin/notificaciones/{notificacion_id}/rechazar:
+    post:
+      tags:
+      - Yape (admin)
+      summary: Rechazar una notificación
+      description: Marca como rechazada una notificación sin_coincidencia o ignorada (queda guardada, con su texto).
+      operationId: yape_rechazar_api_yape_admin_notificaciones__notificacion_id__rechazar_post
+      parameters:
+      - name: notificacion_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Notificacion Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/yape/admin/simular:
+    post:
+      tags:
+      - Yape (admin)
+      summary: Simular una notificación de Yape
+      description: 'Para probar sin dinero real: crea una notificación marcada como simulada con el monto del pedido indicado
+        (o el monto dado) y la manda por el mismo camino que una real (outbox → cola pagos → worker).'
+      operationId: yape_simular_api_yape_admin_simular_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimularIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /orders:
     post:
       tags:
@@ -310,7 +535,7 @@ paths:
       tags:
       - Pedidos (admin)
       summary: Listar pedidos
-      description: 'Filtra opcionalmente por estado: PENDING, PUBLISHED, PROCESSED o FAILED.'
+      description: 'Filtra opcionalmente por estado: PENDING, PUBLISHED, PROCESSED, FAILED o REJECTED (rechazado por negocio: sin stock o pago rechazado).'
       operationId: list_orders_orders_get
       parameters:
       - name: status
@@ -396,8 +621,9 @@ paths:
       tags:
       - Panel (admin)
       summary: Ver una DLQ
-      description: 'Mensajes que agotaron sus 3 reintentos, con el error y la hora. queue=pedidos (por defecto) o queue=correos
-        (correos que no se pudieron enviar: tipo y destinatario, sin el contenido).'
+      description: 'Mensajes que agotaron sus 3 reintentos, con el error y la hora. queue=pedidos (por defecto), queue=correos
+        (correos que no se pudieron enviar: tipo y destinatario, sin el contenido) o queue=pagos (notificaciones de Yape,
+        por notificacion_id).'
       operationId: dlq_list_api_dlq_get
       parameters:
       - name: queue
@@ -407,6 +633,7 @@ paths:
           enum:
           - pedidos
           - correos
+          - pagos
           type: string
           default: pedidos
           title: Queue
@@ -438,6 +665,7 @@ paths:
           enum:
           - pedidos
           - correos
+          - pagos
           type: string
           default: pedidos
           title: Queue
@@ -474,6 +702,7 @@ paths:
           enum:
           - pedidos
           - correos
+          - pagos
           type: string
           default: pedidos
           title: Queue
@@ -609,12 +838,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/stock:
+    get:
+      tags:
+      - Panel (admin)
+      summary: Stock por producto
+      description: Stock actual de cada producto (tabla products) junto al stock inicial de catalogo.json y, en la Zona Yape,
+        las unidades reservadas por pedidos pendientes de pago.
+      operationId: stock_list_api_stock_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/stock/reset:
+    post:
+      tags:
+      - Panel (admin)
+      summary: Restablecer stock
+      description: Vuelve a poner el stock de todos los productos según catalogo.json (para reiniciar la demo antes de la
+        exposición). No toca pedidos ni colas.
+      operationId: stock_reset_api_stock_reset_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
   /api/reset:
     post:
       tags:
       - Panel (admin)
       summary: Reiniciar la demo
-      description: Vacía la base de datos y las colas, y restablece la configuración.
+      description: Vacía la base de datos (incluidos los pedidos Yape y sus notificaciones) y todas las colas (pedidos, correos
+        y pagos), restablece el stock según catalogo.json y la configuración.
       operationId: reset_api_reset_post
       responses:
         '200':
@@ -628,8 +886,8 @@ paths:
       - Sabotajes (admin)
       summary: Sabotear o recuperar
       description: 'Valores de action. Caídas: kill-worker, kill-relay, kill-mailer, crash-broker, crash-db. Recuperar: revive-worker,
-        revive-relay, revive-mailer, revive-broker, revive-db, recover (todo). Worker lento: slow-on / slow-off. Pedidos con
-        error: poison (uno), poison-on / poison-off. Persistencia: persist-on / persist-off. Escalar: workers-up / workers-down.'
+        revive-relay, revive-mailer, revive-broker, revive-db, recover (todo). Worker lento: slow-on / slow-off. Pedidos
+        venenosos: poison-on / poison-off. Persistencia: persist-on / persist-off. Escalar: workers-up / workers-down.'
       operationId: chaos_api_chaos__action__post
       parameters:
       - name: action
@@ -652,6 +910,16 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
 components:
   schemas:
+    AsignarIn:
+      properties:
+        pedido_id:
+          type: string
+          maxLength: 60
+          title: Pedido Id
+      type: object
+      required:
+      - pedido_id
+      title: AsignarIn
     BurstIn:
       properties:
         count:
@@ -704,6 +972,13 @@ components:
             type: array
           - type: 'null'
           title: Email Ids
+        notificacion_ids:
+          anyOf:
+          - items:
+              type: integer
+            type: array
+          - type: 'null'
+          title: Notificacion Ids
       type: object
       title: DlqAction
     ForgotIn:
@@ -784,6 +1059,7 @@ components:
       - PUBLISHED
       - PROCESSED
       - FAILED
+      - REJECTED
       title: OrderStatus
     RateIn:
       properties:
@@ -844,6 +1120,23 @@ components:
           default: 10
       type: object
       title: SimStart
+    SimularIn:
+      properties:
+        pedido_id:
+          anyOf:
+          - type: string
+            maxLength: 60
+          - type: 'null'
+          title: Pedido Id
+        monto:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+          - type: 'null'
+          title: Monto
+      type: object
+      title: SimularIn
     ValidationError:
       properties:
         loc:
@@ -865,11 +1158,26 @@ components:
       - msg
       - type
       title: ValidationError
+    YapeCheckoutIn:
+      properties:
+        sku:
+          type: string
+          maxLength: 60
+          title: Sku
+      type: object
+      required:
+      - sku
+      title: YapeCheckoutIn
 tags:
 - name: Usuarios
   description: Registro, inicio y cierre de sesión, verificación del correo y recuperación de contraseña.
 - name: Tienda
   description: 'Lo que usa la tienda del cliente: catálogo, compra y seguimiento del pedido.'
+- name: Zona Yape real
+  description: 'Productos que se pagan con Yape de verdad: checkout con monto único, pantalla de pago en vivo y el webhook
+    que recibe las notificaciones de Yape desde MacroDroid.'
+- name: Yape (admin)
+  description: 'Pagos Yape en vivo: pedidos esperando pago, notificaciones, asignación manual y simulación.'
 - name: Pedidos (admin)
   description: Consulta y gestión directa de pedidos.
 - name: Panel (admin)

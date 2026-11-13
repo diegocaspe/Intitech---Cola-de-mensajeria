@@ -12,15 +12,15 @@ from app.messaging.email_senders import FakeEmailSender
 from app.messaging.rabbitmq import EmailConsumer
 from app.models.email import EmailEvent, EmailKind, TokenResult
 from app.models.user import EmailStatus, Role
-from app.repositories.sqlite_repository import (SqliteOrderRepository, SqliteOutbox, SqliteSentEmails,
-                                                SqliteUserRepository)
+from app.repositories.sqlite_repository import (SqliteOrderRepository, SqliteOutbox, SqliteProductRepository,
+                                                SqliteSentEmails, SqliteUserRepository)
 from app.services import email_templates
 from app.services.auth_service import AuthService, hash_token
 from app.services.notification_service import NotificationService
 from app.services.order_service import OrderService
 from app.utils.security import PasswordHasher
 from tests.test_consumer import FakeChannel
-from tests.test_order_service import FakePublisher
+from tests.test_order_service import FakePublisher, make_product
 
 ITEMS = [{"sku": "A1", "quantity": 2, "unit_price": "10.00"}, {"sku": "B2", "quantity": 1, "unit_price": "5.50"}]
 
@@ -48,6 +48,7 @@ class Publisher(FakePublisher):
 @pytest.fixture
 def env():
     repo = SqliteOrderRepository(":memory:")
+    SqliteProductRepository(repo, [make_product("A1"), make_product("B2")])   # stock para los pedidos de prueba
     outbox, users, clock = SqliteOutbox(repo), SqliteUserRepository(repo), Clock()
     pub = Publisher()
     return SimpleNamespace(

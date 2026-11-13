@@ -1,23 +1,37 @@
 import logging
+from typing import Callable
 
-from app.repositories.interfaces import ORDER_EVENT, Outbox, OrderPublisher, OrderRepository, UserRepository
+from app.repositories.interfaces import (ORDER_EVENT, PAGO_EVENT, Outbox, OrderPublisher, OrderRepository,
+                                         UserRepository)
 from app.models.email import EmailEvent, EmailKind
 from app.models.order import Order, OrderItem, OrderStatus
 
 log = logging.getLogger(__name__)
 
+# SKU de prueba del modo "Pedidos venenosos": el simulador lo usa en 1 de cada 5 pedidos. Solo falla MIENTRAS el modo
+# está activo; con el modo apagado es un producto más (así, al reprocesar la DLQ, esos pedidos se completan)
+POISON_SKU = "FAIL"
+# SKU de prueba sin stock: el pedido termina RECHAZADO (resultado de negocio), nunca en reintentos ni en la DLQ
+OUT_OF_STOCK_SKU = "SIN-STOCK"
+
 
 class ProcessingError(Exception):
-    """Error de negocio al procesar un pedido (provoca reintento)."""
+    """Fallo al procesar que puede arreglarse solo (provoca reintento con espera y, al tercer fallo, DLQ)."""
+
+
+class OrderRejected(Exception):
+    """Resultado final de negocio (sin stock, pago rechazado): el pedido queda REJECTED, el mensaje se confirma y no
+    se reintenta. Reintentarlo no cambiaría la respuesta y llenaría la DLQ de pedidos que no tienen ningún error."""
 
 
 class OrderService:
     def __init__(self, repo: OrderRepository, publisher: OrderPublisher, outbox: Outbox,
-                 users: UserRepository | None = None):
+                 users: UserRepository | None = None, poison_mode: Callable[[], bool] = lambda: False):
         self.repo = repo
         self.publisher = publisher
         self.outbox = outbox
         self.users = users   # opcional: con él, al confirmar un pedido de un cliente real se pide su comprobante
+        self.poison_mode = poison_mode   # interruptor "Pedidos venenosos" del panel, leído en cada mensaje
 
     # --- lado API ---------------------------------------------------------
     def create_order(self, customer_email: str, items: list[dict]) -> Order:
@@ -34,6 +48,8 @@ class OrderService:
             if event_type == ORDER_EVENT:
                 self.publisher.publish_order_created(aggregate_id)
                 self.repo.mark_published(aggregate_id)
+            elif event_type == PAGO_EVENT:                 # notificación de Yape → cola "pagos"
+                self.publisher.publish_pago(payload)
             else:
                 self.publisher.publish_email(payload)
         return self.outbox.relay(publish, limit, min_age_s)
@@ -74,16 +90,36 @@ class OrderService:
         order = self.repo.get(order_id)
         if order is None:
             raise ProcessingError(f"Pedido {order_id} no existe")
-        # Idempotencia: RabbitMQ garantiza "al menos una vez", puede haber duplicados.
-        if order.status == OrderStatus.PROCESSED:
-            log.info("Pedido %s ya procesado, se ignora el duplicado", order_id)
+        # Idempotencia: RabbitMQ garantiza "al menos una vez", puede haber duplicados. Un pedido con resultado final
+        # (confirmado o rechazado) no se vuelve a procesar.
+        if order.status.final:
+            log.info("Pedido %s ya %s, se ignora el duplicado", order_id, order.status.value)
             return
-        # Simulación de lógica de negocio (stock, pago, correo...). SKU "FAIL" siempre falla.
-        if any(i.sku == "FAIL" for i in order.items):
-            raise ProcessingError("Producto sin stock (simulado)")
-        # confirmado + comprobante en el outbox, en la misma transacción (solo si nadie lo confirmó antes)
-        self.repo.mark_processed(order_id, self._receipt(order))
-        log.info("Pedido %s procesado. Total: %.2f", order_id, order.total)
+        skus = {i.sku for i in order.items}
+        # Resultado de negocio: sin stock → RECHAZADO (final). No es un error del sistema: no gasta reintentos
+        if OUT_OF_STOCK_SKU in skus:
+            self.repo.update_status(order_id, OrderStatus.REJECTED)
+            raise OrderRejected("Producto sin stock")
+        # Fallo técnico simulado: solo mientras el modo venenoso está activo (la decisión no queda marcada para siempre)
+        if POISON_SKU in skus and self.poison_mode():
+            raise ProcessingError("Fallo simulado (modo «Pedidos venenosos» activo)")
+        # descuento del stock + confirmado + comprobante en el outbox, en UNA transacción: todo o nada. Si un ítem no
+        # alcanza, ninguno se descuenta y el pedido queda RECHAZADO (solo si nadie le dio resultado final antes)
+        result = self.repo.mark_processed(order_id, self._receipt(order), self._stock_lines(order))
+        if result.status == OrderStatus.REJECTED:
+            raise OrderRejected(f"Sin stock suficiente de {result.out_of_stock}")
+        if result.status == OrderStatus.PROCESSED:
+            log.info("Pedido %s procesado. Total: %.2f", order_id, order.total)
+
+    @staticmethod
+    def _stock_lines(order: Order) -> list[tuple[str, int]]:
+        """Unidades a descontar por SKU (sumando líneas repetidas). El SKU de prueba del modo venenoso no es un
+        producto: no tiene stock que descontar."""
+        qty: dict[str, int] = {}
+        for i in order.items:
+            if i.sku != POISON_SKU:
+                qty[i.sku] = qty.get(i.sku, 0) + i.quantity
+        return list(qty.items())
 
     def _receipt(self, order: Order) -> EmailEvent | None:
         """Comprobante de compra solo para clientes reales registrados desde la tienda: ni el administrador ni los
@@ -103,6 +139,6 @@ class OrderService:
     def mark_failed(self, order_id: str) -> None:
         self.repo.update_status(order_id, OrderStatus.FAILED)
 
-    def mark_retrying(self, order_id: str) -> None:
-        """Al reprocesar desde la DLQ el pedido vuelve a estar en camino."""
-        self.repo.update_status(order_id, OrderStatus.PUBLISHED)
+    def mark_retrying(self, order_id: str) -> bool:
+        """Al reprocesar desde la DLQ el pedido FALLIDO vuelve a estar en camino. Uno con resultado final no se toca."""
+        return self.repo.requeue_failed(order_id)

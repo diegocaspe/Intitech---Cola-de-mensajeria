@@ -1,16 +1,23 @@
-"""Catálogo de productos leído de catalogo.json (en un sistema real vendría de su propia tabla o servicio)."""
-import json
+"""Catálogo leído de catalogo.json. La app ya no vende desde aquí: el stock real vive en la tabla products
+(PostgresProductRepository). Este archivo queda como semilla y para las pruebas y el mailer (solo nombres)."""
 from pathlib import Path
 
+from app.database.seed import CATALOG_FILE, read_catalog
 from app.repositories.interfaces import ProductRepository
 from app.models.product import Product
 
-CATALOG_FILE = Path(__file__).parent.parent / "database" / "catalogo.json"
+
+def to_product(p: dict, precio_yape=None) -> Product:
+    """precio_yape: precio base de los productos de la Zona Yape real (YAPE_PRECIO_BASE)."""
+    if p.get("pago_yape_real") and precio_yape is not None:
+        p = {**p, "price": precio_yape}
+    return Product(**{**p, "related": tuple(p.get("related") or ())})
 
 
-def load_products(path: Path = CATALOG_FILE) -> list[Product]:
-    data = json.loads(path.read_text(encoding="utf-8"))
-    return [Product(**{**p, "related": tuple(p["related"])}) for p in data]
+def load_products(path: Path = CATALOG_FILE, precio_yape=None, incluir_yape: bool = True) -> list[Product]:
+    """incluir_yape=False quita los productos de la Zona Yape real (zona desactivada)."""
+    return [to_product(p, precio_yape) for p in read_catalog(path)
+            if incluir_yape or not p.get("pago_yape_real")]
 
 
 class InMemoryProductRepository(ProductRepository):

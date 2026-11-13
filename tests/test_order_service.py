@@ -3,11 +3,13 @@ from decimal import Decimal
 import pytest
 
 from app.models.order import OrderStatus, money
-from app.repositories.catalog_repository import InMemoryProductRepository
+from app.models.product import Product
+from app.repositories.catalog_repository import load_products
 from app.repositories.interfaces import OrderPublisher
-from app.repositories.sqlite_repository import SqliteOrderRepository, SqliteOutbox
+from app.repositories.sqlite_repository import SqliteOrderRepository, SqliteOutbox, SqliteProductRepository
 from app.services.checkout_service import CheckoutError, CheckoutService
-from app.services.order_service import OrderService, ProcessingError
+from app.services.order_service import (OUT_OF_STOCK_SKU, POISON_SKU, OrderRejected, OrderService,
+                                        ProcessingError)
 
 
 class FakePublisher(OrderPublisher):
@@ -23,10 +25,22 @@ class FakePublisher(OrderPublisher):
 ITEMS = [{"sku": "A1", "quantity": 2, "unit_price": 10.0}]
 
 
-def make(fail=False):
+def make_product(sku, stock=1000):
+    return Product(sku, f"Producto {sku}", "Pruebas", 10, 20, 4.0, 1, stock, f"{sku}.jpg", "desc")
+
+
+def make(fail=False, poison=True, seed=None):
+    """poison: estado del interruptor «Pedidos venenosos» (por defecto activo, para probar el camino de fallo).
+    seed: productos de la tabla products (por defecto A1 y B2 con mucho stock, más el catálogo real)."""
     pub = FakePublisher(fail)
     repo = SqliteOrderRepository(":memory:")
-    return OrderService(repo, pub, SqliteOutbox(repo)), pub
+    products = SqliteProductRepository(repo, seed if seed is not None
+                                       else [make_product("A1"), make_product("B2")] + load_products())
+    mode = {"poison": poison}
+    svc = OrderService(repo, pub, SqliteOutbox(repo), poison_mode=lambda: mode["poison"])
+    svc.mode = mode   # las pruebas pueden apagar o encender el modo a mitad de camino
+    svc.products = products
+    return svc, pub
 
 
 def test_create_only_writes_to_the_database_and_the_relay_publishes():
@@ -136,18 +150,48 @@ def test_process_is_idempotent():
     assert svc.get_order(order.id).status == OrderStatus.PROCESSED
 
 
-def test_failing_sku_raises():
-    svc, _ = make()
-    order = svc.create_order("a@b.com", [{"sku": "FAIL", "quantity": 1, "unit_price": 1}])
+def test_poison_sku_fails_only_while_the_mode_is_active():
+    svc, _ = make(poison=True)
+    order = svc.create_order("a@b.com", [{"sku": POISON_SKU, "quantity": 1, "unit_price": 1}])
     with pytest.raises(ProcessingError):
         svc.process_order(order.id)
+    svc.mode["poison"] = False                       # el modo se apagó: el mismo pedido ya no falla
+    svc.process_order(order.id)
+    assert svc.get_order(order.id).status == OrderStatus.PROCESSED
+
+
+def test_out_of_stock_is_a_final_rejection_not_an_error():
+    svc, _ = make()
+    order = svc.create_order("a@b.com", [{"sku": OUT_OF_STOCK_SKU, "quantity": 1, "unit_price": 1}])
+    with pytest.raises(OrderRejected):
+        svc.process_order(order.id)
+    assert svc.get_order(order.id).status == OrderStatus.REJECTED
+
+
+def test_rejected_order_is_never_processed_again():
+    svc, _ = make()
+    order = svc.create_order("a@b.com", ITEMS)
+    svc.repo.update_status(order.id, OrderStatus.REJECTED)
+    svc.process_order(order.id)                      # duplicado de un pedido rechazado: se salta
+    assert svc.get_order(order.id).status == OrderStatus.REJECTED
+
+
+def test_requeue_from_dlq_only_touches_failed_orders():
+    svc, _ = make()
+    failed, done = svc.create_order("a@b.com", ITEMS), svc.create_order("c@d.com", ITEMS)
+    svc.mark_failed(failed.id)
+    svc.process_order(done.id)
+    assert svc.mark_retrying(failed.id) is True
+    assert svc.get_order(failed.id).status == OrderStatus.PUBLISHED
+    assert svc.mark_retrying(done.id) is False       # ya confirmado: no vuelve a "en cola" (no se procesa dos veces)
+    assert svc.get_order(done.id).status == OrderStatus.PROCESSED
 
 
 # --- checkout de la tienda --------------------------------------------------
 
 def make_checkout():
     svc, _ = make()
-    return CheckoutService(InMemoryProductRepository(), svc), svc
+    return CheckoutService(svc.products, svc), svc   # el catálogo y su stock salen de la tabla products
 
 
 def test_checkout_uses_catalog_prices_and_tracks_position():

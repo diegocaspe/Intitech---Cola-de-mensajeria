@@ -6,7 +6,7 @@ import time
 
 from app import config
 from app.services.events import EventLog
-from app.services.order_service import OrderService
+from app.services.order_service import POISON_SKU, OrderService
 from app.repositories.interfaces import ProductRepository
 
 POISON_EVERY = 5
@@ -104,14 +104,14 @@ class TrafficSimulator:
 
     # --- internos ---------------------------------------------------------
     def _new_order(self) -> str:
-        if self._next_is_poison():   # producto inexistente: el worker falla siempre → reintentos → DLQ
+        if self._next_is_poison():   # pedido de prueba: falla mientras el modo siga activo → reintentos → DLQ
             order = self.service.create_order(f"{random.choice(NAMES)}{random.randint(1, 999)}@mail.com",
-                                              [{"sku": "FAIL", "quantity": 1, "unit_price": 9.9}])
+                                              [{"sku": POISON_SKU, "quantity": 1, "unit_price": 9.9}])
             with self._lock:
                 self.sent += 1
             return order.id
         # los clientes simulados también hacen cross-selling: un producto y a veces sus relacionados
-        main = random.choice(self.products.all())
+        main = random.choice([p for p in self.products.all() if not p.pago_yape_real])   # la Zona Yape es solo real
         picks = [main] + [self.products.get(s) for s in random.sample(main.related, random.choice([0, 0, 1, 2]))]
         items = [{"sku": p.sku, "quantity": random.choice([1, 1, 1, 2]), "unit_price": p.price} for p in picks]
         email = f"{random.choice(NAMES)}{random.randint(1, 999)}@mail.com"

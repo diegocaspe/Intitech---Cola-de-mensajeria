@@ -18,6 +18,12 @@ class OrderStatus(str, Enum):
     PUBLISHED = "PUBLISHED"    # el broker confirmó la recepción del mensaje
     PROCESSED = "PROCESSED"    # el worker la procesó correctamente
     FAILED = "FAILED"          # agotó reintentos, el mensaje fue a la DLQ
+    REJECTED = "REJECTED"      # resultado final de negocio (sin stock, pago rechazado): no se reintenta ni va a la DLQ
+
+    @property
+    def final(self) -> bool:
+        """Ya tiene un resultado definitivo: un mensaje duplicado de este pedido se confirma y se salta."""
+        return self in (OrderStatus.PROCESSED, OrderStatus.REJECTED)
 
 
 @dataclass

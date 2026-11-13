@@ -1,5 +1,5 @@
-"""Conexión a PostgreSQL: pool de conexiones y creación de las tablas (orders, outbox, users, email_tokens y
-sent_emails)."""
+"""Conexión a PostgreSQL: pool de conexiones y creación de las tablas (orders, outbox, users, email_tokens,
+sent_emails, yape_pedidos, yape_notificaciones y products)."""
 import logging
 import time
 
@@ -7,16 +7,33 @@ import psycopg
 from psycopg_pool import ConnectionPool
 from psycopg_pool.base import AttemptWithBackoff
 
+from app.database.seed import seed_products
+
 log = logging.getLogger(__name__)
 
-SCHEMA = """
+# api, relay, worker y mailer ejecutan el esquema (y la siembra) al arrancar: este candado los pone en fila, uno a la
+# vez, dentro de la misma transacción. Se libera solo al hacer commit
+_LOCK_SCHEMA = 7_031_926
+
+SCHEMA = f"""
+SELECT pg_advisory_xact_lock({_LOCK_SCHEMA});
 CREATE TABLE IF NOT EXISTS orders (
     id              TEXT PRIMARY KEY,
     customer_email  TEXT NOT NULL,
     items           JSONB NOT NULL,
-    status          TEXT NOT NULL CHECK (status IN ('PENDING','PUBLISHED','PROCESSED','FAILED')),
+    status          TEXT NOT NULL CHECK (status IN ('PENDING','PUBLISHED','PROCESSED','FAILED','REJECTED')),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- migración: las bases creadas antes no aceptaban 'REJECTED'. Solo se toca si hace falta (api, relay y worker
+-- ejecutan este esquema al arrancar: así no compiten por bloquear la tabla en cada inicio)
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'orders_status_check'
+                   AND pg_get_constraintdef(oid) LIKE '%REJECTED%') THEN
+        ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
+        ALTER TABLE orders ADD CONSTRAINT orders_status_check
+            CHECK (status IN ('PENDING','PUBLISHED','PROCESSED','FAILED','REJECTED'));
+    END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders (status, created_at);
 CREATE INDEX IF NOT EXISTS idx_orders_email  ON orders (customer_email, created_at DESC);
 
@@ -70,6 +87,65 @@ CREATE TABLE IF NOT EXISTS sent_emails (
 );
 -- los eventos de correo son pocos: este índice permite contarlos y descontarlos rápido de la numeración del panel
 CREATE INDEX IF NOT EXISTS idx_outbox_emails ON outbox (id) WHERE event_type <> 'OrderCreated';
+
+-- Zona Yape real: pedidos esperando un yapeo. Al asociarse el pago nace su pedido normal en orders (mismo id)
+CREATE TABLE IF NOT EXISTS yape_pedidos (
+    id               TEXT PRIMARY KEY,
+    customer_email   TEXT NOT NULL,
+    customer_name    TEXT NOT NULL,
+    sku              TEXT NOT NULL,
+    producto         TEXT NOT NULL,
+    monto            NUMERIC(8,2) NOT NULL,
+    estado           TEXT NOT NULL CHECK (estado IN ('pendiente_pago_yape','pagado','expirado')),
+    creado_en        TIMESTAMPTZ NOT NULL,
+    expira_en        TIMESTAMPTZ NOT NULL,
+    pagado_en        TIMESTAMPTZ,
+    notificacion_id  BIGINT
+);
+-- monto único entre los pedidos pendientes: aunque dos checkouts compitan, la BD nunca acepta dos con el mismo monto
+CREATE UNIQUE INDEX IF NOT EXISTS uq_yape_monto_pendiente ON yape_pedidos (monto) WHERE estado = 'pendiente_pago_yape';
+CREATE INDEX IF NOT EXISTS idx_yape_pedidos_estado ON yape_pedidos (estado, expira_en);
+CREATE INDEX IF NOT EXISTS idx_yape_pedidos_monto  ON yape_pedidos (monto, creado_en);
+
+-- Notificaciones que reenvía MacroDroid: el texto crudo se guarda SIEMPRE (junto a su evento en el outbox)
+CREATE TABLE IF NOT EXISTS yape_notificaciones (
+    id            BIGSERIAL PRIMARY KEY,
+    hash          TEXT NOT NULL UNIQUE,     -- idempotencia: titulo + texto + minuto de llegada
+    titulo        TEXT NOT NULL DEFAULT '',
+    texto         TEXT NOT NULL,
+    recibida_en   TIMESTAMPTZ NOT NULL,
+    estado        TEXT NOT NULL DEFAULT 'recibida'
+                  CHECK (estado IN ('recibida','asociada','sin_coincidencia','ignorada','rechazada')),
+    simulada      BOOLEAN NOT NULL DEFAULT false,
+    monto_leido   NUMERIC(10,2),
+    pagador       TEXT,
+    pedido_id     TEXT,
+    detalle       TEXT,
+    procesada_en  TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_yape_notif_estado ON yape_notificaciones (estado, id);
+
+-- Catálogo con el stock real. catalogo.json solo es la semilla (ver seed.py). CHECK: la última red de seguridad, la BD
+-- nunca acepta stock negativo aunque un UPDATE se equivoque
+CREATE TABLE IF NOT EXISTS products (
+    sku             TEXT PRIMARY KEY,
+    name            TEXT NOT NULL,
+    category        TEXT NOT NULL,
+    price           NUMERIC(10,2) NOT NULL,
+    list_price      NUMERIC(10,2) NOT NULL,
+    rating          REAL NOT NULL DEFAULT 0,
+    reviews         INTEGER NOT NULL DEFAULT 0,
+    stock           INTEGER NOT NULL CHECK (stock >= 0),
+    image           TEXT NOT NULL,
+    description     TEXT NOT NULL DEFAULT '',
+    related         JSONB NOT NULL DEFAULT '[]',
+    pago_yape_real  BOOLEAN NOT NULL DEFAULT false,
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products (category);
+
+-- el stock de un pedido se descuenta UNA sola vez: lo hace el worker al confirmarlo o, en la Zona Yape, el pago
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS stock_descontado BOOLEAN NOT NULL DEFAULT false;
 """
 
 
@@ -90,8 +166,10 @@ def create_pool(url: str, max_size: int = 10) -> ConnectionPool:
 def init_schema(pool: ConnectionPool, attempts: int = 30) -> None:
     for i in range(1, attempts + 1):
         try:
-            with pool.connection() as conn:
+            with pool.connection() as conn:   # esquema + siembra en una transacción, con el candado tomado
                 conn.execute(SCHEMA)
+                if seeded := seed_products(conn):
+                    log.info("Tabla products vacía: sembrados %d productos desde catalogo.json", seeded)
             return
         except psycopg.OperationalError as exc:
             log.warning("PostgreSQL no disponible (%d/%d): %s", i, attempts, exc)

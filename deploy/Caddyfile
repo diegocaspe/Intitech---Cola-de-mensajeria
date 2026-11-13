@@ -1,0 +1,80 @@
+# Caddy delante de la api, solo en el servidor (lo usa docker-compose.prod.yml).
+# {$PUBLIC_DOMAIN} sale del .env del servidor, p. ej. 3-214-91-208.sslip.io (sslip.io resuelve ese nombre a la IP
+# 3.214.91.208, así Let's Encrypt puede emitir un certificado aunque no tengamos dominio propio).
+
+{
+	# correo opcional para avisos de Let's Encrypt: descomentar y poner uno real si se quiere
+	# email tucorreo@ejemplo.com
+}
+
+# Sitio principal: Caddy pide y renueva el certificado solo, y redirige http://{$PUBLIC_DOMAIN} -> https solo.
+{$PUBLIC_DOMAIN} {
+	encode zstd gzip
+
+	# --- Panel de RabbitMQ en /rabbitmq/ (solo lectura, con doble candado) ---------------------------------------
+	# RabbitMQ no publica puertos a internet: solo Caddy llega a rabbitmq:15672 por la red interna de Docker.
+	#
+	# Candado 1 (Caddy): usuario y clave propios, con hash bcrypt (CADDY_RABBITMQ_USER / CADDY_RABBITMQ_HASH).
+	# Candado 2 (RabbitMQ): el formulario de login del panel, con el usuario de solo lectura (RABBITMQ_MONITOR_USER).
+	#
+	# Los dos usan la cabecera Authorization: Basic. Si Caddy pidiera basic_auth en todo /rabbitmq/, el panel de
+	# RabbitMQ la reemplazaría con sus credenciales en cada consulta y Caddy lo rechazaría. Por eso el candado 1 es
+	# una "puerta": basic_auth solo en /rabbitmq/acceso, que entrega una cookie HttpOnly + Secure con un token
+	# aleatorio del .env (CADDY_RABBITMQ_COOKIE). Sin esa cookie, todo /rabbitmq/* vuelve a la puerta.
+	handle /rabbitmq* {
+		handle /rabbitmq/acceso {
+			# "route" ejecuta en el orden escrito. Sin él, Caddy correría redir y header ANTES que basic_auth
+			# (su orden por defecto) y entregaría la cookie sin pedir la clave.
+			route {
+				basic_auth bcrypt "Panel RabbitMQ" {
+					{$CADDY_RABBITMQ_USER} {$CADDY_RABBITMQ_HASH}
+				}
+				# 12 h: alcanza para la exposición; luego Caddy vuelve a pedir su clave
+				header Set-Cookie "rmq_acceso={$CADDY_RABBITMQ_COOKIE}; Path=/rabbitmq/; Max-Age=43200; HttpOnly; Secure; SameSite=Strict"
+				header Cache-Control "no-store"
+				# "*": sin él, Caddy tomaría /rabbitmq/ como filtro de ruta y no como destino del redir
+				redir * /rabbitmq/ 302
+			}
+		}
+
+		@puerta_abierta expression `{http.request.cookie.rmq_acceso} == "{$CADDY_RABBITMQ_COOKIE}"`
+		handle @puerta_abierta {
+			# Solo lectura también aquí, aunque alguien entrara con el usuario administrador: la API de RabbitMQ
+			# solo acepta GET/HEAD (nada de purgar, publicar, borrar colas ni "Get messages", que es un POST y
+			# con ack podría sacar mensajes de la cola) y no muestra usuarios, permisos ni definiciones
+			# (las definiciones incluyen los hashes de las claves). Administrar: solo por túnel SSH.
+			@escritura {
+				path /rabbitmq/api/*
+				not method GET HEAD
+			}
+			respond @escritura "Panel publico de solo lectura. Para administrar usa el tunel SSH (ver README)." 403
+
+			@sensible path /rabbitmq/api/definitions* /rabbitmq/api/users* /rabbitmq/api/permissions* /rabbitmq/api/topic-permissions* /rabbitmq/api/user-limits*
+			respond @sensible "No disponible en el panel publico." 403
+
+			header Cache-Control "no-store"
+			# management.path_prefix = /rabbitmq (deploy/rabbitmq/20-produccion.conf): la ruta pasa tal cual
+			reverse_proxy rabbitmq:15672
+		}
+
+		handle {
+			redir * /rabbitmq/acceso 302
+		}
+	}
+
+	# --- Tienda, panel y API -------------------------------------------------------------------------------------
+	handle {
+		reverse_proxy api:8000 {
+			# Sin búfer: si la app usa conexiones en vivo (SSE) los eventos llegan al instante.
+			# WebSocket no necesita nada: reverse_proxy hace el "upgrade" por sí solo.
+			# Hoy la tienda y el panel consultan con fetch() periódico, que pasa sin configuración especial.
+			flush_interval -1
+		}
+	}
+}
+
+# Cualquier otra entrada por HTTP (p. ej. http://3.214.91.208 escrito a mano, o un QR viejo con la IP)
+# se manda al dominio con HTTPS, conservando la ruta.
+http:// {
+	redir https://{$PUBLIC_DOMAIN}{uri} permanent
+}

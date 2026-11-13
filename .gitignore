@@ -1,6 +1,8 @@
 # Secretos: el .env real nunca se sube; la plantilla .env.example sí
 .env
 .env.*
+# secretos del servidor en la nube (los sube deploy/subir_env.ps1)
+.env.production
 !.env.example
 
 # Python
@@ -25,3 +27,6 @@ uploads/
 # Herramientas del editor / asistente
 .impeccable/
 .vscode/
+
+# QR de Yape del dueño (Zona Yape real): se pone a mano en la laptop y deploy/subir.ps1 lo sube al servidor
+app/static/img/yape_qr.png

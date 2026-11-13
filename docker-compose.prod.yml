@@ -1,0 +1,105 @@
+# Override para el servidor en la nube (AWS EC2, t3.small: 2 GB de RAM + 2 GB de swap).
+# Se usa SIEMPRE junto al docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# En la laptop no se usa: iniciar.ps1 sigue levantando solo docker-compose.yml (sin Caddy, por HTTP en el 8000).
+#
+# Qué agrega:
+#   - Caddy delante de la api: HTTPS en https://$PUBLIC_DOMAIN con certificado gratis de Let's Encrypt (lo pide y
+#     renueva solo) y redirección http -> https. Configuración en deploy/Caddyfile.
+#   - la api sigue publicada en el 8000 como respaldo (HTTP directo, sin TLS)
+#   - restart: unless-stopped -> todo vuelve solo si el servidor se reinicia
+#     (no revive lo que se detuvo a mano ni lo que "mató" un sabotaje: eso lo recupera el botón del panel)
+#   - rotación de logs: como mucho 3 archivos de 10 MB por contenedor, para no llenar el disco de 20 GB
+#   - límite de memoria por contenedor, con margen para el uso normal de la demo (suma ~1,9 GB; el swap es colchón)
+#   - panel de RabbitMQ en https://$PUBLIC_DOMAIN/rabbitmq/ a través de Caddy, de solo lectura y con doble candado:
+#     la clave de Caddy (CADDY_RABBITMQ_*) y luego el usuario de monitoreo de RabbitMQ (RABBITMQ_MONITOR_*).
+#     RabbitMQ arranca con deploy/rabbitmq/arranque.sh, que deja los usuarios como dice el .env en cada arranque:
+#     RABBITMQ_USER sin tags (solo AMQP, no entra al panel web), RABBITMQ_MONITOR_USER "monitoring" de solo lectura
+#     y RABBITMQ_ADMIN_USER "administrator" (solo por túnel SSH).
+# PostgreSQL y RabbitMQ siguen publicados SOLO en 127.0.0.1 (ver docker-compose.yml): no se exponen a internet.
+# Solo Caddy llega a rabbitmq:15672, por la red interna de Docker.
+# Para administrar RabbitMQ: túnel SSH, ssh -L 15672:127.0.0.1:15672 ubuntu@<ip> y http://localhost:15672/rabbitmq/
+
+x-prod: &prod
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  caddy:
+    <<: *prod
+    image: caddy:2
+    mem_limit: 128m
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    environment:
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:?Falta PUBLIC_DOMAIN en .env del servidor (p. ej. 3-214-91-208.sslip.io)}
+      # Candado 1 del panel de RabbitMQ (/rabbitmq/acceso). El hash bcrypt va entre comillas simples en el .env
+      # (tiene "$"): CADDY_RABBITMQ_HASH='$2a$14$...'. Se genera con "caddy hash-password" (ver README).
+      CADDY_RABBITMQ_USER: ${CADDY_RABBITMQ_USER:?Falta CADDY_RABBITMQ_USER en .env del servidor (ver .env.example)}
+      CADDY_RABBITMQ_HASH: ${CADDY_RABBITMQ_HASH:?Falta CADDY_RABBITMQ_HASH en .env del servidor (ver README, caddy hash-password)}
+      # token de la cookie que entrega la puerta: largo y aleatorio. Vacío dejaría pasar a cualquiera, por eso es obligatorio
+      CADDY_RABBITMQ_COOKIE: ${CADDY_RABBITMQ_COOKIE:?Falta CADDY_RABBITMQ_COOKIE en .env del servidor (ver .env.example)}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data       # certificados y cuenta de Let's Encrypt: no se vuelven a pedir en cada reinicio
+      - caddy_config:/config
+    networks:
+      default:
+        ipv4_address: 172.30.50.20   # IP fija: es la única de la que la api acepta cabeceras X-Forwarded-*
+    depends_on:
+      - api
+
+  postgres:
+    <<: *prod
+    mem_limit: 384m
+
+  rabbitmq:
+    <<: *prod
+    mem_limit: 512m   # RabbitMQ frena a los publicadores al 40% de este límite (~200 MB): sobra para la demo
+    # arranca RabbitMQ como siempre y deja los 3 usuarios como dice el .env (idempotente, en cada arranque)
+    entrypoint: ["bash", "/opt/intitech/arranque.sh"]
+    environment:
+      RABBITMQ_MONITOR_USER: ${RABBITMQ_MONITOR_USER:?Falta RABBITMQ_MONITOR_USER en .env del servidor (ver .env.example)}
+      RABBITMQ_MONITOR_PASS: ${RABBITMQ_MONITOR_PASS:?Falta RABBITMQ_MONITOR_PASS en .env del servidor (ver .env.example)}
+      RABBITMQ_ADMIN_USER: ${RABBITMQ_ADMIN_USER:?Falta RABBITMQ_ADMIN_USER en .env del servidor (ver .env.example)}
+      RABBITMQ_ADMIN_PASS: ${RABBITMQ_ADMIN_PASS:?Falta RABBITMQ_ADMIN_PASS en .env del servidor (ver .env.example)}
+    volumes:
+      - ./deploy/rabbitmq/arranque.sh:/opt/intitech/arranque.sh:ro
+      - ./deploy/rabbitmq/20-produccion.conf:/etc/rabbitmq/conf.d/20-produccion.conf:ro   # path_prefix /rabbitmq
+
+  api:
+    <<: *prod
+    mem_limit: 448m   # API + tienda + panel + simulador
+    # Detrás de Caddy: --proxy-headers toma de X-Forwarded-For / X-Forwarded-Proto la IP real del cliente y el
+    # esquema https (lo usan el límite de intentos de login y las URLs que arma la app). Solo se confía en Caddy:
+    # quien entre directo por el 8000 no puede inventarse otra IP con esas cabeceras.
+    command: ["uvicorn", "app.routes.api:app", "--host", "0.0.0.0", "--port", "8000",
+              "--proxy-headers", "--forwarded-allow-ips", "172.30.50.20"]
+    environment:
+      # La api lee "mensajes en proceso" de la API HTTP de RabbitMQ. Aquí RABBITMQ_USER no tiene tags (no entra a
+      # la API HTTP), así que usa el usuario de monitoreo (solo lectura) y el prefijo /rabbitmq.
+      RABBITMQ_MGMT_USER: ${RABBITMQ_MONITOR_USER:?Falta RABBITMQ_MONITOR_USER en .env del servidor (ver .env.example)}
+      RABBITMQ_MGMT_PASS: ${RABBITMQ_MONITOR_PASS:?Falta RABBITMQ_MONITOR_PASS en .env del servidor (ver .env.example)}
+      RABBITMQ_MGMT_PATH_PREFIX: /rabbitmq
+
+  relay:
+    <<: *prod
+    mem_limit: 128m
+
+  worker:
+    <<: *prod
+    mem_limit: 256m   # hasta 10 hilos consumidores al escalar desde el panel
+
+  mailer:
+    <<: *prod
+    mem_limit: 128m
+
+volumes:
+  caddy_data:
+  caddy_config:

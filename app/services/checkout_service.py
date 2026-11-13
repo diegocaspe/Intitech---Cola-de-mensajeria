@@ -27,6 +27,8 @@ class CheckoutService:
             product = self.products.get(sku)
             if product is None:
                 raise CheckoutError(f"Producto desconocido: {sku}")
+            if product.pago_yape_real:   # la Zona Yape real tiene su propio checkout: 1 unidad, pago real
+                raise CheckoutError(f"{product.name} se paga aparte con Yape real: no se mezcla con el carrito")
             if not 1 <= qty <= MAX_QTY:
                 raise CheckoutError(f"Cantidad inválida para {product.name}")
             items.append({"sku": sku, "quantity": qty, "unit_price": product.price})

@@ -4,12 +4,19 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from datetime import datetime
 from decimal import Decimal
-from typing import Callable
+from typing import Callable, NamedTuple
 
 from app.models.email import EmailEvent, EmailToken, TokenPurpose, TokenResult
 from app.models.order import Order, OrderStatus
 from app.models.product import Product
 from app.models.user import Role, User
+from app.models.yape import EstadoNotificacion, EstadoPedidoYape, PAGO_EVENT, YapeNotificacion, YapePedido
+
+
+class ProcessResult(NamedTuple):
+    """Lo que pasó al confirmar un pedido en el worker."""
+    status: OrderStatus | None      # PROCESSED, REJECTED (no alcanzó el stock) o None (ya tenía resultado final)
+    out_of_stock: str | None = None  # SKU que no alcanzó
 
 
 class OrderRepository(ABC):
@@ -36,11 +43,24 @@ class OrderRepository(ABC):
     @abstractmethod
     def update_status(self, order_id: str, status: OrderStatus) -> None: ...
 
-    def mark_processed(self, order_id: str, receipt: EmailEvent | None = None) -> bool:
-        """Marca el pedido PROCESSED y, en la MISMA transacción, deja su comprobante en el outbox. Solo si aún no
-        estaba procesado (dos workers con el mismo mensaje no generan dos comprobantes). True si lo marcó."""
-        self.update_status(order_id, OrderStatus.PROCESSED)
-        return True
+    @abstractmethod
+    def mark_processed(self, order_id: str, receipt: EmailEvent | None = None,
+                       stock: list[tuple[str, int]] = ()) -> ProcessResult:
+        """En UNA transacción: descuenta el stock de cada (sku, cantidad), en orden de sku, con
+        UPDATE ... WHERE stock >= cantidad; marca el pedido PROCESSED y deja su comprobante en el outbox.
+        Si un ítem no alcanza, deshace todos los descuentos y el pedido queda REJECTED (todo o nada).
+        No hace nada si el pedido ya tenía resultado final (un duplicado nunca descuenta dos veces), y no descuenta si
+        el stock ya se descontó antes (pedido pagado en la Zona Yape)."""
+
+    def statuses(self, order_ids: list[str]) -> dict[str, str]:
+        """Estado de cada pedido de la lista (los escenarios automáticos siguen solo sus pedidos de prueba)."""
+        found = {i: self.get(i) for i in order_ids}
+        return {i: o.status.value for i, o in found.items() if o}
+
+    @abstractmethod
+    def requeue_failed(self, order_id: str) -> bool:
+        """FAILED -> PUBLISHED al reprocesar desde la DLQ. Nunca toca un pedido con resultado final (PROCESSED o
+        REJECTED): si no, un duplicado en la DLQ lo procesaría dos veces. True si lo cambió."""
 
     @abstractmethod
     def mark_published(self, order_id: str) -> None:
@@ -120,6 +140,14 @@ class ProductRepository(ABC):
     @abstractmethod
     def get(self, sku: str) -> Product | None: ...
 
+    def restore_stock(self) -> int:
+        """Vuelve a poner el stock de cada producto según catalogo.json (reiniciar la demo). Devuelve cuántos tocó."""
+        raise NotImplementedError
+
+    def initial_stock(self) -> dict[str, int]:
+        """Stock de cada SKU según catalogo.json (lo que deja «Restablecer stock»)."""
+        raise NotImplementedError
+
 
 class UserRepository(ABC):
     @abstractmethod
@@ -164,6 +192,11 @@ class OrderPublisher(ABC):
         """Publica un evento de correo (persistente, con publisher confirms). Lanza excepción si no se confirma."""
         raise NotImplementedError
 
+    def publish_pago(self, payload: dict) -> None:
+        """Publica una notificación de Yape en la cola "pagos" (persistente, con publisher confirms). Lanza excepción
+        si no se confirma."""
+        raise NotImplementedError
+
     def is_healthy(self) -> bool:
         return True
 
@@ -176,6 +209,81 @@ class EmailSender(ABC):
     @abstractmethod
     def send(self, to: str, subject: str, html: str, text: str) -> None:
         """Entrega el correo. Debe lanzar EmailSendError si no se pudo."""
+
+
+class YapeRepository(ABC):
+    """Zona Yape real: pedidos que esperan un yapeo y notificaciones que llegan del celular.
+
+    Las horas (now, recibida_en) las pasa el service: así las reglas de vencimiento no dependen del reloj de la BD y
+    las pruebas pueden adelantar el tiempo."""
+
+    @abstractmethod
+    def crear_pedido(self, pedido: YapePedido, montos: list[Decimal], now: datetime) -> YapePedido:
+        """En UNA transacción y serializado (seguro ante concurrencia): vence los pedidos pendientes cuyo plazo pasó,
+        comprueba que quede stock del SKU (stock de la tabla products − pendientes vigentes; los pagados ya se
+        descontaron de products), toma el primer monto de `montos` que no use otro pedido pendiente y guarda el pedido
+        con ese monto. Lanza SinStockYape o SinMontosYape."""
+
+    @abstractmethod
+    def get_pedido(self, pedido_id: str) -> YapePedido | None: ...
+
+    @abstractmethod
+    def pedidos(self, estados: tuple[EstadoPedidoYape, ...], limit: int) -> list[YapePedido]:
+        """Los más nuevos primero."""
+
+    @abstractmethod
+    def expirar(self, now: datetime) -> int:
+        """Pendientes con el plazo vencido → expirado (libera stock y monto). Idempotente. Devuelve cuántos venció."""
+
+    @abstractmethod
+    def reservados(self, now: datetime) -> dict[str, int]:
+        """Unidades reservadas por SKU: pedidos pendientes vigentes (los pagados ya restaron su unidad en products)."""
+
+    @abstractmethod
+    def guardar_notificacion(self, n: YapeNotificacion) -> tuple[int, bool]:
+        """Guarda el texto crudo y, en la MISMA transacción, el evento PAGO_EVENT en el outbox. Si ya existe una con el
+        mismo hash no duplica nada. Devuelve (id, nueva)."""
+
+    @abstractmethod
+    def get_notificacion(self, notificacion_id: int) -> YapeNotificacion | None: ...
+
+    @abstractmethod
+    def buscar_coincidencia(self, monto: Decimal, recibida_en: datetime) -> YapePedido | None:
+        """Pedido pendiente o expirado con exactamente ese monto que estaba vigente cuando LLEGÓ el pago."""
+
+    @abstractmethod
+    def asociar(self, notificacion_id: int, pedido_id: str, order: Order, now: datetime,
+                notif_desde: tuple[EstadoNotificacion, ...], detalle: str, monto: Decimal | None,
+                pagador: str | None) -> str:
+        """En UNA transacción: notificación → asociada, pedido Yape → pagado, descuenta 1 unidad del stock (mismo UPDATE
+        atómico que el worker) y el pedido normal (orders) + su evento OrderCreated en el outbox. Si el stock ya no
+        alcanza (pago tardío de un pedido vencido cuya unidad tomó otro), el pago se asocia igual (nunca se pierde) y
+        el worker rechazará el pedido por falta de stock. Devuelve "ok", "notificacion_cerrada" (ya no estaba en
+        notif_desde) o "pedido_pagado" (otro pago ya lo había pagado; no cambia nada)."""
+
+    @abstractmethod
+    def marcar_notificacion(self, notificacion_id: int, estado: EstadoNotificacion, now: datetime,
+                            desde: tuple[EstadoNotificacion, ...], detalle: str | None = None,
+                            monto: Decimal | None = None, pagador: str | None = None) -> bool:
+        """Cambia el estado solo si el actual está en `desde` (dos workers con el mismo mensaje no pisan nada)."""
+
+    @abstractmethod
+    def pago_en_camino(self, pedido: YapePedido) -> YapeNotificacion | None:
+        """Una notificación aún sin procesar con el monto del pedido que llegó a tiempo (para la pantalla del
+        cliente: "pago recibido, en cola")."""
+
+    @abstractmethod
+    def antes_en_cola(self, notificacion_id: int) -> int:
+        """Notificaciones sin procesar que llegaron antes que esta."""
+
+    @abstractmethod
+    def notificaciones(self, limit: int) -> list[dict]:
+        """Para el panel, las más nuevas primero: los datos de la notificación más outbox_publicado (bool o None si no
+        tiene evento) y order_status (estado del pedido normal asociado, o None)."""
+
+    @abstractmethod
+    def clear(self) -> None:
+        """Borra pedidos Yape y notificaciones (Reiniciar demo)."""
 
 
 class SentEmailRepository(ABC):

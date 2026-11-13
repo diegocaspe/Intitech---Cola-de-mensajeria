@@ -9,6 +9,8 @@ from app import config
 from app.database.connection import create_pool, init_schema
 from app.messaging.rabbitmq import RabbitOrderPublisher
 from app.repositories.postgres_repository import PostgresOrderRepository, PostgresOutbox
+from app.repositories.yape_postgres import PostgresYapeRepository
+from app.services.yape_service import YapeService
 from app.services.order_service import OrderService
 from app.utils.control import ControlStore
 
@@ -32,9 +34,19 @@ def main() -> None:
     control = ControlStore()
     publisher = RabbitOrderPublisher(persistent_mode=lambda: control.get()["persistent"])
     service = OrderService(PostgresOrderRepository(pool), publisher, PostgresOutbox(pool))
+    yape = YapeService(PostgresYapeRepository(pool))
+    next_expire = 0.0
     log.info("Revisando el outbox cada %.2f s", config.RELAY_POLL_S)
     while True:
         sent = 0
+        if time.monotonic() >= next_expire:              # Zona Yape: vence los pedidos sin pagar (idempotente)
+            next_expire = time.monotonic() + config.YAPE_EXPIRE_EVERY_S
+            try:
+                expired = yape.expirar_vencidos()
+                if expired:
+                    log.info("%d pedido(s) Yape vencidos sin pago: stock liberado", expired)
+            except Exception as exc:
+                log.warning("No se pudieron vencer los pedidos Yape: %s", exc.__class__.__name__)
         try:
             sent = service.relay_outbox(limit=BATCH)
             if sent:

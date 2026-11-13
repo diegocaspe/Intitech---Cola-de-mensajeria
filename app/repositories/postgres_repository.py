@@ -1,18 +1,38 @@
-"""Repositorios de PostgreSQL: pedidos, outbox y usuarios. La conexión y las tablas están en app/database."""
+"""Repositorios de PostgreSQL: pedidos, outbox, usuarios y productos. La conexión y las tablas están en app/database."""
 from __future__ import annotations
 
+import threading
+import time
 from datetime import datetime
 from decimal import Decimal
 from typing import Callable
 
 import psycopg
 from psycopg.types.json import Jsonb
-from psycopg_pool import ConnectionPool
+from psycopg_pool import ConnectionPool, PoolTimeout
 
-from app.repositories.interfaces import Outbox, OrderRepository, SentEmailRepository, UserRepository
+from app.database.seed import PRODUCT_COLS, product_row, read_catalog
+from app.repositories.catalog_repository import load_products, to_product
+from app.repositories.interfaces import (PAGO_EVENT, Outbox, OrderRepository, ProcessResult, ProductRepository,
+                                         SentEmailRepository, UserRepository)
 from app.models.email import EmailEvent, EmailToken, TokenPurpose, TokenResult
 from app.models.order import Order, OrderItem, OrderStatus, money
+from app.models.product import Product
 from app.models.user import EmailStatus, Role, User
+
+_ORDER_COLS = "id, customer_email, items, status, created_at"
+FINAL_STATUSES = ("PROCESSED", "REJECTED")
+
+# Descuento atómico: resta solo si alcanza. Con dos compras simultáneas del último producto, PostgreSQL bloquea la fila:
+# la segunda espera, vuelve a evaluar "stock >= qty" con el valor nuevo y no afecta ninguna fila (rowcount = 0)
+DESCONTAR_STOCK = """UPDATE products SET stock = stock - %(qty)s, updated_at = now()
+                     WHERE sku = %(sku)s AND stock >= %(qty)s"""
+
+
+class _SinStock(Exception):
+    def __init__(self, sku: str):
+        super().__init__(sku)
+        self.sku = sku
 
 
 def _insert_email(conn, event: EmailEvent) -> None:
@@ -47,7 +67,7 @@ class PostgresOrderRepository(OrderRepository):
                          (order.id, Jsonb({"order_id": order.id})))
 
     def get(self, order_id: str) -> Order | None:
-        rows = self._q("SELECT * FROM orders WHERE id=%s", (order_id,))
+        rows = self._q(f"SELECT {_ORDER_COLS} FROM orders WHERE id=%s", (order_id,))
         return self._to_order(rows[0]) if rows else None
 
     def list(self, status: OrderStatus | None = None, limit: int | None = None,
@@ -57,28 +77,51 @@ class PostgresOrderRepository(OrderRepository):
             where.append("status=%s"); args.append(status.value)
         if older_than_s:
             where.append("created_at < now() - make_interval(secs => %s)"); args.append(older_than_s)
-        sql = "SELECT * FROM orders" + (" WHERE " + " AND ".join(where) if where else "") + " ORDER BY created_at"
+        sql = f"SELECT {_ORDER_COLS} FROM orders" + (" WHERE " + " AND ".join(where) if where else "") + " ORDER BY created_at"
         if limit:
             sql += " LIMIT %s"; args.append(int(limit))
         return [self._to_order(r) for r in self._q(sql, tuple(args))]
 
     def recent(self, limit: int) -> list[Order]:
-        return [self._to_order(r) for r in self._q("SELECT * FROM orders ORDER BY created_at DESC LIMIT %s", (limit,))]
+        return [self._to_order(r) for r in self._q(f"SELECT {_ORDER_COLS} FROM orders ORDER BY created_at DESC LIMIT %s",
+                                                   (limit,))]
 
     def list_by_email(self, email: str, limit: int) -> list[Order]:
-        rows = self._q("SELECT * FROM orders WHERE customer_email=%s ORDER BY created_at DESC LIMIT %s", (email, limit))
+        rows = self._q(f"SELECT {_ORDER_COLS} FROM orders WHERE customer_email=%s ORDER BY created_at DESC LIMIT %s",
+                       (email, limit))
         return [self._to_order(r) for r in rows]
 
     def update_status(self, order_id: str, status: OrderStatus) -> None:
         self._q("UPDATE orders SET status=%s WHERE id=%s", (status.value, order_id))
 
-    def mark_processed(self, order_id: str, receipt: EmailEvent | None = None) -> bool:
-        with self.pool.connection() as conn, conn.transaction():   # estado + comprobante: todo o nada
-            done = conn.execute("UPDATE orders SET status='PROCESSED' WHERE id=%s AND status<>'PROCESSED' RETURNING id",
-                                (order_id,)).fetchone()
-            if done and receipt:
+    def mark_processed(self, order_id: str, receipt: EmailEvent | None = None,
+                       stock: list[tuple[str, int]] = ()) -> ProcessResult:
+        with self.pool.connection() as conn, conn.transaction():   # stock + estado + comprobante: todo o nada
+            # FOR UPDATE: si dos workers reciben el mismo mensaje, el segundo espera aquí y luego ve el estado final
+            row = conn.execute("SELECT status, stock_descontado FROM orders WHERE id=%s FOR UPDATE",
+                               (order_id,)).fetchone()
+            if row is None or row[0] in FINAL_STATUSES:
+                return ProcessResult(None)
+            if not row[1]:
+                try:
+                    with conn.transaction():   # punto de guardado: si un ítem no alcanza, se deshacen TODOS los descuentos
+                        for sku, qty in sorted(stock):   # siempre en el mismo orden: dos workers no se bloquean en cruz
+                            if conn.execute(DESCONTAR_STOCK, {"sku": sku, "qty": qty}).rowcount == 0:
+                                raise _SinStock(sku)
+                except _SinStock as exc:
+                    conn.execute("UPDATE orders SET status='REJECTED' WHERE id=%s", (order_id,))
+                    return ProcessResult(OrderStatus.REJECTED, exc.sku)
+            conn.execute("UPDATE orders SET status='PROCESSED', stock_descontado=true WHERE id=%s", (order_id,))
+            if receipt:
                 _insert_email(conn, receipt)
-        return done is not None
+        return ProcessResult(OrderStatus.PROCESSED)
+
+    def statuses(self, order_ids: list[str]) -> dict[str, str]:
+        return dict(self._q("SELECT id, status FROM orders WHERE id = ANY(%s)", (list(order_ids),)))
+
+    def requeue_failed(self, order_id: str) -> bool:
+        return bool(self._q("UPDATE orders SET status='PUBLISHED' WHERE id=%s AND status='FAILED' RETURNING id",
+                            (order_id,)))
 
     def mark_published(self, order_id: str) -> None:
         self._q("UPDATE orders SET status='PUBLISHED' WHERE id=%s AND status='PENDING'", (order_id,))
@@ -121,6 +164,56 @@ class PostgresOrderRepository(OrderRepository):
                      created_at=created.isoformat())
 
 
+class PostgresProductRepository(ProductRepository):
+    """Catálogo desde la tabla products. Guarda la última lectura: con PostgreSQL caído la tienda sigue mostrando el
+    catálogo (con el último stock conocido) y no espera el timeout del pool en cada visita."""
+    FRESH_S = 1.0    # el stock que ve la tienda puede atrasarse hasta 1 s (el que vale es el de la BD al descontar)
+    RETRY_S = 5.0    # con la BD caída, vuelve a intentar cada 5 s
+
+    def __init__(self, pool: ConnectionPool, precio_yape=None, incluir_yape: bool = True):
+        self.pool = pool
+        self.precio_yape, self.incluir_yape = precio_yape, incluir_yape
+        self._cache: list[Product] | None = None
+        self._next = 0.0
+        self._lock = threading.Lock()
+
+    def _read(self) -> list[Product]:
+        with self.pool.connection() as conn:
+            rows = conn.execute(f"SELECT {PRODUCT_COLS} FROM products ORDER BY category, sku").fetchall()
+        cols = [c.strip() for c in PRODUCT_COLS.split(",")]
+        return [to_product(dict(zip(cols, r)), self.precio_yape) for r in rows
+                if self.incluir_yape or not r[-1]]   # r[-1] = pago_yape_real
+
+    def all(self) -> list[Product]:
+        now = time.monotonic()
+        # solo un hilo refresca; los demás devuelven la última lectura (si aún no hay ninguna, esperan a esa)
+        if now >= self._next and self._lock.acquire(blocking=self._cache is None):
+            try:
+                self._cache, self._next = self._read(), time.monotonic() + self.FRESH_S
+            except (psycopg.Error, PoolTimeout):
+                self._next = time.monotonic() + self.RETRY_S
+                if self._cache is None:   # nunca se leyó la tabla: se muestra la semilla
+                    self._cache = load_products(precio_yape=self.precio_yape, incluir_yape=self.incluir_yape)
+            finally:
+                self._lock.release()
+        return list(self._cache or [])
+
+    def get(self, sku: str) -> Product | None:
+        return next((p for p in self.all() if p.sku == sku), None)
+
+    def initial_stock(self) -> dict[str, int]:
+        return {p["sku"]: int(p["stock"]) for p in read_catalog()}
+
+    def restore_stock(self) -> int:
+        rows = sorted((product_row(p) for p in read_catalog()), key=lambda r: r[0])   # en orden de sku, como el worker
+        with self.pool.connection() as conn, conn.transaction(), conn.cursor() as cur:
+            # upsert: un producto que faltara vuelve a la tabla; a los que ya están solo se les cambia el stock
+            cur.executemany(f"""INSERT INTO products ({PRODUCT_COLS}) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                                ON CONFLICT (sku) DO UPDATE SET stock = EXCLUDED.stock, updated_at = now()""", rows)
+        self._next = 0.0   # la próxima lectura ya muestra el stock restablecido
+        return len(rows)
+
+
 class PostgresOutbox(Outbox):
     def __init__(self, pool: ConnectionPool):
         self.pool = pool
@@ -147,8 +240,8 @@ class PostgresOutbox(Outbox):
 
     def pending_email_count(self) -> int:
         with self.pool.connection() as conn:
-            return conn.execute("""SELECT COUNT(*) FROM outbox
-                                   WHERE published_at IS NULL AND event_type <> 'OrderCreated'""").fetchone()[0]
+            return conn.execute("""SELECT COUNT(*) FROM outbox WHERE published_at IS NULL
+                                   AND event_type <> 'OrderCreated' AND event_type <> %s""", (PAGO_EVENT,)).fetchone()[0]
 
     def mark_sent(self, order_id: str) -> None:
         with self.pool.connection() as conn:

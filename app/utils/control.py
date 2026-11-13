@@ -16,7 +16,8 @@ class ControlStore:
         self._cache: tuple[float, dict] | None = None
 
     def _defaults(self) -> dict:
-        return {"workers": config.WORKERS, "worker_delay": config.WORKER_DELAY, "persistent": True}
+        # poison: modo "Pedidos venenosos". Lo decide el panel (API) y lo lee el worker en cada mensaje
+        return {"workers": config.WORKERS, "worker_delay": config.WORKER_DELAY, "persistent": True, "poison": False}
 
     def get(self) -> dict:
         cached = self._cache

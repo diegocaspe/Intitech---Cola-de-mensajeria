@@ -1,0 +1,2 @@
+# Scripts que corren dentro de contenedores Linux: siempre con fin de línea LF, aunque git en Windows use CRLF
+*.sh text eol=lf

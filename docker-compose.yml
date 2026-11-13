@@ -55,9 +55,17 @@ services:
         POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env (ver .env.example)}
         CONTROL_PATH: /data/control.json
       PUBLIC_URL: ${PUBLIC_URL:-}   # la define iniciar.ps1 con la IP de la laptop en la red local
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}   # en el servidor (.env): tiene prioridad sobre PUBLIC_URL
       SECRET_KEY: ${SECRET_KEY:?Falta SECRET_KEY en .env (ver .env.example)}
       ADMIN_EMAIL: ${ADMIN_EMAIL:?Falta ADMIN_EMAIL en .env (ver .env.example)}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD en .env (ver .env.example)}
+      # Zona Yape real (opcional): sin un YAPE_WEBHOOK_SECRET válido la zona se desactiva sola
+      YAPE_WEBHOOK_SECRET: ${YAPE_WEBHOOK_SECRET:-}
+      YAPE_TITULAR: ${YAPE_TITULAR:-}
+      YAPE_PRECIO_BASE: ${YAPE_PRECIO_BASE:-1.00}
+      YAPE_MONTO_MIN: ${YAPE_MONTO_MIN:-1.01}
+      YAPE_MONTO_MAX: ${YAPE_MONTO_MAX:-1.99}
+      YAPE_MINUTOS_EXPIRA: ${YAPE_MINUTOS_EXPIRA:-10}
     volumes:
       - app_data:/data
       - /var/run/docker.sock:/var/run/docker.sock   # permite los botones de sabotaje reales
@@ -105,6 +113,7 @@ services:
     environment:
       <<: *env
       PUBLIC_URL: ${PUBLIC_URL:-}   # base de los enlaces de los correos (verificar cuenta, restablecer contraseña)
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}   # si está, gana sobre PUBLIC_URL (servidor en la nube)
       EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
       GMAIL_USER: ${GMAIL_USER:-}
       GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
