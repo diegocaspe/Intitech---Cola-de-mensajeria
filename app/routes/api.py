@@ -1,5 +1,3 @@
-import hmac
-import json
 import random
 import threading
 import time
@@ -11,7 +9,7 @@ from typing import Literal
 
 import psycopg
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.concurrency import run_in_threadpool
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from psycopg_pool import PoolTimeout
@@ -28,17 +26,13 @@ from app.models.order import OrderStatus
 from app.utils.control import ControlStore
 from app.utils.docker_control import DockerControl
 from app.messaging.management import QueueMonitor
-from app.messaging.lab import PersistenceLab
-from app.messaging.rabbitmq import DeadLetterInspector, RabbitOrderPublisher, purge_queues
+from app.messaging.rabbitmq import (DeadLetterInspector, RabbitOrderPublisher, purge_queues,
+                                    remove_legacy_pagos_in_background)
 from app.database.connection import create_pool, init_schema
 from app.repositories.postgres_repository import (PostgresOrderRepository, PostgresOutbox, PostgresProductRepository,
                                                   PostgresSentEmails, PostgresUserRepository)
 from app.models.email import TokenResult
-from app.utils.rate_limit import LoginRateLimiter
 from app.utils.security import PasswordHasher, TokenSigner
-from app.models.yape import SinMontosYape, SinStockYape, YapeError
-from app.repositories.yape_postgres import PostgresYapeRepository
-from app.services.yape_service import YapeService
 
 # --- composición de dependencias -------------------------------------------
 config.require_env("api")   # antes de abrir conexiones: si falta un secreto, error claro en vez de un fallo raro
@@ -54,7 +48,6 @@ auth = AuthService(PostgresUserRepository(pool), PasswordHasher(), PostgresOutbo
                    reset_throttle_s=config.RESET_THROTTLE_S)
 sent_emails = PostgresSentEmails(pool)
 tokens = TokenSigner(config.SECRET_KEY)
-login_limiter = LoginRateLimiter(config.LOGIN_MAX_FAILS, config.LOGIN_WINDOW_S)
 
 
 class DbWatcher:
@@ -70,10 +63,11 @@ class DbWatcher:
 
     def __init__(self):
         self.snapshot = {"orders": {**{s.value: 0 for s in OrderStatus}, "total": 0}, "revenue": 0.0,
-                         "recent": [], "outbox_recent": [], "last_min": 0, "outbox_pending": 0, "stale": 0,
+                         "recent": [], "outbox_recent": [], "last_min": 0, "outbox_pending": 0, "stale": 0, "stale_ids": [],
                          "queue_window": {"count": 0, "head": [], "tail": [], "first_event": 1, "numbers": {}},
                          "relay": {"published": 0, "rate": 0.0}, "db_up": True,
-                         "emails": {"sent": 0, "outbox_pending": 0}}
+                         "emails": {"sent": 0, "outbox_pending": 0},
+                         "payments": {"approved": 0, "declined": 0, "refunded": 0, "pending": 0}}
         self._peak = 0   # mayor acumulación del outbox desde la última vez que quedó vacío
 
     def start(self) -> None:
@@ -124,6 +118,7 @@ class DbWatcher:
     def _read(self) -> bool:
         try:
             counts = service.repo.count_by_status()
+            stale_ids = service.repo.stale_published(config.LOST_AFTER_S)   # una sola consulta: el conteo y los ids
             published, recent = service.outbox.published_stats(self.RATE_WINDOW_S)
             self.snapshot = {
                 **self.snapshot,
@@ -136,10 +131,13 @@ class DbWatcher:
                 "last_min": service.repo.count_since(60),
                 "outbox_pending": service.outbox.pending_count(),
                 "queue_window": service.outbox.queue_window(24),   # ids reales de los extremos de la fila, para el almacén
-                "stale": len(service.repo.stale_published(config.LOST_AFTER_S)),
+                "stale": len(stale_ids),
+                "stale_ids": stale_ids,   # para marcar en la pizarra de PostgreSQL cuáles perdió RabbitMQ
                 "relay": {"published": published, "rate": round(recent / self.RATE_WINDOW_S, 1)},
                 # correos: enviados (tabla de idempotencia del mailer) y eventos aún sin publicar en el outbox
                 "emails": {"sent": sent_emails.count(), "outbox_pending": service.outbox.pending_email_count()},
+                # pagos con tarjeta simulados: lo que decidió el worker al cobrar
+                "payments": {k.lower(): v for k, v in service.repo.payment_counts().items()},
             }
             self._note_backlog(self.snapshot["outbox_pending"])
             return True
@@ -148,20 +146,14 @@ class DbWatcher:
 
 
 db_watch = DbWatcher()
-# Catálogo y stock desde la tabla products (catalogo.json solo es la semilla). Zona Yape real: con la zona desactivada
-# (secreto ausente o corto) sus productos ni se muestran
-products = PostgresProductRepository(pool, precio_yape=config.YAPE["precio_base"], incluir_yape=config.YAPE["enabled"])
+# Catálogo y stock desde la tabla products (catalogo.json solo es la semilla)
+products = PostgresProductRepository(pool)
 checkout_service = CheckoutService(products, service)
-yape = YapeService(PostgresYapeRepository(pool), service.repo, products, config.YAPE)
-# el webhook cuenta TODAS sus peticiones (válidas o no): como mucho YAPE_WEBHOOK_PER_MIN por minuto
-webhook_limiter = LoginRateLimiter(config.YAPE_WEBHOOK_PER_MIN, 60)
 simulator = TrafficSimulator(service, events, products)
 docker = DockerControl()
 monitor = QueueMonitor()
 dlq = DeadLetterInspector()
 dlq_emails = DeadLetterInspector(email=True)
-dlq_pagos = DeadLetterInspector(pagos=True)
-lab = PersistenceLab(docker, events)
 
 
 @asynccontextmanager
@@ -171,16 +163,14 @@ async def lifespan(_: FastAPI):
     auth.ensure_admin(config.ADMIN_EMAIL, config.ADMIN_PASSWORD)
     db_watch.start()
     events.add("info", "Sistema listo. Todo lo que ves está respaldado por RabbitMQ + PostgreSQL.")
-    if not yape.enabled:   # solo el motivo (nombra la variable, nunca su valor)
-        events.add("warn", f"Zona Yape real desactivada: {config.YAPE['problem']}", "wallet")
+    # la antigua cola "pagos" (Zona Yape, eliminada) se borra del broker si quedó de una versión anterior
+    remove_legacy_pagos_in_background()
     yield
 
 
 TAGS = [
     {"name": "Usuarios", "description": "Registro, inicio y cierre de sesión, verificación del correo y recuperación de contraseña."},
     {"name": "Tienda", "description": "Lo que usa la tienda del cliente: catálogo, compra y seguimiento del pedido."},
-    {"name": "Zona Yape real", "description": "Productos que se pagan con Yape de verdad: checkout con monto único, pantalla de pago en vivo y el webhook que recibe las notificaciones de Yape desde MacroDroid."},
-    {"name": "Yape (admin)", "description": "Pagos Yape en vivo: pedidos esperando pago, notificaciones, asignación manual y simulación."},
     {"name": "Pedidos (admin)", "description": "Consulta y gestión directa de pedidos."},
     {"name": "Panel (admin)", "description": "Métricas, pedidos fallidos (DLQ), reconciliación y reinicio de la demo."},
     {"name": "Simulador (admin)", "description": "Genera tráfico de prueba: goteo, ráfagas o un Black Friday completo."},
@@ -202,6 +192,14 @@ def db_unavailable(_: Request, __: Exception):
     # PostgreSQL caído: el pedido NO se acepta (no hay dónde guardarlo con su evento). Mejor un 503 claro que
     # aceptar algo que se podría perder
     return JSONResponse({"detail": DB_DOWN_DETAIL}, status_code=503)
+
+
+@app.exception_handler(RequestValidationError)
+def invalid_request(_: Request, exc: RequestValidationError):
+    # Como el 422 de FastAPI, pero SIN el campo "input": nunca se devuelve lo que envió el cliente (p. ej. el número de
+    # una tarjeta o una contraseña mal formados)
+    errors = [{k: v for k, v in e.items() if k in ("type", "loc", "msg")} for e in exc.errors()]
+    return JSONResponse({"detail": errors}, status_code=422)
 
 
 # --- sesión -----------------------------------------------------------------
@@ -293,20 +291,11 @@ def register(body: RegisterIn):
 
 
 @app.post("/api/auth/login", tags=["Usuarios"], summary="Iniciar sesión",
-          description="Valida correo y contraseña y entrega la cookie de sesión. Contra la fuerza bruta: tras "
-                      f"{config.LOGIN_MAX_FAILS} intentos fallidos en {config.LOGIN_WINDOW_S} s desde una misma IP "
-                      "responde 429 (con la cabecera Retry-After) hasta que pase la ventana.",
-          responses={429: {"description": "Demasiados intentos fallidos desde esta IP"}})
-def login(body: LoginIn, request: Request):
-    ip = request.client.host if request.client else "?"   # IP real: la API se publica sin proxy delante
-    wait = login_limiter.retry_after(ip)
-    if wait:
-        raise HTTPException(429, f"Demasiados intentos fallidos. Espera {wait} s e inténtalo de nuevo.",
-                            headers={"Retry-After": str(wait)})
+          description="Valida correo y contraseña y entrega la cookie de sesión. Si no coinciden, responde 401.")
+def login(body: LoginIn):
     try:
         user = auth.authenticate(body.email, body.password)
     except AuthError as exc:
-        login_limiter.fail(ip)
         raise HTTPException(401, str(exc))
     return _start_session(user)
 
@@ -365,16 +354,9 @@ def reset_password(body: ResetIn):
 
 
 # --- API de la tienda -------------------------------------------------------
-@app.get("/api/products", tags=["Tienda"], summary="Catálogo de productos", description="Los productos con precio, descuento, stock e imagen. El stock sale de la tabla products (el worker lo descuenta al confirmar cada pedido). Los de la Zona Yape real llevan pago_yape_real=true y su stock descuenta además los pedidos pendientes de pago (solo si la zona está activa).")
+@app.get("/api/products", tags=["Tienda"], summary="Catálogo de productos", description="Los productos con precio, descuento, stock e imagen. El stock sale de la tabla products (el worker lo descuenta al confirmar cada pedido). Si la base de datos cae, se sirve el último stock conocido.")
 def list_products():
-    stock = {}
-    if yape.enabled:
-        try:   # el catálogo se sirve aunque la BD esté caída: entonces muestra el último stock conocido
-            stock = yape.stock_disponible()
-        except (psycopg.Error, PoolTimeout):
-            pass
-    return [{**asdict(p), "discount_pct": p.discount_pct, "image": f"/static/img/{p.image}",
-             "stock": stock.get(p.sku, p.stock)} for p in products.all()]
+    return [{**asdict(p), "discount_pct": p.discount_pct, "image": f"/static/img/{p.image}"} for p in products.all()]
 
 
 class CartLine(BaseModel):
@@ -382,21 +364,40 @@ class CartLine(BaseModel):
     quantity: int
 
 
+class CardIn(BaseModel):
+    """Tarjeta de PRUEBA (pago simulado). Campos de texto sin restricciones a propósito: los valida CheckoutService y
+    responde 400 con un mensaje propio, que nunca repite lo que se escribió. No se guarda ni se registra el número
+    completo ni el CVV."""
+    holder: str = ""
+    number: str = ""
+    exp: str = ""
+    cvv: str = ""
+
+
 class CheckoutIn(BaseModel):
     items: list[CartLine] = Field(min_length=1, max_length=30)
+    card: CardIn | None = None
 
 
-@app.post("/api/checkout", status_code=201, tags=["Tienda"], summary="Comprar (checkout)", description="Convierte el carrito en un pedido. Solo se envían SKU y cantidad: los precios salen del catálogo del servidor. Requiere sesión.")
+@app.post("/api/checkout", status_code=201, tags=["Tienda"], summary="Comprar (checkout)",
+          description="Convierte el carrito en un pedido y responde al instante (201): el cobro lo hace el worker después, de "
+                      "forma asíncrona. Solo se envían SKU y cantidad (los precios salen del catálogo del servidor) y la "
+                      "tarjeta. SOLO se aceptan las tarjetas de prueba 4111 1111 1111 1111 (aprobada), 4000 0000 0000 0002 "
+                      "(rechazada) y 4000 0000 0000 0119 (error temporal: se aprueba en el reintento); cualquier otro número "
+                      "responde 400 «Usa una tarjeta de prueba». La tarjeta se cambia por un token de prueba: el número "
+                      "completo y el CVV no se guardan ni viajan en la cola. Requiere sesión.",
+          responses={400: {"description": "Carrito o tarjeta inválidos («Usa una tarjeta de prueba»)"}})
 def checkout(body: CheckoutIn, user: dict = Depends(require_user)):
     try:
-        order = checkout_service.checkout(user["email"], [l.model_dump() for l in body.items])
+        order = checkout_service.checkout(user["email"], [l.model_dump() for l in body.items],
+                                          body.card.model_dump() if body.card else None)
     except CheckoutError as exc:
         raise HTTPException(400, str(exc))
     events.add("ok", f"Compra real desde la tienda: {user['name']} · S/ {order.total:,.2f}", "cart")
     return service.track(order.id)
 
 
-@app.get("/api/orders/{order_id}/track", tags=["Tienda"], summary="Seguir un pedido", description="Estado del pedido y su posición en la cola. El cliente lo consulta cada segundo.")
+@app.get("/api/orders/{order_id}/track", tags=["Tienda"], summary="Seguir un pedido", description="Estado del pedido y su posición en la cola. El cliente lo consulta cada segundo. payment_status: PENDING, APPROVED, DECLINED o REFUNDED; card: «Visa •••• 1111»; reject_reason (si está REJECTED): pago_rechazado (no se descontó stock) o sin_stock (no se cobró, o se reembolsó).")
 def track(order_id: str, user: dict = Depends(require_user)):
     order = service.get_order(order_id)
     if not order or (order.customer_email != user["email"] and user["role"] != "admin"):
@@ -432,179 +433,6 @@ def store_qr(request: Request):
     import qrcode.image.svg
     img = qrcode.make(_store_url(request), image_factory=qrcode.image.svg.SvgPathFillImage, box_size=12, border=2)
     return Response(img.to_string(), media_type="image/svg+xml")
-
-
-# --- Zona Yape real ---------------------------------------------------------
-YAPE_QR = STATIC / "img" / "yape_qr.png"   # el QR de Yape del dueño (si no existe, la pantalla muestra un recuadro)
-_queue_cache = {"t": 0.0, "stats": None}
-_queue_lock = threading.Lock()
-
-
-def _queue_stats() -> dict | None:
-    """Estadísticas de RabbitMQ con caché de 1 s: cada celular consulta su pantalla de pago cada segundo."""
-    with _queue_lock:
-        if time.monotonic() - _queue_cache["t"] > 1.0:
-            _queue_cache["stats"], _queue_cache["t"] = monitor.stats(), time.monotonic()
-        return _queue_cache["stats"]
-
-
-def _need_yape():
-    if not yape.enabled:
-        raise HTTPException(503, "La Zona Yape real no está disponible en este momento")
-
-
-class YapeCheckoutIn(BaseModel):
-    sku: str = Field(max_length=60)
-
-
-@app.get("/api/yape/config", tags=["Zona Yape real"], summary="Configuración pública de la Zona Yape",
-         description="Si la zona está activa, el titular de la cuenta Yape, el rango de montos, los minutos para pagar y si el QR está configurado (static/img/yape_qr.png). Nunca incluye el secreto.")
-def yape_config():
-    s = config.YAPE
-    return {"enabled": yape.enabled, "titular": s["titular"] if yape.enabled else None, "minutos": s["minutos"],
-            "monto_min": s["monto_min"], "monto_max": s["monto_max"], "qr": YAPE_QR.exists()}
-
-
-@app.post("/api/yape/checkout", status_code=201, tags=["Zona Yape real"], summary="Iniciar un pago con Yape real",
-          description="Crea un pedido pendiente_pago_yape de 1 unidad del producto con un MONTO ÚNICO entre YAPE_MONTO_MIN y "
-                      "YAPE_MONTO_MAX que ningún otro pedido vigente usa, y reserva el stock por YAPE_MINUTOS_EXPIRA minutos. "
-                      "Requiere sesión. Si la base de datos no responde o no quedan montos libres responde 503 (alta demanda) "
-                      "y no crea nada.",
-          responses={409: {"description": "Sin stock"}, 503: {"description": "Alta demanda: reintenta en unos segundos"}})
-def yape_checkout(body: YapeCheckoutIn, user: dict = Depends(require_user)):
-    _need_yape()
-    try:
-        pedido = yape.checkout(user["email"], user["name"], body.sku)
-    except SinMontosYape:
-        raise HTTPException(503, "Estamos con alta demanda. Intenta de nuevo en unos segundos.")
-    except SinStockYape as exc:
-        raise HTTPException(409, str(exc))
-    except YapeError as exc:
-        raise HTTPException(400, str(exc))
-    events.add("info", f"Zona Yape: {user['name']} va a yapear S/ {pedido.monto} ({pedido.producto})", "wallet")
-    return yape.estado_cliente(pedido.id, user["email"], _queue_stats() is not None)
-
-
-@app.get("/api/yape/pedidos/{pedido_id}", tags=["Zona Yape real"], summary="Pantalla de pago en vivo",
-         description="Estado del pago para el cliente; la tienda lo consulta cada segundo. fase: esperando_yapeo, en_cola "
-                     "(con posicion), procesando, pago_registrado (RabbitMQ caído tras recibir el pago), confirmado, expirado o "
-                     "sin_stock (el pago llegó tarde y otro cliente se llevó la última unidad: se devuelve).")
-def yape_estado(pedido_id: str, user: dict = Depends(require_user)):
-    st = yape.estado_cliente(pedido_id[:60], None if user["role"] == "admin" else user["email"],
-                             _queue_stats() is not None)
-    if not st:
-        raise HTTPException(404, "Pedido no encontrado")
-    return st
-
-
-def _leer_cuerpo(raw: bytes) -> tuple[str, str]:
-    """JSON {titulo, texto} (los campos extra se ignoran). Si el JSON llega roto (p. ej. comillas sin escapar dentro
-    del texto de la notificación), se guarda el cuerpo entero como texto: así la notificación nunca se pierde."""
-    try:
-        text = raw.decode("utf-8")
-    except UnicodeDecodeError:   # algunos clientes mandan Latin-1/cp1252: "envió" no debe llegar como "envi�"
-        text = raw.decode("cp1252", "replace")
-    try:
-        data = json.loads(text)
-    except ValueError:
-        return "", text
-    if not isinstance(data, dict):
-        return "", text
-    pick = lambda *keys: next((str(data[k]) for k in keys if data.get(k) not in (None, "")), "")
-    return pick("titulo", "title"), pick("texto", "text", "mensaje")
-
-
-@app.post("/api/pagos/yape/notificacion", tags=["Zona Yape real"], summary="Webhook de MacroDroid (notificación de Yape)",
-          description="Recibe cada notificación de Yape que reenvía MacroDroid. Exige la cabecera X-Yape-Secret igual a "
-                      "YAPE_WEBHOOK_SECRET (401 si no coincide) y como mucho 60 peticiones por minuto (429). Guarda SIEMPRE "
-                      "el texto crudo y, en la misma transacción, el evento pago.yape_recibido en el outbox; responde 200 solo "
-                      "si se guardó y 503 si la base de datos no responde (MacroDroid debe reintentar). La misma notificación "
-                      "(título + texto) en el mismo minuto se guarda una sola vez (200 con duplicada=true). No procesa el pago: "
-                      "lo hace el worker desde la cola pagos.",
-          responses={401: {"description": "Falta X-Yape-Secret o no coincide"}, 429: {"description": "Más de 60 por minuto"},
-                     503: {"description": "Base de datos no disponible o zona desactivada: reintentar"}},
-          # el cuerpo se lee a mano (para no perder notificaciones con JSON roto): aquí solo se documenta
-          openapi_extra={
-              "parameters": [{"name": "X-Yape-Secret", "in": "header", "required": True, "schema": {"type": "string"},
-                              "description": "Igual a YAPE_WEBHOOK_SECRET"}],
-              "requestBody": {"required": True, "content": {"application/json": {"schema": {
-                  "type": "object", "additionalProperties": True, "required": ["texto"],
-                  "properties": {"titulo": {"type": "string", "maxLength": 500, "example": "Confirmación de Pago"},
-                                 "texto": {"type": "string", "maxLength": 4000,
-                                           "example": "Yape! JUAN PEREZ te envió un pago por S/ 1.37"}}}}}}})
-async def yape_webhook(request: Request):
-    _need_yape()
-    wait = webhook_limiter.retry_after("webhook")
-    if wait:
-        raise HTTPException(429, f"Demasiadas notificaciones. Espera {wait} s.", headers={"Retry-After": str(wait)})
-    webhook_limiter.fail("webhook")
-    given = request.headers.get("x-yape-secret", "")
-    if not hmac.compare_digest(given.encode(), config.YAPE["secret"].encode()):   # tiempo constante; nunca se registra
-        raise HTTPException(401, "Secreto inválido")
-    titulo, texto = _leer_cuerpo((await request.body())[:20000])
-    if not (titulo + texto).strip():
-        raise HTTPException(400, "Falta el texto de la notificación")
-    try:
-        notif_id, nueva = await run_in_threadpool(yape.recibir, titulo, texto)
-    except (psycopg.Error, PoolTimeout):
-        raise HTTPException(503, "Base de datos no disponible: reintenta en unos segundos")
-    if nueva:   # sin el texto: el contenido de la notificación solo lo ve el administrador en su sección del panel
-        events.add("info", f"Llegó una notificación de Yape (#{notif_id}): guardada y en camino a la cola de pagos", "wallet")
-    return {"ok": True, "id": notif_id, "duplicada": not nueva}
-
-
-@app.get("/api/yape/admin/panel", tags=["Yape (admin)"], summary="Pagos Yape en vivo",
-         description="Pedidos esperando pago (monto y tiempo restante), notificaciones con su texto crudo, estado y etapa "
-                     "(notificacion → outbox → cola_pagos → worker → confirmado) y los contadores de las colas pagos y pagos.dlq.")
-def yape_panel(_: dict = Depends(require_admin)):
-    q = _queue_stats()
-    return {"enabled": yape.enabled, "problem": config.YAPE["problem"], "titular": config.YAPE["titular"],
-            "qr": YAPE_QR.exists(), "queue": q["pagos"] if q else None, **yape.panel()}
-
-
-class AsignarIn(BaseModel):
-    pedido_id: str = Field(max_length=60)
-
-
-@app.post("/api/yape/admin/notificaciones/{notificacion_id}/asignar", tags=["Yape (admin)"], summary="Asignar a un pedido",
-          description="Asocia a mano una notificación sin_coincidencia (o ignorada) a un pedido Yape pendiente o expirado. "
-                      "El pedido queda pagado y sigue el flujo normal.")
-def yape_asignar(notificacion_id: int, body: AsignarIn, _: dict = Depends(require_admin)):
-    try:
-        yape.asignar(notificacion_id, body.pedido_id)
-    except YapeError as exc:
-        raise HTTPException(409, str(exc))
-    events.add("ok", f"Pago Yape #{notificacion_id} asignado a mano al pedido {body.pedido_id[:8]}", "wallet")
-    return {"ok": True}
-
-
-@app.post("/api/yape/admin/notificaciones/{notificacion_id}/rechazar", tags=["Yape (admin)"], summary="Rechazar una notificación",
-          description="Marca como rechazada una notificación sin_coincidencia o ignorada (queda guardada, con su texto).")
-def yape_rechazar(notificacion_id: int, _: dict = Depends(require_admin)):
-    try:
-        yape.rechazar(notificacion_id)
-    except YapeError as exc:
-        raise HTTPException(409, str(exc))
-    events.add("warn", f"Notificación Yape #{notificacion_id} rechazada por el administrador", "wallet")
-    return {"ok": True}
-
-
-class SimularIn(BaseModel):
-    pedido_id: str | None = Field(None, max_length=60)
-    monto: Decimal | None = Field(None, gt=0, max_digits=8, decimal_places=2)
-
-
-@app.post("/api/yape/admin/simular", tags=["Yape (admin)"], summary="Simular una notificación de Yape",
-          description="Para probar sin dinero real: crea una notificación marcada como simulada con el monto del pedido "
-                      "indicado (o el monto dado) y la manda por el mismo camino que una real (outbox → cola pagos → worker).")
-def yape_simular(body: SimularIn, _: dict = Depends(require_admin)):
-    _need_yape()
-    try:
-        notif_id, monto = yape.simular(body.pedido_id, body.monto)
-    except YapeError as exc:
-        raise HTTPException(400, str(exc))
-    events.add("info", f"Notificación Yape SIMULADA #{notif_id} por S/ {monto}", "wallet")
-    return {"ok": True, "id": notif_id, "monto": monto}
 
 
 # --- API de pedidos ---------------------------------------------------------
@@ -652,7 +480,7 @@ def _services(q) -> dict | None:
     return st
 
 
-@app.get("/api/metrics", tags=["Panel (admin)"], summary="Métricas del panel", description="Todo lo que el panel muestra: pedidos por estado, colas, outbox, DLQ, servicios y simulador.")
+@app.get("/api/metrics", tags=["Panel (admin)"], summary="Métricas del panel", description="Todo lo que el panel muestra: pedidos por estado, pagos (approved, declined, refunded, pending), colas, outbox, DLQ, servicios y simulador. lost y lost_ids: pedidos publicados hace rato que RabbitMQ perdió (solo se calculan con la cola vacía); siguen guardados en PostgreSQL.")
 def metrics(_: dict = Depends(require_admin)):
     q = monitor.stats()
     ctl = control.get()
@@ -662,13 +490,13 @@ def metrics(_: dict = Depends(require_admin)):
         **snap,
         # perdidos = publicados hace rato, sin procesar, y que no están en ninguna cola (el broker los olvidó)
         "lost": snap["stale"] if in_flight == 0 else 0,
+        "lost_ids": snap["stale_ids"] if in_flight == 0 else [],   # misma regla: solo con la cola vacía
         "queue": q,
         "broker_up": q is not None,
         "services": _services(q),
         "sim": simulator.snapshot(),
         "control": {"workers": ctl["workers"], "slow": ctl["worker_delay"] >= config.SLOW_DELAY,
                     "persistent": ctl["persistent"], "poison": bool(ctl["poison"])},
-        "lab": lab.state,
         "scenarios": scenarios.state,   # escenario automático en curso y el último resultado de cada uno
         "events": events.latest()[:25],
     }
@@ -678,19 +506,18 @@ def metrics(_: dict = Depends(require_admin)):
 class DlqAction(BaseModel):
     order_ids: list[str] | None = None   # None = todos
     email_ids: list[str] | None = None   # con queue=correos
-    notificacion_ids: list[int] | None = None   # con queue=pagos
 
 
-DlqQueue = Literal["pedidos", "correos", "pagos"]
+DlqQueue = Literal["pedidos", "correos"]
 
 
-@app.get("/api/dlq", tags=["Panel (admin)"], summary="Ver una DLQ", description="Mensajes que agotaron sus 3 reintentos, con el error y la hora. queue=pedidos (por defecto), queue=correos (correos que no se pudieron enviar: tipo y destinatario, sin el contenido) o queue=pagos (notificaciones de Yape, por notificacion_id).")
+@app.get("/api/dlq", tags=["Panel (admin)"], summary="Ver una DLQ", description="Mensajes que agotaron sus 3 reintentos, con el error y la hora. queue=pedidos (por defecto), o queue=correos (correos que no se pudieron enviar: tipo y destinatario, sin el contenido).")
 def dlq_list(queue: DlqQueue = "pedidos", _: dict = Depends(require_admin)):
     try:
-        items = {"correos": dlq_emails, "pagos": dlq_pagos}.get(queue, dlq).peek(50)
+        items = (dlq_emails if queue == "correos" else dlq).peek(50)
     except ConnectionError:
         raise HTTPException(503, "RabbitMQ no disponible")
-    if queue in ("correos", "pagos"):
+    if queue == "correos":
         return items
     for it in items:                              # se enriquece con los datos del pedido
         try:
@@ -703,10 +530,6 @@ def dlq_list(queue: DlqQueue = "pedidos", _: dict = Depends(require_admin)):
 
 @app.post("/api/dlq/reprocess", tags=["Panel (admin)"], summary="Reprocesar desde la DLQ", description="Devuelve a la cola principal los mensajes elegidos (o todos). queue=correos reenvía correos a la cola del mailer: los que ya salieron no se repiten (idempotencia por email_id).")
 def dlq_reprocess(body: DlqAction, queue: DlqQueue = "pedidos", _: dict = Depends(require_admin)):
-    if queue == "pagos":   # el worker los procesa de nuevo; uno ya procesado no se repite (idempotencia)
-        done = dlq_pagos.reprocess(set(body.notificacion_ids) if body.notificacion_ids else None)
-        events.add("info", f"DLQ de pagos: {len(done)} notificación(es) devueltas a la cola «pagos»", "inbox")
-        return {"reprocessed": len(done)}
     if queue == "correos":
         done = dlq_emails.reprocess(set(body.email_ids) if body.email_ids else None)
         events.add("info", f"DLQ de correos: {len(done)} correo(s) devueltos a la cola del mailer", "inbox")
@@ -722,10 +545,6 @@ def dlq_reprocess(body: DlqAction, queue: DlqQueue = "pedidos", _: dict = Depend
 
 @app.post("/api/dlq/discard", tags=["Panel (admin)"], summary="Descartar de la DLQ", description="Elimina de la DLQ los mensajes elegidos (o todos). queue=pedidos (por defecto) o queue=correos.")
 def dlq_discard(body: DlqAction, queue: DlqQueue = "pedidos", _: dict = Depends(require_admin)):
-    if queue == "pagos":   # el texto crudo sigue en yape_notificaciones: solo sale de la cola
-        done = dlq_pagos.discard(set(body.notificacion_ids) if body.notificacion_ids else None)
-        events.add("warn", f"DLQ de pagos: {len(done)} mensaje(s) descartados (la notificación sigue guardada)", "inbox")
-        return {"discarded": len(done)}
     if queue == "correos":
         done = dlq_emails.discard(set(body.email_ids) if body.email_ids else None)
         events.add("warn", f"DLQ de correos: {len(done)} correo(s) descartados (no se enviarán)", "inbox")
@@ -735,16 +554,7 @@ def dlq_discard(body: DlqAction, queue: DlqQueue = "pedidos", _: dict = Depends(
     return {"discarded": len(done)}
 
 
-# --- experimento de persistencia y reconciliación -------------------------
-@app.post("/api/lab/run", tags=["Panel (admin)"], summary="Experimento de persistencia", description="Compara una cola en disco contra una en memoria reiniciando RabbitMQ.")
-def lab_run(_: dict = Depends(require_admin)):
-    if not docker.available:
-        raise HTTPException(503, "Docker no está disponible desde la API (falta montar el socket)")
-    if not lab.start():
-        raise HTTPException(409, "El experimento ya está en curso")
-    return lab.state
-
-
+# --- reconciliación ---------------------------------------------------------
 @app.post("/api/reconcile", tags=["Panel (admin)"], summary="Reconciliar desde la BD", description="Reenvía los pedidos publicados que nunca se procesaron (mensajes perdidos en el broker).")
 def reconcile(_: dict = Depends(require_admin)):
     n = service.reconcile_lost(config.LOST_AFTER_S)
@@ -794,17 +604,11 @@ def sim_burst(body: BurstIn, _: dict = Depends(require_admin)):
     return {"ok": True}
 
 
-@app.get("/api/stock", tags=["Panel (admin)"], summary="Stock por producto", description="Stock actual de cada producto (tabla products) junto al stock inicial de catalogo.json y, en la Zona Yape, las unidades reservadas por pedidos pendientes de pago.")
+@app.get("/api/stock", tags=["Panel (admin)"], summary="Stock por producto", description="Stock actual de cada producto (tabla products) junto al stock inicial de catalogo.json.")
 def stock_list(_: dict = Depends(require_admin)):
     initial = products.initial_stock()
-    reserved = {}
-    if yape.enabled:
-        try:
-            reserved = yape.repo.reservados(yape.clock())
-        except (psycopg.Error, PoolTimeout):
-            pass
-    return [{"sku": p.sku, "name": p.name, "category": p.category, "stock": p.stock, "initial": initial.get(p.sku),
-             "reserved": reserved.get(p.sku, 0)} for p in products.all()]
+    return [{"sku": p.sku, "name": p.name, "category": p.category, "stock": p.stock, "initial": initial.get(p.sku)}
+            for p in products.all()]
 
 
 @app.post("/api/stock/reset", tags=["Panel (admin)"], summary="Restablecer stock", description="Vuelve a poner el stock de todos los productos según catalogo.json (para reiniciar la demo antes de la exposición). No toca pedidos ni colas.")
@@ -814,7 +618,7 @@ def stock_reset(_: dict = Depends(require_admin)):
     return {"restored": n}
 
 
-@app.post("/api/reset", tags=["Panel (admin)"], summary="Reiniciar la demo", description="Vacía la base de datos (incluidos los pedidos Yape y sus notificaciones) y todas las colas (pedidos, correos y pagos), restablece el stock según catalogo.json y la configuración.")
+@app.post("/api/reset", tags=["Panel (admin)"], summary="Reiniciar la demo", description="Vacía la base de datos (pedidos y outbox) y todas las colas (pedidos y correos), restablece el stock según catalogo.json y la configuración.")
 def reset(_: dict = Depends(require_admin)):
     if scenarios.running:
         raise HTTPException(409, "Hay un escenario automático en curso: detenlo antes de reiniciar la demo")
@@ -825,7 +629,6 @@ def reset(_: dict = Depends(require_admin)):
     except Exception:
         pass
     service.repo.clear()
-    yape.repo.clear()                # pedidos Yape y notificaciones
     products.restore_stock()         # sin pedidos, el stock vuelve al de catalogo.json
     time.sleep(0.5)
     try:
@@ -870,7 +673,6 @@ def run_chaos(action: str) -> None:
         events.add("bad", "SABOTAJE: el relay cayó. Los pedidos se siguen guardando, pero nada llega a RabbitMQ: el outbox acumula", "skull")
     elif action == "crash-broker":
         # stop_app y no SIGKILL: un reinicio completo tarda 20-45 s, esto vuelve en ~4 s (ver DockerControl.broker_app).
-        # El SIGKILL real queda en el experimento de persistencia
         docker.broker_app("stop_app")
         events.add("bad", "SABOTAJE: RabbitMQ cayó. Relay y workers pierden la conexión. ¿Se pierden los mensajes?", "burst")
     elif action == "crash-db":
@@ -921,7 +723,7 @@ def run_chaos(action: str) -> None:
 # --- escenarios automáticos -------------------------------------------------
 class LiveScenarioOps:
     """Lo que el orquestador de escenarios puede hacer, con los MISMOS sabotajes de los botones (run_chaos), y lo que
-    puede leer (colas, contenedores, BD). Solo crea y sigue pedidos de prueba: nunca toca pedidos de clientes ni de Yape."""
+    puede leer (colas, contenedores, BD). Solo crea y sigue pedidos de prueba: nunca toca pedidos de clientes."""
     KILL = {"worker": "kill-worker", "rabbitmq": "crash-broker", "postgres": "crash-db"}
     REVIVE = {"worker": "revive-worker", "rabbitmq": "revive-broker", "postgres": "revive-db"}
 
@@ -952,12 +754,13 @@ class LiveScenarioOps:
         control.set(worker_delay=seconds)
 
     def create_test_order(self, email: str, poison: bool = False) -> str:
-        """Mismo camino que un pedido de la API (pedido + evento en una transacción). Productos normales del catálogo
-        que aún tienen stock, nunca de la Zona Yape; el venenoso usa el SKU de prueba que falla solo con el modo activo."""
+        """Mismo camino que un pedido de la API (pedido + evento en una transacción). Productos del catálogo que aún
+        tienen stock; el venenoso usa el SKU de prueba que falla solo con el modo activo. Sin tarjeta: se paga solo con
+        la tarjeta de prueba aprobada (tok_test_approved)."""
         if poison:
             items = [{"sku": POISON_SKU, "quantity": 1, "unit_price": Decimal("9.90")}]
         else:
-            catalog = [p for p in products.all() if not p.pago_yape_real]
+            catalog = products.all()
             if self._stock is None:
                 self._stock = {p.sku: p.stock for p in catalog}
             with_stock = [p for p in catalog if self._stock.get(p.sku, 0) > 0]

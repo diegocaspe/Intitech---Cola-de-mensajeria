@@ -181,6 +181,21 @@ def test_poison_scenario_sends_four_to_the_dlq_then_reprocesses_them():
     assert runner.state["runs"][5]["summary"]["lines"] == ["4 fueron a la DLQ y se completaron al reprocesar"]
 
 
+def test_poison_scenario_goes_slow_and_pauses_at_the_first_retry_and_the_first_dlq():
+    runner, world, _ = make()
+    said, pause = [], runner._pause
+    def recording_pause():                                                          # lo que se narra en cada pausa
+        said.append(runner.state["runs"][5]["narration"])
+        pause()
+    runner._pause = recording_pause
+    runner.start(5, "rapido", background=False)
+    assert subsequence(world.calls, ["poison True", "delay 0.6", "poison False", "reprocess", "recover"])
+    assert said[0].startswith("Un pedido venenoso falló: espera 2 s en la cola de reintento orders.retry.2s")
+    assert said[1].startswith("Agotó sus 3 reintentos (2 s, 5 s, 10 s): RabbitMQ lo apartó a la DLQ")
+    assert len(said) == 3                                                           # y la de antes de reprocesar
+    assert runner.state["runs"][5]["summary"]["processed"] == 20
+
+
 def test_db_scenario_rejects_five_with_notice_and_keeps_the_dlq_empty():
     runner, world, _ = make()
     runner.start(6, "rapido", background=False)

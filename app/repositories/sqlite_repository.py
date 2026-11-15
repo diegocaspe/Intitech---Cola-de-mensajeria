@@ -10,16 +10,17 @@ from decimal import Decimal
 from typing import Callable
 
 from app.repositories.catalog_repository import load_products, to_product
-from app.repositories.interfaces import (ORDER_EVENT, PAGO_EVENT, Outbox, OrderRepository, ProcessResult,
+from app.repositories.interfaces import (ORDER_EVENT, Outbox, OrderRepository, ProcessResult,
                                          ProductRepository, SentEmailRepository, UserRepository)
 from app.models.email import EmailEvent, EmailToken, TokenPurpose, TokenResult
-from app.models.order import Order, OrderItem, OrderStatus, money
+from app.models.order import Order, OrderItem, OrderStatus, PaymentStatus, money
 from app.models.product import Product
 from app.models.user import EmailStatus, Role, User
 
-_ORDER_COLS = "id, customer_email, items, status, created_at"
-_PRODUCT_COLS = ("sku, name, category, price, list_price, rating, reviews, stock, image, description, related, "
-                 "pago_yape_real")
+_ORDER_COLS = ("id, customer_email, items, status, created_at, payment_token, card_brand, card_last4, payment_status, "
+               "payment_reason, payment_failures")
+_PRODUCT_COLS = "sku, name, category, price, list_price, rating, reviews, stock, image, description, related"
+_FINAL = "('PROCESSED','REJECTED')"
 # el mismo descuento atómico que en PostgreSQL: resta solo si alcanza
 DESCONTAR_STOCK = "UPDATE products SET stock = stock - ?, updated_at = ? WHERE sku = ? AND stock >= ?"
 
@@ -66,14 +67,18 @@ class SqliteOrderRepository(OrderRepository):
         self._run("""CREATE TABLE IF NOT EXISTS outbox (
                 id INTEGER PRIMARY KEY AUTOINCREMENT, aggregate_id TEXT NOT NULL, event_type TEXT NOT NULL,
                 payload TEXT NOT NULL, created_at TEXT NOT NULL, published_at TEXT)""")
-        if "stock_descontado" not in {r[1] for r in self._run("PRAGMA table_info(orders)")}:
-            self._run("ALTER TABLE orders ADD COLUMN stock_descontado INTEGER NOT NULL DEFAULT 0")
+        existing = {r[1] for r in self._run("PRAGMA table_info(orders)")}
+        for col, ddl in (("stock_descontado", "INTEGER NOT NULL DEFAULT 0"), ("payment_token", "TEXT"),
+                         ("card_brand", "TEXT"), ("card_last4", "TEXT"), ("payment_status", "TEXT"),
+                         ("payment_reason", "TEXT"), ("payment_failures", "INTEGER NOT NULL DEFAULT 0")):
+            if col not in existing:
+                self._run(f"ALTER TABLE orders ADD COLUMN {col} {ddl}")
         # catálogo con stock real (lo llena SqliteProductRepository). Aquí porque el worker lo descuenta junto al pedido
         self._run("""CREATE TABLE IF NOT EXISTS products (
                 sku TEXT PRIMARY KEY, name TEXT NOT NULL, category TEXT NOT NULL, price TEXT NOT NULL,
                 list_price TEXT NOT NULL, rating REAL NOT NULL DEFAULT 0, reviews INTEGER NOT NULL DEFAULT 0,
                 stock INTEGER NOT NULL CHECK (stock >= 0), image TEXT NOT NULL, description TEXT NOT NULL DEFAULT '',
-                related TEXT NOT NULL DEFAULT '[]', pago_yape_real INTEGER NOT NULL DEFAULT 0, updated_at TEXT)""")
+                related TEXT NOT NULL DEFAULT '[]', updated_at TEXT)""")
         self._run("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)")
 
     def _run(self, sql: str, args: tuple = ()):
@@ -99,9 +104,11 @@ class SqliteOrderRepository(OrderRepository):
 
     def save(self, order: Order) -> None:
         self._tx(
-            (f"INSERT INTO orders ({_ORDER_COLS}) VALUES (?,?,?,?,?)",
+            (f"INSERT INTO orders ({_ORDER_COLS}) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
              (order.id, order.customer_email, json.dumps([i.to_dict() for i in order.items]),
-              order.status.value, order.created_at)),
+              order.status.value, order.created_at, order.payment_token, order.card_brand, order.card_last4,
+              order.payment_status.value if order.payment_status else None, order.payment_reason,
+              order.payment_failures)),
             ("INSERT INTO outbox (aggregate_id, event_type, payload, created_at) VALUES (?, 'OrderCreated', ?, ?)",
              (order.id, json.dumps({"order_id": order.id}), _now())),
         )
@@ -158,7 +165,11 @@ class SqliteOrderRepository(OrderRepository):
                     if not descontar(c, sku, qty):
                         c.execute("ROLLBACK TO stock")   # deshace los descuentos de este pedido: todo o nada
                         c.execute("RELEASE stock")
-                        c.execute("UPDATE orders SET status='REJECTED' WHERE id=?", (order_id,))
+                        # ya cobrado: reembolso simulado en la misma transacción
+                        c.execute("""UPDATE orders SET status='REJECTED', payment_reason=?,
+                                         payment_status = CASE WHEN payment_status='APPROVED' THEN 'REFUNDED'
+                                                               ELSE payment_status END
+                                     WHERE id=?""", (f"Sin stock de {sku}", order_id))
                         return ProcessResult(OrderStatus.REJECTED, sku)
                 c.execute("RELEASE stock")
             c.execute("UPDATE orders SET status='PROCESSED', stock_descontado=1 WHERE id=?", (order_id,))
@@ -166,6 +177,35 @@ class SqliteOrderRepository(OrderRepository):
                 c.execute(*_email_row(receipt))
             return ProcessResult(OrderStatus.PROCESSED)
         return self._write(tx)
+
+    def stock_of(self, skus: list[str]) -> dict[str, int]:
+        skus = list(skus)
+        if not skus:
+            return {}
+        marks = ",".join("?" * len(skus))
+        return dict(self._run(f"SELECT sku, stock FROM products WHERE sku IN ({marks})", tuple(skus)))
+
+    def add_payment_failure(self, order_id: str) -> None:
+        self._run("UPDATE orders SET payment_failures = payment_failures + 1 WHERE id=?", (order_id,))
+
+    def mark_payment_approved(self, order_id: str) -> None:
+        self._run(f"UPDATE orders SET payment_status='APPROVED', payment_reason=NULL WHERE id=? AND status NOT IN {_FINAL}",
+                  (order_id,))
+
+    def mark_payment_declined(self, order_id: str, reason: str) -> None:
+        self._run(f"""UPDATE orders SET status='REJECTED', payment_status='DECLINED', payment_reason=?
+                      WHERE id=? AND status NOT IN {_FINAL}""", (reason, order_id))
+
+    def reject_out_of_stock(self, order_id: str, reason: str) -> None:
+        self._run(f"UPDATE orders SET status='REJECTED', payment_reason=? WHERE id=? AND status NOT IN {_FINAL}",
+                  (reason, order_id))
+
+    def payment_counts(self) -> dict[str, int]:
+        counts = {s.value: 0 for s in PaymentStatus}
+        for status, n in self._run("SELECT payment_status, COUNT(*) FROM orders WHERE payment_status IS NOT NULL "
+                                   "GROUP BY payment_status"):
+            counts[status] = n
+        return counts
 
     def requeue_failed(self, order_id: str) -> bool:
         return bool(self._write(lambda c: c.execute(
@@ -205,9 +245,11 @@ class SqliteOrderRepository(OrderRepository):
 
     @staticmethod
     def _to_order(row) -> Order:
-        id_, email, items, status, created = row
+        id_, email, items, status, created, token, brand, last4, pay_status, reason, failures = row
         return Order(email, [OrderItem(**i) for i in json.loads(items)],
-                     id=id_, status=OrderStatus(status), created_at=created)
+                     id=id_, status=OrderStatus(status), created_at=created, payment_token=token, card_brand=brand,
+                     card_last4=last4, payment_status=PaymentStatus(pay_status) if pay_status else None,
+                     payment_reason=reason, payment_failures=failures or 0)
 
 
 class SqliteProductRepository(ProductRepository):
@@ -219,18 +261,17 @@ class SqliteProductRepository(ProductRepository):
         self.seed = seed if seed is not None else load_products()
         if not repo._run("SELECT 1 FROM products LIMIT 1"):
             self.repo._tx(*[(f"INSERT OR IGNORE INTO products ({_PRODUCT_COLS}, updated_at) "
-                             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", self._row(p)) for p in self.seed])
+                             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", self._row(p)) for p in self.seed])
 
     @staticmethod
     def _row(p: Product) -> tuple:
         return (p.sku, p.name, p.category, str(p.price), str(p.list_price), p.rating, p.reviews, p.stock, p.image,
-                p.description, json.dumps(list(p.related)), int(p.pago_yape_real), _now())
+                p.description, json.dumps(list(p.related)), _now())
 
     def all(self) -> list[Product]:
         cols = [c.strip() for c in _PRODUCT_COLS.split(",")]
         rows = self.repo._run(f"SELECT {_PRODUCT_COLS} FROM products ORDER BY category, sku")
-        return [to_product({**dict(zip(cols, r)), "related": json.loads(r[10]), "pago_yape_real": bool(r[11])})
-                for r in rows]
+        return [to_product({**dict(zip(cols, r)), "related": json.loads(r[10])}) for r in rows]
 
     def get(self, sku: str) -> Product | None:
         return next((p for p in self.all() if p.sku == sku), None)
@@ -240,7 +281,7 @@ class SqliteProductRepository(ProductRepository):
 
     def restore_stock(self) -> int:
         rows = sorted((self._row(p) for p in self.seed), key=lambda r: r[0])
-        self.repo._tx(*[(f"""INSERT INTO products ({_PRODUCT_COLS}, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+        self.repo._tx(*[(f"""INSERT INTO products ({_PRODUCT_COLS}, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
                              ON CONFLICT (sku) DO UPDATE SET stock = excluded.stock, updated_at = excluded.updated_at""",
                          r) for r in rows])
         return len(rows)
@@ -268,8 +309,8 @@ class SqliteOutbox(Outbox):
         self.repo._run(*_email_row(event))
 
     def pending_email_count(self) -> int:
-        return self.repo._run("SELECT COUNT(*) FROM outbox WHERE published_at IS NULL AND event_type NOT IN (?, ?)",
-                              (ORDER_EVENT, PAGO_EVENT))[0][0]
+        return self.repo._run("SELECT COUNT(*) FROM outbox WHERE published_at IS NULL AND event_type <> ?",
+                              (ORDER_EVENT,))[0][0]
 
     def events(self, event_type: str | None = None) -> list[dict]:
         """Todos los eventos con su payload (solo para las pruebas)."""

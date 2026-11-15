@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 
 from app import config
-from app.utils.rate_limit import LoginRateLimiter
 
 STRONG_KEY = "f3a9" * 16          # 64 caracteres, como los de secrets.token_hex(32)
 STRONG_PASS = "Tq7#vLm2xW9z"
@@ -199,48 +198,8 @@ def test_el_panel_tiene_el_enlace_a_rabbitmq():
     assert "Ver colas en RabbitMQ" in html
 
 
-# --- límite de intentos de login -----------------------------------------------
-class Clock:
-    def __init__(self):
-        self.t = 1000.0
-
-    def __call__(self):
-        return self.t
-
-
-def test_bloquea_tras_5_fallos_en_un_minuto_y_libera_despues():
-    clock = Clock()
-    limiter = LoginRateLimiter(max_fails=5, window_s=60, clock=clock)
-    for _ in range(5):
-        assert limiter.retry_after("1.2.3.4") == 0
-        limiter.fail("1.2.3.4")
-        clock.t += 1
-    wait = limiter.retry_after("1.2.3.4")
-    assert 0 < wait <= 60
-    clock.t += wait
-    assert limiter.retry_after("1.2.3.4") == 0
-
-
-def test_cada_ip_tiene_su_propio_contador():
-    limiter = LoginRateLimiter(max_fails=5, window_s=60, clock=Clock())
-    for _ in range(5):
-        limiter.fail("1.2.3.4")
-    assert limiter.retry_after("1.2.3.4") > 0
-    assert limiter.retry_after("5.6.7.8") == 0
-
-
-def test_los_fallos_viejos_salen_de_la_ventana():
-    clock = Clock()
-    limiter = LoginRateLimiter(max_fails=5, window_s=60, clock=clock)
-    for _ in range(4):
-        limiter.fail("ip")
-    clock.t += 61
-    limiter.fail("ip")
-    assert limiter.retry_after("ip") == 0      # solo 1 fallo dentro del último minuto
-
-
 # --- rutas del panel, simulador, sabotajes y reinicio: solo admin -------------------
-ADMIN_PREFIXES = ("/api/sim", "/api/chaos", "/api/reset", "/api/metrics", "/api/dlq", "/api/lab", "/api/reconcile",
+ADMIN_PREFIXES = ("/api/sim", "/api/chaos", "/api/reset", "/api/metrics", "/api/dlq", "/api/reconcile",
                   "/api/stock", "/orders")
 
 
@@ -261,7 +220,7 @@ def test_las_rutas_de_admin_exigen_require_admin():
             deps = [d for d in fn.args.defaults if isinstance(d, ast.Call) and getattr(d.func, "id", "") == "Depends"]
             assert any(getattr(d.args[0], "id", "") == "require_admin" for d in deps), f"{path} no exige admin"
             checked += 1
-    assert checked >= 15   # sim (4), chaos, reset, metrics, dlq (3), lab, reconcile, orders (4)
+    assert checked >= 14   # sim (4), chaos, reset, metrics, dlq (3), reconcile, orders (4)
 
 
 def test_la_pagina_del_panel_verifica_el_rol_admin():

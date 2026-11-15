@@ -4,6 +4,8 @@
 # secretos del servidor en la nube (los sube deploy/subir_env.ps1)
 .env.production
 !.env.example
+# claves SSH (la del servidor vive en ~/.ssh, nunca en el proyecto)
+*.pem
 
 # Python
 __pycache__/
@@ -28,5 +30,3 @@ uploads/
 .impeccable/
 .vscode/
 
-# QR de Yape del dueño (Zona Yape real): se pone a mano en la laptop y deploy/subir.ps1 lo sube al servidor
-app/static/img/yape_qr.png

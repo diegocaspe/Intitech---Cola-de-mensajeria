@@ -19,7 +19,7 @@ from typing import Callable, Protocol
 
 log = logging.getLogger(__name__)
 
-TEST_DOMAIN = "prueba.intitech"           # correo de los pedidos de prueba: nunca coincide con un cliente ni con Yape
+TEST_DOMAIN = "prueba.intitech"           # correo de los pedidos de prueba: nunca coincide con un cliente
 SPEEDS = {"expo": 6.0, "rapido": 2.0}     # segundos que se mantiene cada estado para que el público lo vea
 WAIT_MAX_S = 60.0
 FINAL = ("PROCESSED", "REJECTED", "FAILED")
@@ -390,6 +390,8 @@ class ScenarioRunner:
         started = self._prepare()
         self._step("Venenosos ACTIVOS: 1 de cada 5 pedidos fallará. Enviando 20…", "nWork")
         self.ops.set_poison(True)
+        # más lento, como en el 2, para poder explicarlo en voz alta; «Recuperar todo» al final devuelve la velocidad normal
+        self.ops.set_worker_delay(0.6)
         self._send(20, poison_every=5)
 
         def narrate(s):
@@ -398,6 +400,13 @@ class ScenarioRunner:
             return f"Procesados {t['PROCESSED']} · reintentando {s['retrying'] or 0} ({stages}) · en la DLQ {t['FAILED']}"
         self._step(focus="nRetry")
         self._wait("los primeros reintentos", lambda s: (s["retrying"] or 0) > 0 or self._tally()["FAILED"] > 0, narrate)
+        self._say("Un pedido venenoso falló: espera 2 s en la cola de reintento orders.retry.2s y vuelve a intentarse. "
+                  "Los demás siguen.")
+        self._pause()
+        self._wait("que el primero llegue a la DLQ", lambda s: self._tally()["FAILED"] > 0, narrate)
+        self._run["focus"] = "nDlq"
+        self._say("Agotó sus 3 reintentos (2 s, 5 s, 10 s): RabbitMQ lo apartó a la DLQ. La cola principal no se bloqueó.")
+        self._pause()
         self._step(focus="nDlq")
         self._wait("que la cola llegue a 0", lambda s: self._drained(s) and self._all_final(), narrate,
                    progress=lambda s: (s["retrying"], s["depth"], s["dlq"]))

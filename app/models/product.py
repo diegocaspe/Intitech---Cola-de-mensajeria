@@ -17,7 +17,6 @@ class Product:
     image: str
     description: str
     related: tuple[str, ...] = field(default_factory=tuple)  # cross-selling: "comprados juntos"
-    pago_yape_real: bool = False   # Zona Yape real: se paga con Yape de verdad, 1 unidad, fuera del carrito
 
     def __post_init__(self):
         # el catálogo JSON trae floats: se convierten a dinero exacto (frozen obliga a usar object.__setattr__)

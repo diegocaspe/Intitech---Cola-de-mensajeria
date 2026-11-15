@@ -134,7 +134,7 @@
   <div class="foot-top">
     <div class="foot-brand"><span class="logo inv"><img src="/static/assets/logo/mark-white.svg" alt="" style="height:48px"><span class="wordmark" style="font-size:30px"><span>inti</span><b>tech</b></span></span>
       <p>Tecnología que se siente cerca. Tienda online peruana con envíos a todo el país.</p>
-      <div class="pay-chips" aria-label="Medios de pago"><span class="pay-chip yape"><img src="/static/assets/pay/yape.png" alt="Yape"></span><span class="pay-chip plin"><img src="/static/assets/pay/plin.png" alt="Plin"></span><span class="pay-chip visa"><img src="/static/assets/pay/visa.png" alt="Visa"></span><span class="pay-chip"><img src="/static/assets/pay/mastercard.png" alt="Mastercard"></span></div></div>
+      <div class="pay-chips" aria-label="Medios de pago"><span class="pay-chip visa"><img src="/static/assets/pay/visa.png" alt="Visa"></span><span class="pay-chip"><img src="/static/assets/pay/mastercard.png" alt="Mastercard"></span></div></div>
     <div><h4>Categorías</h4><ul id="footCats"></ul></div>
     <div><h4>Tu cuenta</h4><ul><li><button onclick="openOrders()">Mis pedidos</button></li><li><button onclick="openCart()">Carrito</button></li><li><a href="/login?next=/">Ingresar o crear cuenta</a></li></ul></div>
   </div>
@@ -162,12 +162,20 @@
     <h2>Finalizar compra</h2>
     <div class="buyer" id="coBuyer"></div>
     <div><span class="fld-l">Método de pago</span>
-      <div class="pay-opts">
-        <label class="pay-opt"><input type="radio" name="pay" checked><span class="pay-chips"><span class="pay-chip yape"><img src="/static/assets/pay/yape.png" alt=""></span><span class="pay-chip plin"><img src="/static/assets/pay/plin.png" alt=""></span></span><b>Yape o Plin</b></label>
-        <label class="pay-opt"><input type="radio" name="pay"><span class="pay-chips"><span class="pay-chip visa"><img src="/static/assets/pay/visa.png" alt=""></span><span class="pay-chip"><img src="/static/assets/pay/mastercard.png" alt=""></span></span><b>Tarjeta</b></label>
-        <label class="pay-opt"><input type="radio" name="pay"><span class="po-ic"><svg class="i m" aria-hidden="true"><use href="/static/icons.svg#i-hand-coins"/></svg></span><b>Contra entrega</b></label>
-      </div></div>
-    <div class="note"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-info"/></svg>Demo académica: no se solicitan datos de pago ni se realiza ningún cobro. Tu pedido viajará por la cola de mensajería en tiempo real.</div>
+      <div class="pay-opt is-on"><span class="pay-chips"><span class="pay-chip visa"><img src="/static/assets/pay/visa.png" alt=""></span><span class="pay-chip"><img src="/static/assets/pay/mastercard.png" alt=""></span></span><b>Tarjeta</b></div></div>
+    <!-- autocomplete="off": el navegador no ofrece tarjetas reales guardadas; la API solo acepta las de prueba -->
+    <div class="card-fields">
+      <label class="cf wide"><span class="fld-l">Titular</span><input id="ccHolder" autocomplete="off" maxlength="60" placeholder="Como figura en la tarjeta" required></label>
+      <label class="cf wide"><span class="fld-l">Número de tarjeta</span><input id="ccNum" class="num" inputmode="numeric" autocomplete="off" maxlength="19" placeholder="0000 0000 0000 0000" required></label>
+      <label class="cf"><span class="fld-l">Vencimiento</span><input id="ccExp" class="num" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="MM/AA" required></label>
+      <label class="cf"><span class="fld-l">CVV</span><input id="ccCvv" class="num" inputmode="numeric" autocomplete="off" maxlength="3" placeholder="123" required></label>
+    </div>
+    <div class="test-cards"><span class="tc-t">Tarjetas de prueba <small>Toca una para rellenar el formulario</small></span>
+      <button type="button" class="tc" onclick="fillCard('4111 1111 1111 1111')"><span class="num">4111 1111 1111 1111</span><small>Aprobada</small></button>
+      <button type="button" class="tc" onclick="fillCard('4000 0000 0000 0002')"><span class="num">4000 0000 0000 0002</span><small>Rechazada (fondos insuficientes)</small></button>
+      <button type="button" class="tc" onclick="fillCard('4000 0000 0000 0119')"><span class="num">4000 0000 0000 0119</span><small>Error temporal: se aprueba en el reintento</small></button>
+    </div>
+    <div class="note"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-info"/></svg>Demo académica: usa una tarjeta de prueba. No se realiza ningún cobro real.</div>
     <div id="coSummary" style="display:flex;flex-direction:column;gap:10px"></div>
     <p class="err" id="coErr" role="alert"></p>
     <button class="btn btn-success btn-l btn-block" id="coBtn" type="submit">Confirmar pedido</button>
@@ -177,8 +185,6 @@
 
 <div class="modal sm" id="trkModal" role="dialog" aria-modal="true" aria-label="Seguimiento del pedido"><button class="x" onclick="closeAll()" aria-label="Cerrar">×</button><div class="trk" id="trkBody"></div></div>
 
-<div class="modal sm" id="yapeModal" role="dialog" aria-modal="true" aria-label="Pagar con Yape"><button class="x" onclick="closeAll()" aria-label="Cerrar">×</button><div class="trk ypay" id="yapeBody" aria-live="polite"></div></div>
-<button class="yape-pill" id="yapePill" hidden onclick="openYape(store.get(YP_KEY, {}).id)"><svg class="i s" aria-hidden="true"><use href="/static/icons.svg#i-smartphone"/></svg>Tienes un pago Yape en curso · <b>Ver</b></button>
 
 <div class="added" id="added" role="status"></div>
 
@@ -193,7 +199,7 @@ const COMBOS = [
   { name: "Cocina práctica", sub: "Freidora de aire + microondas + hervidor", skus: ["FREIDORA", "MICROONDAS", "HERVIDOR"] },
 ];
 /* íconos por categoría del catálogo y diapositivas del carrusel (imágenes en /static/assets/hero) */
-const CAT_ICON = { "Celulares": "smartphone", "Televisores": "tv", "Cómputo": "laptop", "Audio": "headphones", "Cocina": "cooking-pot", "Electrohogar": "washing-machine", "Hogar": "house", "Zona Yape real": "wallet" };
+const CAT_ICON = { "Celulares": "smartphone", "Televisores": "tv", "Cómputo": "laptop", "Audio": "headphones", "Cocina": "cooking-pot", "Electrohogar": "washing-machine", "Hogar": "house" };
 const SLIDES = [
   { img: "gamer", t: "blue", ov: "Semana gamer", cat: "Cómputo", pre: "Laptops y cómputo hasta", sub: "Laptops gamer, monitores y periféricos con envío a todo el Perú.", cta: "Ver cómputo", alt: "Laptop gamer con audífonos y mouse" },
   { img: "cel", t: "light", ov: "Smartphones 5G", cat: "Celulares", pre: "Celulares hasta", sub: "Samsung, Xiaomi, Motorola y más, con seguimiento en vivo de tu pedido.", cta: "Ver celulares", alt: "Tres smartphones 5G" },
@@ -210,8 +216,6 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 };
 let P = [], BY = {};
-let YCFG = { enabled: false };              // configuración pública de la Zona Yape real
-const normal = () => P.filter(p => !p.pago_yape_real);   // los de la Zona Yape no entran en ofertas, combos ni carrito
 let cart = store.get("cart", {});          // { sku: cantidad }
 let me = null;                             // usuario con sesión (o null)
 const view = { cat: "Todo", q: "", sort: "feat" };
@@ -230,18 +234,16 @@ function priceTag(p, size = "") {
     <div class="now num">${size ? `${ent}<small>.${dec}</small>` : money(p.price)}</div></div>`;
 }
 function card(p, compact, tone = "dark") {
-  const yp = p.pago_yape_real;
-  return `<article class="pcard ${compact ? "compact" : ""} ${yp ? "is-yape" : ""}" onclick="openProduct('${p.sku}')">
+  return `<article class="pcard ${compact ? "compact" : ""}" onclick="openProduct('${p.sku}')">
     <div class="pimg"><img src="${p.image}" alt="${esc(p.name)}" loading="lazy">
-      ${yp ? `<span class="badge s yape-b">${icon("smartphone", "s")} Pago real con Yape</span>` : `<span class="badge s ${tone}">-${p.discount_pct}%</span>`}${p.stock < 10 && !compact ? `<span class="flag">${icon("flame", "s")} Quedan ${p.stock}</span>` : ""}</div>
+      <span class="badge s ${tone}">-${p.discount_pct}%</span>${p.stock < 10 && !compact ? `<span class="flag">${icon("flame", "s")} Quedan ${p.stock}</span>` : ""}</div>
     <div class="pbody">
       ${compact ? "" : `<span class="brand">${esc(view.cat !== "Todo" && brandOf(p) !== "Otras marcas" ? brandOf(p) : p.category)}</span>`}
       <span class="pname">${esc(p.name)}</span>
       <span class="rate">${stars(p.rating)} ${p.rating} <span>(${p.reviews.toLocaleString("es")})</span></span>
       ${priceTag(p)}
       ${p.price >= FREE_SHIP && !compact ? `<span class="free">Envío gratis</span>` : ""}
-      ${yp ? `<button class="btn btn-s btn-block yape-btn" onclick="event.stopPropagation(); yapeStart('${p.sku}', this)">${icon("smartphone", "s")} Pagar con Yape</button>`
-        : `<button class="btn btn-s btn-block add" data-sku="${p.sku}" onclick="event.stopPropagation(); add('${p.sku}', 1, this)">${icon("shopping-cart", "s")} Agregar</button>`}
+      <button class="btn btn-s btn-block add" data-sku="${p.sku}" onclick="event.stopPropagation(); add('${p.sku}', 1, this)">${icon("shopping-cart", "s")} Agregar</button>
     </div></article>`;
 }
 /* ================== página de categoría: facetas derivadas del nombre del producto ================== */
@@ -402,11 +404,11 @@ document.querySelectorAll(".js-q").forEach(inp => inp.addEventListener("input", 
 
 function renderHome() {
   const cats = [...new Set(P.map(p => p.category))];
-  document.querySelectorAll(".js-maxoff").forEach(e => e.textContent = "-" + maxOff(normal()) + "%");
+  document.querySelectorAll(".js-maxoff").forEach(e => e.textContent = "-" + maxOff(P) + "%");
   $("catGrid").innerHTML = cats.map(c => { const l = P.filter(p => p.category === c);
-    return `<a class="cat-tile ${l[0]?.pago_yape_real ? "yape-tile" : ""}" href="${catUrl(c)}"><span class="cat-ic">${icon(catIcon(c), "l")}</span><div><h3>${esc(c)}</h3><p>${l.length} productos</p></div><span class="upto">${l[0]?.pago_yape_real ? "Pago real con Yape" : "Hasta -" + maxOff(l) + "%"}</span></a>`; }).join("") +
+    return `<a class="cat-tile" href="${catUrl(c)}"><span class="cat-ic">${icon(catIcon(c), "l")}</span><div><h3>${esc(c)}</h3><p>${l.length} productos</p></div><span class="upto">Hasta -${maxOff(l)}%</span></a>`; }).join("") +
     `<a class="cat-tile dark" href="#combos"><span class="cat-ic">${icon("package", "l")}</span><div><h3>Combos</h3><p>Arma tu setup y ahorra más</p></div><span class="upto">${COMBOS.length} combos listos</span></a>`;
-  $("flashGrid").innerHTML = normal().sort((a, b) => b.discount_pct - a.discount_pct).slice(0, 5).map(p => card(p, false, "")).join("");
+  $("flashGrid").innerHTML = [...P].sort((a, b) => b.discount_pct - a.discount_pct).slice(0, 5).map(p => card(p, false, "")).join("");
   $("footCats").innerHTML = cats.map(c => `<li><a href="${catUrl(c)}">${esc(c)}</a></li>`).join("");
 }
 function renderCombos() {
@@ -448,7 +450,6 @@ function carGo(k) {
 const cartCount = () => Object.values(cart).reduce((a, b) => a + b, 0);
 function saveCart() { store.set("cart", cart); renderCart(); }
 function add(sku, qty = 1, btn, silent) {
-  if (BY[sku]?.pago_yape_real) { yapeStart(sku, btn); return; }   // la Zona Yape no se mezcla con el carrito
   cart[sku] = Math.min(MAX_QTY, (cart[sku] || 0) + qty);
   saveCart();
   const c = $("cartCount"); c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump");
@@ -476,7 +477,7 @@ function renderCart() {
   const lines = Object.entries(cart).filter(([s]) => BY[s]);
   const t = totals();
   if (!lines.length) {
-    $("cartBody").innerHTML = `<div class="empty flat"><img src="/static/assets/logo/mark-blue.svg" alt=""><h3>Tu carrito está vacío</h3><p>Aprovecha Black Friday: hay ofertas con hasta ${maxOff(normal())}% de descuento esperándote.</p></div>` +
+    $("cartBody").innerHTML = `<div class="empty flat"><img src="/static/assets/logo/mark-blue.svg" alt=""><h3>Tu carrito está vacío</h3><p>Aprovecha Black Friday: hay ofertas con hasta ${maxOff(P)}% de descuento esperándote.</p></div>` +
       `<div class="sugg"><h4>Lo más vendido hoy</h4>${["GALAXY-A25", "FREIDORA", "TV-MI-55"].filter(s => BY[s]).map(s => srow(BY[s])).join("")}</div>`;
     $("cartFoot").innerHTML = ""; return;
   }
@@ -536,7 +537,7 @@ function openProduct(sku) {
           <span class="rate" style="margin-top:8px">${stars(p.rating)} <b>${p.rating}</b> · ${p.reviews.toLocaleString("es")} opiniones</span></div>
         <div class="buybox">
           ${priceTag(p, "xl")}
-          ${p.pago_yape_real ? yapeBuyBox(p) : `<span class="save">Ahorras ${money(p.list_price - p.price)} con Black Friday</span>
+          <span class="save">Ahorras ${money(p.list_price - p.price)} con Black Friday</span>
           ${p.stock < 10 ? `<span class="flag" style="align-self:flex-start">${icon("flame", "s")} ¡Solo quedan ${p.stock} unidades!</span>` : `<span class="stock-ok">${icon("circle-check", "s")} En stock</span>`}
           <div class="buy-row"><span style="font-weight:700;font-size:14px">Cantidad</span>
             <div class="stepper"><button onclick="pdSet(-1)" aria-label="Menos">−</button><span class="num" id="pdQ">1</span><button onclick="pdSet(1)" aria-label="Más">+</button></div>
@@ -548,7 +549,7 @@ function openProduct(sku) {
             <div class="shipnote">${icon("truck")}<div><b>${free ? "Este producto tiene envío gratis" : "Envío a todo el Perú"}</b><span>${free ? "Por Black Friday" : money(SHIP_COST) + " · gratis desde S/ " + FREE_SHIP}</span></div></div>
             <div class="shipnote blue">${icon("rotate-ccw")}<div><b>30 días de devolución</b><span>Si no te convence, lo cambias</span></div></div>
             <div class="shipnote plain">${icon("lock")}<div><b>Compra protegida</b><span>Tus datos viajan cifrados</span></div></div>
-          </div>`}
+          </div>
         </div>
         <p class="desc">${esc(p.description)}</p>
       </div></div>
@@ -583,7 +584,6 @@ function closeAll() {
   document.querySelectorAll(".modal.open,.drawer.open,.filters.open").forEach(e => e.classList.remove("open"));
   $("overlay").classList.remove("open"); document.body.classList.remove("lock");
   trackingId = null;
-  yp.id = null; yapePill();   // deja de consultar el pago Yape; si sigue en curso, queda el aviso flotante
 }
 addEventListener("keydown", e => e.key === "Escape" && closeAll());
 function openCart() { hideAdded(); renderCart(); openLayer("cart"); }
@@ -596,19 +596,35 @@ function openCheckout() {
   $("coSummary").innerHTML = `<div class="sum-row"><span>${cartCount()} producto(s)</span><span class="num">${money(t.sub)}</span></div>
     <div class="sum-row"><span>Envío</span><span class="num">${t.ship ? money(t.ship) : '<b style="color:var(--green-700)">Gratis</b>'}</span></div>
     <div class="sum-total"><span style="font-weight:800">Total</span><b class="num">${money(t.total)}</b></div>`;
-  $("coErr").textContent = ""; $("coBtn").disabled = false; $("coBtn").textContent = "Confirmar pedido · " + money(t.total);
+  $("coErr").textContent = ""; $("coBtn").disabled = false; $("coBtn").textContent = "Pagar · " + money(t.total);
+  if (!$("ccHolder").value) $("ccHolder").value = me.name;
   openLayer("coModal");
 }
+/* tarjetas de prueba: rellenan el formulario con un vencimiento futuro y un CVV de 3 dígitos */
+function fillCard(number) {
+  const d = new Date(); d.setFullYear(d.getFullYear() + 3);
+  $("ccNum").value = number;
+  $("ccExp").value = String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getFullYear()).slice(-2);
+  $("ccCvv").value = "123";
+  if (!$("ccHolder").value.trim()) $("ccHolder").value = me ? me.name : "Cliente de prueba";
+  $("coErr").textContent = "";
+}
+/* formato mientras se escribe: número en grupos de 4, vencimiento MM/AA, CVV solo dígitos */
+$("ccNum").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 "); });
+$("ccExp").addEventListener("input", e => { const v = e.target.value.replace(/\D/g, "").slice(0, 4); e.target.value = v.length > 2 ? v.slice(0, 2) + "/" + v.slice(2) : v; });
+$("ccCvv").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 3); });
+const cardData = () => ({ holder: $("ccHolder").value.trim(), number: $("ccNum").value, exp: $("ccExp").value, cvv: $("ccCvv").value });
 async function submitCheckout(e) {
   e.preventDefault();
   $("coBtn").disabled = true; $("coBtn").textContent = "Enviando pedido…";
   try {
     const r = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: Object.entries(cart).map(([sku, quantity]) => ({ sku, quantity })) }) });
+      body: JSON.stringify({ items: Object.entries(cart).map(([sku, quantity]) => ({ sku, quantity })), card: cardData() }) });
     if (r.status === 401) { location.href = "/login?next=" + encodeURIComponent("/?pagar=1"); return false; }
     const d = await r.json();
     if (!r.ok) throw new Error(typeof d.detail === "string" ? d.detail : "No se pudo crear el pedido");
     cart = {}; saveCart();
+    $("ccNum").value = $("ccExp").value = $("ccCvv").value = "";   // los datos de la tarjeta no se quedan en la página
     openTracking(d.id, me.name);
   } catch (err) {
     $("coErr").textContent = err.message === "Failed to fetch" ? "Sin conexión con la tienda. Intenta de nuevo." : err.message;
@@ -632,15 +648,23 @@ function renderTracking(t, name) {
   const st = t.status, pos = t.position;
   const lvl = { PENDING: 1, PUBLISHED: pos > 1 ? 2 : 3, PROCESSED: 5, FAILED: 3, REJECTED: 3 }[st];
   const cls = n => (st === "FAILED" || st === "REJECTED") && n === 3 ? "bad" : n < lvl ? "done" : n === lvl ? "active" : "";
+  const declined = st === "REJECTED" && t.reject_reason === "pago_rechazado";
   const head = st === "PROCESSED" ? ["party", `¡Listo${name ? ", " + esc(name) : ""}! Pedido confirmado`]
-    : st === "FAILED" ? ["alert", "No pudimos procesar tu pedido"] : st === "REJECTED" ? ["alert", "Pedido rechazado: un producto se agotó"] : ["hourglass", "Estamos procesando tu pedido"];
+    : st === "FAILED" ? ["alert", "No pudimos procesar tu pedido"]
+    : declined ? ["alert", "Pago rechazado"] : st === "REJECTED" ? ["alert", "Pedido rechazado: un producto se agotó"] : ["hourglass", "Estamos procesando tu pedido"];
+  // paso 3: el worker cobra la tarjeta (proveedor simulado) y verifica el stock
+  const step3 = declined ? "Pago rechazado: no se descontó stock"
+    : st === "REJECTED" ? (t.payment_status === "REFUNDED" ? "Sin stock: te devolvimos el pago (reembolso simulado)" : "Sin stock: no se te cobró nada")
+    : st === "FAILED" ? "Hubo un problema con este pedido"
+    : t.payment_retry ? "El proveedor de pagos no respondió: reintentando el cobro…"
+    : st === "PROCESSED" ? `Pago aprobado${t.card ? " · " + esc(t.card) : ""}` : "Un worker está cobrando tu tarjeta";
   $("trkBody").innerHTML = `<div class="big s-${st}">${icon(head[0])}</div><h2>${head[1]}</h2>
     <div class="oid num">Pedido #${esc(t.id.slice(0, 8).toUpperCase())}${t.total ? " · " + money(t.total) : ""}</div>
     <div class="steps">
       <div class="step ${cls(1)}"><div class="dot">1</div><div><b>Pedido recibido</b><span>Guardado de forma segura en la base de datos</span></div></div>
       <div class="step ${cls(2)}"><div class="dot">2</div><div><b>En la fila de pedidos</b><span>Esperando turno en la cola de mensajería (RabbitMQ)</span>
         ${st === "PUBLISHED" && pos > 1 ? `<br><span class="qpos num">Hay ${pos - 1} pedido${pos - 1 === 1 ? "" : "s"} antes que el tuyo</span>` : ""}</div></div>
-      <div class="step ${cls(3)}"><div class="dot">3</div><div><b>Verificando pago y stock</b><span>${st === "REJECTED" ? "Sin stock: no se te cobrará nada" : st === "FAILED" ? "Hubo un problema con este pedido" : "Un worker está procesando tu pedido"}</span></div></div>
+      <div class="step ${cls(3)}"><div class="dot">3</div><div><b>Cobrando tu tarjeta y verificando stock</b><span>${step3}</span></div></div>
       <div class="step ${cls(4)} ${st === "PROCESSED" ? "done" : ""}"><div class="dot">${icon("check")}</div><div><b>¡Confirmado!</b><span>Recibirás un correo con los detalles</span></div></div>
     </div>
     ${st === "PENDING" ? `<div class="alert">${icon("warn")}<span><b>Alta demanda.</b> Tu pedido ya está guardado y no se perderá: entrará a la fila en cuanto el sistema se recupere.</span></div>` : ""}
@@ -658,156 +682,6 @@ function confetti() {
     box.appendChild(c);
   }
   document.body.appendChild(box); setTimeout(() => box.remove(), 4000);
-}
-
-/* ================== Zona Yape real: pago con Yape de verdad, confirmado en vivo ================== */
-/* El servidor asigna un monto ÚNICO (p. ej. S/ 1.37). MacroDroid reenvía la notificación de Yape al webhook, el worker
-   la asocia por el monto y el pedido sigue la cola normal. Esta pantalla consulta el estado cada segundo. */
-const YP_KEY = "yapeActivo";                 // { id, paid, done } del pago en curso (sobrevive a recargar la página)
-const yp = { id: null, last: null, paid: false, deadline: 0, offline: false };
-const YP_LVL = { esperando_yapeo: 1, en_cola: 2, pago_registrado: 2, procesando: 3, confirmado: 5, expirado: 1, sin_stock: 3 };
-const soles = v => "S/ " + Number(v).toFixed(2);
-
-function yapeBuyBox(p) {
-  const rango = YCFG.monto_min ? ` (entre ${soles(YCFG.monto_min)} y ${soles(YCFG.monto_max)})` : "";
-  return `<span class="yape-tag">${icon("smartphone", "s")} Pago real con Yape</span>
-    <p class="yape-note">Pagas con tu Yape un <b>monto único de céntimos</b>${rango} que te mostramos al continuar. Es 1 unidad y se compra aparte del carrito. La confirmación llega sola, en vivo.</p>
-    ${p.stock > 0 ? `<button class="btn btn-l yape-btn" onclick="yapeStart('${p.sku}', this)">${icon("smartphone")} Pagar con Yape</button>`
-      : `<span class="flag" style="align-self:flex-start">Agotado por ahora: vuelve en unos minutos</span>`}`;
-}
-
-async function yapeStart(sku, btn) {
-  if (!me) { location.href = "/login?next=" + encodeURIComponent("/?yape=" + sku); return; }
-  const cur = store.get(YP_KEY, {});
-  if (cur.id && !cur.done) { openYape(cur.id); return; }   // ya tiene un pago en curso: se lo mostramos
-  if (btn) btn.disabled = true;
-  openLayer("yapeModal");
-  $("yapeBody").innerHTML = `<div class="big s-PENDING">${icon("hourglass")}</div><h2>Generando tu monto único…</h2>`;
-  try {
-    const r = await fetch("/api/yape/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sku }) });
-    if (r.status === 401) { location.href = "/login?next=" + encodeURIComponent("/?yape=" + sku); return; }
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) {   // sin pedido y sin QR: nada que pagar todavía
-      const busy = r.status === 503;
-      $("yapeBody").innerHTML = `<div class="big s-PENDING">${icon(busy ? "hourglass" : "circle-alert")}</div>
-        <h2>${busy ? "Alta demanda" : "No pudimos iniciar el pago"}</h2>
-        <p class="muted">${esc(busy ? "Estamos con alta demanda, reintenta en unos segundos." : (typeof d.detail === "string" ? d.detail : "Inténtalo de nuevo."))}</p>
-        <p class="yape-note">Todavía no se generó ningún monto: <b>no yapees</b>.</p>
-        <button class="btn btn-l btn-block" onclick="yapeStart('${sku}')">Reintentar</button>`;
-      return;
-    }
-    store.set(YP_KEY, { id: d.id, paid: false, done: false });
-    openYape(d.id, d);
-  } catch {
-    $("yapeBody").innerHTML = `<div class="big s-PENDING">${icon("circle-alert")}</div><h2>Sin conexión con la tienda</h2>
-      <p class="yape-note">Todavía no se generó ningún monto: <b>no yapees</b>.</p><button class="btn btn-l btn-block" onclick="yapeStart('${sku}')">Reintentar</button>`;
-  } finally { if (btn) btn.disabled = false; }
-}
-
-function openYape(id, first) {
-  if (!id) return;
-  const cur = store.get(YP_KEY, {});
-  yp.id = id; yp.paid = cur.id === id && !!cur.paid; yp.last = first || (yp.last?.id === id ? yp.last : null);
-  openLayer("yapeModal"); $("yapePill").hidden = true;
-  renderYape(yp.last);
-  pollYape();
-}
-
-async function pollYape() {
-  const id = yp.id; if (!id) return;
-  let wait = 1000;
-  try {
-    const r = await fetch(`/api/yape/pedidos/${encodeURIComponent(id)}`);
-    if (yp.id !== id) return;
-    if (r.ok) { yp.offline = false; renderYape(await r.json()); }
-    else if (r.status === 404 || r.status === 401) { store.set(YP_KEY, {}); yp.id = null; closeAll(); return; }
-    else { yp.offline = true; renderYape(yp.last); wait = 2000; }      // 503: BD caída. Nunca un error en pantalla
-  } catch { if (yp.id !== id) return; yp.offline = true; renderYape(yp.last); wait = 2000; }
-  const f = yp.last?.fase;
-  if (f === "confirmado" || f === "sin_stock" || (f === "expirado" && !yp.paid)) return;   // terminó
-  if (yp.id === id) setTimeout(pollYape, f === "expirado" ? 3000 : wait);
-}
-
-function yapePaid() {
-  const stopped = yp.last?.fase === "expirado";   // con el plazo vencido la consulta se había detenido: se reanuda
-  yp.paid = true;
-  store.set(YP_KEY, { ...store.get(YP_KEY, {}), paid: true, done: false });
-  renderYape(yp.last);
-  if (stopped) pollYape();
-}
-
-function yapeTick() {
-  const el = $("ypCd"); if (!el) return;
-  const s = Math.max(0, Math.round((yp.deadline - Date.now()) / 1000));
-  el.textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
-  el.closest(".yape-cd")?.classList.toggle("low", s <= 60);
-}
-
-function yapePill() {
-  const cur = store.get(YP_KEY, {});
-  $("yapePill").hidden = !(me && cur.id && !cur.done);
-}
-
-function renderYape(t) {
-  const body = $("yapeBody");
-  if (!t) { body.innerHTML = `<div class="big s-PENDING">${icon("hourglass")}</div><h2>Conectando con la tienda…</h2>`; return; }
-  yp.last = t;
-  yp.deadline = Date.now() + t.segundos_restantes * 1000;
-  let f = t.fase;
-  // pagó (dijo "Ya yapeé") y el webhook aún no llega: puede ser PostgreSQL caído y MacroDroid reintentando
-  const waitingConfirm = yp.paid && (f === "esperando_yapeo" || f === "expirado");
-  if (f === "confirmado" || f === "sin_stock") store.set(YP_KEY, { ...store.get(YP_KEY, {}), done: true });
-  if (f === "expirado" && !yp.paid) store.set(YP_KEY, { ...store.get(YP_KEY, {}), done: true });
-  const lvl = waitingConfirm ? 2 : YP_LVL[f];
-  const cls = n => n < lvl ? "done" : n === lvl ? "active" : "";
-  const amount = `<div class="yape-amount"><span>Yapea EXACTAMENTE</span><b class="num">${soles(t.monto)}</b></div>`;
-  const steps = `<div class="steps">
-      <div class="step ${cls(1)}"><div class="dot">1</div><div><b>Esperando tu yapeo</b><span>Yapea el monto exacto a ${esc(t.titular)}</span></div></div>
-      <div class="step ${cls(2)}"><div class="dot">2</div><div><b>Pago recibido</b><span>${f === "en_cola" && t.posicion ? `En la cola de mensajería · posición ${t.posicion}` : "La notificación de Yape entra a la cola"}</span></div></div>
-      <div class="step ${cls(3)}"><div class="dot">3</div><div><b>Procesando</b><span>Un worker confirma tu pedido</span></div></div>
-      <div class="step ${cls(4)} ${f === "confirmado" ? "done" : ""}"><div class="dot">${icon("check")}</div><div><b>Pedido confirmado</b><span>Te llegará el comprobante por correo</span></div></div>
-    </div>`;
-  const head = (ic, cl, title, sub = "") => `<div class="big ${cl}">${icon(ic)}</div><h2>${title}</h2>${sub ? `<p class="muted yape-sub">${sub}</p>` : ""}
-    <div class="oid num">${esc(t.producto)} · Pedido #${esc(t.id.slice(0, 8).toUpperCase())}</div>`;
-  const offline = yp.offline ? `<p class="yape-off">${icon("clock", "s")} Reconectando con la tienda…</p>` : "";
-  let html;
-  if (waitingConfirm) {
-    html = head("hourglass", "s-PENDING", "Esperando confirmación de tu pago, no vuelvas a yapear",
-      `Si yapeaste ${soles(t.monto)}, tu pago se confirmará solo en cuanto llegue. No se pierde: si algo falla, lo revisamos a mano.`) + steps;
-  } else if (f === "esperando_yapeo") {
-    const qr = YCFG.qr ? `<img class="yape-qr" src="/static/img/yape_qr.png" alt="Código QR de Yape de ${esc(t.titular)}" onerror="this.outerHTML='<div class=&quot;yape-qr none&quot;>QR no configurado</div>'">`
-      : `<div class="yape-qr none">QR no configurado</div>`;
-    html = `<div class="yape-head"><img src="/static/assets/pay/yape.png" alt="Yape"><b>Paga con Yape</b></div>
-      ${qr}<div class="yape-holder">Titular: <b>${esc(t.titular)}</b></div>${amount}
-      <div class="yape-cd">${icon("clock", "s")} Tienes <b class="num" id="ypCd">--:--</b> para yapear</div>
-      <div class="alert yape-warn">${icon("warn")}<span><b>Si yapeas otro monto, tu pago no se confirmará automáticamente.</b> Yapea solo una vez.</span></div>
-      <button class="btn btn-l btn-block yape-btn" onclick="yapePaid()">${icon("check")} Ya yapeé</button>
-      <span class="muted" style="font-size:13px">Esta pantalla se actualiza sola cuando llega tu pago.</span>`;
-  } else if (f === "en_cola") {
-    html = head("check-circle", "s-PROCESSED", `Pago recibido ✓, en cola${t.posicion ? ` (posición ${t.posicion})` : ""}`,
-      "Tu pago ya está guardado. Tu pedido espera su turno en la cola.") + steps;
-  } else if (f === "pago_registrado") {
-    html = head("check-circle", "s-PROCESSED", "Pago registrado ✓, esperando procesamiento",
-      "Tu pago está guardado y no se perderá. Lo procesaremos en cuanto el sistema se recupere: no vuelvas a yapear.") + steps;
-  } else if (f === "procesando") {
-    html = head("hourglass", "s-PENDING", "Procesando", "Un worker está confirmando tu pedido.") + steps;
-  } else if (f === "confirmado") {
-    html = head("party", "s-PROCESSED", `¡Pedido confirmado${me ? ", " + esc(me.name.split(" ")[0]) : ""}!`,
-      `Pagaste ${soles(t.monto)} con Yape. Te enviamos el comprobante por correo.`) + steps +
-      `<button class="btn btn-l btn-block" onclick="closeAll()">Seguir comprando</button>`;
-    if (!celebrated.has(t.id)) { celebrated.add(t.id); confetti(); }
-  } else if (f === "sin_stock") {   // pagó después del plazo y otro cliente se llevó la última unidad
-    html = head("circle-alert", "s-PENDING", "Tu pago llegó, pero el producto se agotó",
-      `Recibimos tus ${soles(t.monto)}, pero ya no quedaba stock. Tu pago está registrado y te lo devolveremos.`) +
-      `<button class="btn btn-l btn-block" onclick="closeAll()">Seguir comprando</button>`;
-  } else {   // expirado sin haber dicho que pagó
-    html = head("clock", "s-PENDING", "Se acabó el tiempo para pagar",
-      "Este monto ya no está reservado: no lo yapees. Si ya yapeaste, pulsa «Ya yapeé» y lo revisamos a mano.") +
-      `<button class="btn btn-l btn-block yape-btn" onclick="store.set(YP_KEY, {}); yapeStart('${esc(t.sku)}')">Generar un nuevo monto</button>
-       <button class="btn btn-l btn-block btn-secondary" onclick="yapePaid()">Ya yapeé</button>`;
-  }
-  body.innerHTML = html + offline;
-  yapeTick();
 }
 
 /* ================== mis pedidos ================== */
@@ -876,7 +750,7 @@ function tick() {
 
 /* ================== inicio ================== */
 (async function init() {
-  tick(); setInterval(tick, 1000); setInterval(yapeTick, 1000);
+  tick(); setInterval(tick, 1000);
   $("grid").innerHTML = Array.from({ length: 8 }, () => `<div class="sk"><i style="aspect-ratio:1"></i><i style="height:12px;width:40%"></i><i style="height:14px"></i><i style="height:24px;width:50%"></i><i style="height:36px"></i></div>`).join("");
   /* el loader se ve al menos LOADER_MIN ms (contados desde que empezó a cargar la página) para que la entrada se note */
   const LOADER_MIN = 2000;
@@ -884,19 +758,15 @@ function tick() {
     $("loader").classList.add("out"); document.body.classList.remove("lock");
   }, Math.max(0, LOADER_MIN - performance.now()));
   setTimeout(hideLoader, 5000);   /* red colgada: no dejar al usuario atrapado tras el loader */
-  fetch("/api/yape/config").then(r => r.ok && r.json()).then(c => { if (c) YCFG = c; }).catch(() => {});
   try {
     P = await (await fetch("/api/products")).json();
   } catch { hideLoader(); $("grid").innerHTML = $("flashGrid").innerHTML = `<div class="empty"><h3>No se pudo cargar el catálogo</h3><p>Recarga la página en unos segundos.</p></div>`; return; }
   hideLoader();
   BY = Object.fromEntries(P.map(p => [p.sku, p]));
-  for (const s in cart) if (!BY[s] || BY[s].pago_yape_real) delete cart[s];
+  for (const s in cart) if (!BY[s]) delete cart[s];
   renderHome(); route(); renderCarousel(); renderCombos(); renderCart();
   await loadMe();
   renderCart();
-  const yapeSku = new URLSearchParams(location.search).get("yape");   // vuelve del login para pagar con Yape
-  if (yapeSku) { history.replaceState(null, "", "/"); if (me && BY[yapeSku]) yapeStart(yapeSku); }
-  else if (me && store.get(YP_KEY, {}).id && !store.get(YP_KEY, {}).done) openYape(store.get(YP_KEY, {}).id);   // recargó en plena compra
   if (new URLSearchParams(location.search).has("pagar")) {   // vuelve del login para pagar
     history.replaceState(null, "", "/");
     if (me && cartCount()) openCheckout();

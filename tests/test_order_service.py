@@ -10,6 +10,7 @@ from app.repositories.sqlite_repository import SqliteOrderRepository, SqliteOutb
 from app.services.checkout_service import CheckoutError, CheckoutService
 from app.services.order_service import (OUT_OF_STOCK_SKU, POISON_SKU, OrderRejected, OrderService,
                                         ProcessingError)
+from app.services.payments import FakePaymentProvider
 
 
 class FakePublisher(OrderPublisher):
@@ -23,6 +24,8 @@ class FakePublisher(OrderPublisher):
 
 
 ITEMS = [{"sku": "A1", "quantity": 2, "unit_price": 10.0}]
+# tarjeta de prueba aprobada (vencimiento lejano, para que la prueba no caduque)
+CARD = {"holder": "Ana Pérez", "number": "4111 1111 1111 1111", "exp": "12/40", "cvv": "123"}
 
 
 def make_product(sku, stock=1000):
@@ -37,7 +40,9 @@ def make(fail=False, poison=True, seed=None):
     products = SqliteProductRepository(repo, seed if seed is not None
                                        else [make_product("A1"), make_product("B2")] + load_products())
     mode = {"poison": poison}
-    svc = OrderService(repo, pub, SqliteOutbox(repo), poison_mode=lambda: mode["poison"])
+    # proveedor de pagos simulado sin la espera de 300-800 ms: las pruebas no dependen del reloj
+    svc = OrderService(repo, pub, SqliteOutbox(repo), poison_mode=lambda: mode["poison"],
+                       payments=FakePaymentProvider(sleep=lambda _: None))
     svc.mode = mode   # las pruebas pueden apagar o encender el modo a mitad de camino
     svc.products = products
     return svc, pub
@@ -197,8 +202,9 @@ def make_checkout():
 def test_checkout_uses_catalog_prices_and_tracks_position():
     co, svc = make_checkout()
     price = co.products.get("MOUSE-GAMER").price
-    first = co.checkout("a@b.com", [{"sku": "MOUSE-GAMER", "quantity": 2}])
-    second = co.checkout("c@d.com", [{"sku": "MOUSE-GAMER", "quantity": 1}, {"sku": "MOUSE-GAMER", "quantity": 1}])
+    first = co.checkout("a@b.com", [{"sku": "MOUSE-GAMER", "quantity": 2}], CARD)
+    second = co.checkout("c@d.com", [{"sku": "MOUSE-GAMER", "quantity": 1}, {"sku": "MOUSE-GAMER", "quantity": 1}],
+                         CARD)
     assert first.total == round(2 * price, 2)    # precio del catálogo, no del navegador
     assert len(second.items) == 1 and second.items[0].quantity == 2  # líneas repetidas se agrupan
     assert svc.track(second.id)["position"] == 2  # hay un pedido antes en la cola
@@ -216,7 +222,23 @@ def test_checkout_uses_catalog_prices_and_tracks_position():
 def test_checkout_rejects_invalid(email, lines):
     co, _ = make_checkout()
     with pytest.raises(CheckoutError):
-        co.checkout(email, lines)
+        co.checkout(email, lines, CARD)
+
+
+@pytest.mark.parametrize("card,msg", [
+    (None, "Faltan los datos"),
+    ({**CARD, "holder": ""}, "titular"),
+    ({**CARD, "number": "4111 1111 1111 1112"}, "Usa una tarjeta de prueba"),
+    ({**CARD, "exp": "13/40"}, "MM/AA"),
+    ({**CARD, "exp": "01/20"}, "vencida"),
+    ({**CARD, "cvv": "12"}, "CVV"),
+])
+def test_checkout_rejects_invalid_card_without_echoing_it(card, msg):
+    co, svc = make_checkout()
+    with pytest.raises(CheckoutError, match=msg) as exc:
+        co.checkout("a@b.com", [{"sku": "MOUSE-GAMER", "quantity": 1}], card)
+    assert "4111" not in str(exc.value) and "123" not in str(exc.value)   # el error nunca repite la tarjeta
+    assert svc.repo.count_by_status()["PENDING"] == 0                    # y no se creó ningún pedido
 
 
 # --- dinero exacto ------------------------------------------------------------

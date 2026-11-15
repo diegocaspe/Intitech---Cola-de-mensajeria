@@ -8,8 +8,7 @@ from psycopg.types.json import Jsonb
 
 CATALOG_FILE = Path(__file__).parent / "catalogo.json"
 
-PRODUCT_COLS = ("sku, name, category, price, list_price, rating, reviews, stock, image, description, related, "
-                "pago_yape_real")
+PRODUCT_COLS = "sku, name, category, price, list_price, rating, reviews, stock, image, description, related"
 
 
 def read_catalog(path: Path = CATALOG_FILE) -> list[dict]:
@@ -20,7 +19,7 @@ def product_row(p: dict) -> tuple:
     """Una fila de products en el orden de PRODUCT_COLS. Los precios pasan por str: dinero exacto, sin floats."""
     return (p["sku"], p["name"], p["category"], Decimal(str(p["price"])), Decimal(str(p["list_price"])),
             float(p["rating"]), int(p["reviews"]), int(p["stock"]), p["image"], p["description"],
-            Jsonb(list(p.get("related", []))), bool(p.get("pago_yape_real", False)))
+            Jsonb(list(p.get("related", []))))
 
 
 def seed_products(conn) -> int:
@@ -30,6 +29,6 @@ def seed_products(conn) -> int:
         return 0
     rows = [product_row(p) for p in read_catalog()]
     with conn.cursor() as cur:
-        cur.executemany(f"INSERT INTO products ({PRODUCT_COLS}) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
+        cur.executemany(f"INSERT INTO products ({PRODUCT_COLS}) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
                         "ON CONFLICT (sku) DO NOTHING", rows)
     return len(rows)

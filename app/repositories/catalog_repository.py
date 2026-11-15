@@ -7,17 +7,12 @@ from app.repositories.interfaces import ProductRepository
 from app.models.product import Product
 
 
-def to_product(p: dict, precio_yape=None) -> Product:
-    """precio_yape: precio base de los productos de la Zona Yape real (YAPE_PRECIO_BASE)."""
-    if p.get("pago_yape_real") and precio_yape is not None:
-        p = {**p, "price": precio_yape}
+def to_product(p: dict) -> Product:
     return Product(**{**p, "related": tuple(p.get("related") or ())})
 
 
-def load_products(path: Path = CATALOG_FILE, precio_yape=None, incluir_yape: bool = True) -> list[Product]:
-    """incluir_yape=False quita los productos de la Zona Yape real (zona desactivada)."""
-    return [to_product(p, precio_yape) for p in read_catalog(path)
-            if incluir_yape or not p.get("pago_yape_real")]
+def load_products(path: Path = CATALOG_FILE) -> list[Product]:
+    return [to_product(p) for p in read_catalog(path)]
 
 
 class InMemoryProductRepository(ProductRepository):

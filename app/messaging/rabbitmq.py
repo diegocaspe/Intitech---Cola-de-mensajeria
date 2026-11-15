@@ -115,19 +115,54 @@ def declare_topology(ch) -> None:
             "x-dead-letter-routing-key": config.EMAIL_ROUTING_KEY,
         })
 
-    # Pagos Yape: el mismo esquema otra vez. Cola durable "pagos", reintentos 2 s / 5 s / 10 s con TTL y "pagos.dlq"
-    ch.queue_declare(config.PAGOS_DLQ, durable=True)
-    ch.queue_bind(config.PAGOS_DLQ, config.DLX, config.PAGOS_ROUTING_KEY)
-    ch.exchange_declare(config.PAGOS_EXCHANGE, "direct", durable=True)
-    ch.queue_declare(config.PAGOS_QUEUE, durable=True, arguments={
-        "x-dead-letter-exchange": config.DLX, "x-dead-letter-routing-key": config.PAGOS_ROUTING_KEY})
-    ch.queue_bind(config.PAGOS_QUEUE, config.PAGOS_EXCHANGE, config.PAGOS_ROUTING_KEY)
-    for delay, queue in zip(config.RETRY_DELAYS, config.PAGOS_RETRY_QUEUES):
-        ch.queue_declare(queue, durable=True, arguments={
-            "x-message-ttl": delay * 1000,
-            "x-dead-letter-exchange": config.PAGOS_EXCHANGE,
-            "x-dead-letter-routing-key": config.PAGOS_ROUTING_KEY,
-        })
+
+# Restos de la antigua cola "pagos" (Zona Yape real, ya eliminada). Se borran al arrancar para que el broker del
+# servidor quede limpio. if_unused=False / if_empty=False: se borran aunque tengan consumidores o mensajes
+LEGACY_PAGOS_QUEUES = ("pagos", "pagos.dlq", *(f"pagos.retry.{d}s" for d in config.RETRY_DELAYS))
+LEGACY_PAGOS_EXCHANGE = "tienda.pagos"
+# Colas del antiguo «Experimento de persistencia» del panel (ya eliminado): en el servidor pueden seguir existiendo
+LEGACY_LAB_QUEUES = ("lab.persistente", "lab.volatil")
+
+
+def remove_legacy_pagos() -> int:
+    """Borra las colas y el exchange de pagos, y las colas del antiguo experimento, si existen. Cada borrado va en su propio canal: si el broker rechaza uno
+    (p. ej. un exchange que ya no existe en versiones antiguas), el canal se cierra sin afectar a los demás. Devuelve
+    cuántos borrados aceptó el broker (borrar algo que no existe también cuenta como aceptado)."""
+    conn = connect(retries=1, heartbeat=0)
+    done = 0
+    try:
+        ops = [lambda ch, q=q: ch.queue_delete(q, if_unused=False, if_empty=False)
+               for q in (*LEGACY_PAGOS_QUEUES, *LEGACY_LAB_QUEUES)]
+        ops.append(lambda ch: ch.exchange_delete(LEGACY_PAGOS_EXCHANGE, if_unused=False))
+        for op in ops:
+            try:
+                ch = conn.channel()
+                op(ch)
+                ch.close()
+                done += 1
+            except pika.exceptions.ChannelClosed:
+                pass
+    finally:
+        conn.close()
+    return done
+
+
+def remove_legacy_pagos_in_background(every_s: float = 5.0, attempts: int = 120) -> threading.Thread:
+    """Llama a remove_legacy_pagos en un hilo aparte hasta que el broker responda (al arrancar, RabbitMQ puede tardar
+    más que la API o el worker). Idempotente: si la API y el worker lo hacen a la vez, no pasa nada."""
+    def run():
+        for _ in range(attempts):
+            try:
+                remove_legacy_pagos()
+                log.info("Colas heredadas («pagos» y las del antiguo experimento) borradas del broker (si existían)")
+                return
+            except Exception as exc:
+                log.debug("Broker aún no disponible para borrar «pagos»: %s", exc.__class__.__name__)
+                time.sleep(every_s)
+        log.warning("No se pudieron borrar las colas antiguas de «pagos»: RabbitMQ no respondió")
+    t = threading.Thread(target=run, daemon=True, name="limpieza-pagos")
+    t.start()
+    return t
 
 
 def purge_queues() -> None:
@@ -136,8 +171,7 @@ def purge_queues() -> None:
         ch = conn.channel()
         declare_topology(ch)
         for q in (config.QUEUE, config.VOLATILE_QUEUE, config.DLQ, *config.RETRY_QUEUES,
-                  config.EMAIL_QUEUE, config.EMAIL_DLQ, *config.EMAIL_RETRY_QUEUES,
-                  config.PAGOS_QUEUE, config.PAGOS_DLQ, *config.PAGOS_RETRY_QUEUES):
+                  config.EMAIL_QUEUE, config.EMAIL_DLQ, *config.EMAIL_RETRY_QUEUES):
             ch.queue_purge(q)
     finally:
         conn.close()
@@ -219,31 +253,6 @@ class RabbitOrderPublisher(OrderPublisher):
                     self._channel().basic_publish(
                         exchange=config.EMAIL_EXCHANGE,
                         routing_key=config.EMAIL_ROUTING_KEY,
-                        body=json.dumps(payload),
-                        properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent,
-                                                        content_type="application/json", headers={"retries": 0}),
-                        mandatory=True,
-                    )
-                    self._healthy = True
-                    return
-                except (*_NET_ERRORS, ConnectionError) as exc:
-                    last_exc = exc
-                    self._close()
-            self._healthy = False
-            self._down_until = time.monotonic() + self.RETRY_AFTER
-            raise ConnectionError(f"Publicación fallida: {last_exc}")
-
-    def publish_pago(self, payload: dict) -> None:
-        """Notificaciones de Yape: siempre por el camino durable, persistentes y con publisher confirms."""
-        with self._lock:
-            if time.monotonic() < self._down_until:
-                raise ConnectionError("RabbitMQ no disponible")
-            last_exc = None
-            for _ in range(2):
-                try:
-                    self._channel().basic_publish(
-                        exchange=config.PAGOS_EXCHANGE,
-                        routing_key=config.PAGOS_ROUTING_KEY,
                         body=json.dumps(payload),
                         properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent,
                                                         content_type="application/json", headers={"retries": 0}),
@@ -426,93 +435,12 @@ class EmailConsumer:
             ch.basic_nack(method.delivery_tag, requeue=False)
 
 
-class PagoConsumer:
-    """Consumidor de la cola "pagos" (notificaciones de Yape), con las mismas garantías que OrderConsumer: ack manual
-    tras guardar el resultado, reintentos 2 s / 5 s / 10 s ante errores de negocio, DLQ al tercer fallo, errores de
-    infraestructura (BD caída) de vuelta a la cola sin gastar reintentos, y reconexión automática."""
-
-    def __init__(self, service):
-        self.service = service
-
-    def run(self, stop: threading.Event) -> None:
-        while not stop.is_set():
-            conn = None
-            try:
-                conn = connect(retries=1)
-                ch = conn.channel()
-                declare_topology(ch)
-                ch.basic_qos(prefetch_count=1)
-                ch.confirm_delivery()   # la copia que va a la cola de reintento también debe confirmarla el broker
-                ch.basic_consume(config.PAGOS_QUEUE, on_message_callback=self._on_message, auto_ack=False)
-                log.info("Escuchando '%s'", config.PAGOS_QUEUE)
-                while not stop.is_set():
-                    conn.process_data_events(time_limit=0.5)
-            except (*_NET_ERRORS, ConnectionError) as exc:
-                log.warning("Conexión con RabbitMQ perdida (%s). Reintentando...", exc.__class__.__name__)
-                stop.wait(2)
-            except Exception:
-                log.exception("Error inesperado en el consumidor de pagos. Reconectando...")
-                stop.wait(2)
-            finally:
-                try:
-                    if conn and conn.is_open:
-                        conn.close()
-                except Exception:
-                    pass
-
-    def _on_message(self, ch, method, props, body) -> None:
-        try:
-            notificacion_id = int(json.loads(body)["notificacion_id"])
-        except (ValueError, KeyError, TypeError):
-            log.error("Mensaje de pago ilegible -> DLQ")
-            ch.basic_nack(method.delivery_tag, requeue=False)
-            return
-        headers = props.headers or {}
-        retries = headers.get("retries", 0)
-        try:
-            try:
-                estado = self.service.procesar(notificacion_id)
-            except ProcessingError as exc:      # error de negocio: reintento diferido y luego DLQ
-                self._retry_or_dead_letter(ch, method, body, headers, retries, notificacion_id, exc)
-                return
-            log.info("Notificación Yape %s: %s", notificacion_id, estado)
-            ch.basic_ack(method.delivery_tag)   # solo tras guardar el resultado en la BD
-        except _NET_ERRORS:
-            raise
-        except Exception as exc:
-            # infraestructura (p. ej. PostgreSQL caído): el pago no tiene la culpa; vuelve a la cola, nunca a la DLQ
-            log.warning("Infraestructura no disponible con la notificación %s: %s. Devuelta a la cola.",
-                        notificacion_id, exc.__class__.__name__)
-            time.sleep(2)
-            ch.basic_nack(method.delivery_tag, requeue=True)
-
-    def _retry_or_dead_letter(self, ch, method, body, headers, retries, notificacion_id, exc) -> None:
-        if retries < config.MAX_RETRIES:
-            log.error("Notificación %s falló (%s). Reintento %d en %d s", notificacion_id, exc, retries + 1,
-                      config.RETRY_DELAYS[retries])
-            ch.basic_publish("", config.PAGOS_RETRY_QUEUES[retries], body, pika.BasicProperties(
-                delivery_mode=pika.DeliveryMode.Persistent,
-                content_type="application/json",
-                headers={**headers, "retries": retries + 1, "x-last-error": str(exc),
-                         "x-first-failure": headers.get("x-first-failure") or datetime.now(timezone.utc).isoformat()},
-            ), mandatory=True)
-            ch.basic_ack(method.delivery_tag)
-        else:
-            log.error("Notificación %s agotó sus %d reintentos -> DLQ", notificacion_id, config.MAX_RETRIES)
-            ch.basic_nack(method.delivery_tag, requeue=False)
-
-
 class DeadLetterInspector:
     """Revisa, reprocesa o descarta los mensajes de una DLQ sin perderlos en el camino. Por defecto la de pedidos;
-    con email=True, la de correos (los mensajes se identifican por email_id en vez de order_id); con pagos=True, la de
-    pagos Yape (por notificacion_id)."""
+    con email=True, la de correos (los mensajes se identifican por email_id en vez de order_id)."""
 
-    def __init__(self, email: bool = False, pagos: bool = False):
+    def __init__(self, email: bool = False):
         self.email = email
-        if pagos:
-            self.queue, self.exchange = config.PAGOS_DLQ, config.PAGOS_EXCHANGE
-            self.routing_key, self.id_field = config.PAGOS_ROUTING_KEY, "notificacion_id"
-            return
         self.queue = config.EMAIL_DLQ if email else config.DLQ
         self.exchange = config.EMAIL_EXCHANGE if email else config.EXCHANGE
         self.routing_key = config.EMAIL_ROUTING_KEY if email else config.ROUTING_KEY

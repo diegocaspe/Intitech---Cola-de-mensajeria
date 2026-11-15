@@ -111,7 +111,7 @@ class TrafficSimulator:
                 self.sent += 1
             return order.id
         # los clientes simulados también hacen cross-selling: un producto y a veces sus relacionados
-        main = random.choice([p for p in self.products.all() if not p.pago_yape_real])   # la Zona Yape es solo real
+        main = random.choice(self.products.all())
         picks = [main] + [self.products.get(s) for s in random.sample(main.related, random.choice([0, 0, 1, 2]))]
         items = [{"sku": p.sku, "quantity": random.choice([1, 1, 1, 2]), "unit_price": p.price} for p in picks]
         email = f"{random.choice(NAMES)}{random.randint(1, 999)}@mail.com"

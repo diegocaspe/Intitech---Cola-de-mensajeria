@@ -13,20 +13,27 @@ from psycopg_pool import ConnectionPool, PoolTimeout
 
 from app.database.seed import PRODUCT_COLS, product_row, read_catalog
 from app.repositories.catalog_repository import load_products, to_product
-from app.repositories.interfaces import (PAGO_EVENT, Outbox, OrderRepository, ProcessResult, ProductRepository,
+from app.repositories.interfaces import (Outbox, OrderRepository, ProcessResult, ProductRepository,
                                          SentEmailRepository, UserRepository)
 from app.models.email import EmailEvent, EmailToken, TokenPurpose, TokenResult
-from app.models.order import Order, OrderItem, OrderStatus, money
+from app.models.order import Order, OrderItem, OrderStatus, PaymentStatus, money
 from app.models.product import Product
 from app.models.user import EmailStatus, Role, User
 
-_ORDER_COLS = "id, customer_email, items, status, created_at"
+_ORDER_COLS = ("id, customer_email, items, status, created_at, payment_token, card_brand, card_last4, payment_status, "
+               "payment_reason, payment_failures")
 FINAL_STATUSES = ("PROCESSED", "REJECTED")
 
 # Descuento atómico: resta solo si alcanza. Con dos compras simultáneas del último producto, PostgreSQL bloquea la fila:
 # la segunda espera, vuelve a evaluar "stock >= qty" con el valor nuevo y no afecta ninguna fila (rowcount = 0)
 DESCONTAR_STOCK = """UPDATE products SET stock = stock - %(qty)s, updated_at = now()
                      WHERE sku = %(sku)s AND stock >= %(qty)s"""
+
+
+# Rechazo por stock al descontar. Si el pago ya estaba aprobado se reembolsa (simulado) en la misma transacción
+_REJECT_REFUND = """UPDATE orders SET status='REJECTED', payment_reason=%s,
+                       payment_status = CASE WHEN payment_status='APPROVED' THEN 'REFUNDED' ELSE payment_status END
+                   WHERE id=%s"""
 
 
 class _SinStock(Exception):
@@ -60,9 +67,11 @@ class PostgresOrderRepository(OrderRepository):
 
     def save(self, order: Order) -> None:
         with self.pool.connection() as conn, conn.transaction():   # pedido + evento: todo o nada
-            conn.execute("INSERT INTO orders (id, customer_email, items, status, created_at) VALUES (%s,%s,%s,%s,%s)",
+            conn.execute(f"INSERT INTO orders ({_ORDER_COLS}) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                          (order.id, order.customer_email, Jsonb([i.to_dict() for i in order.items]),
-                          order.status.value, order.created_at))
+                          order.status.value, order.created_at, order.payment_token, order.card_brand,
+                          order.card_last4, order.payment_status.value if order.payment_status else None,
+                          order.payment_reason, order.payment_failures))
             conn.execute("INSERT INTO outbox (aggregate_id, event_type, payload) VALUES (%s, 'OrderCreated', %s)",
                          (order.id, Jsonb({"order_id": order.id})))
 
@@ -109,12 +118,38 @@ class PostgresOrderRepository(OrderRepository):
                             if conn.execute(DESCONTAR_STOCK, {"sku": sku, "qty": qty}).rowcount == 0:
                                 raise _SinStock(sku)
                 except _SinStock as exc:
-                    conn.execute("UPDATE orders SET status='REJECTED' WHERE id=%s", (order_id,))
+                    # si ya se cobró (otro pedido se llevó el stock entre la revisión y el descuento): reembolso simulado
+                    conn.execute(_REJECT_REFUND, (f"Sin stock de {exc.sku}", order_id))
                     return ProcessResult(OrderStatus.REJECTED, exc.sku)
             conn.execute("UPDATE orders SET status='PROCESSED', stock_descontado=true WHERE id=%s", (order_id,))
             if receipt:
                 _insert_email(conn, receipt)
         return ProcessResult(OrderStatus.PROCESSED)
+
+    def stock_of(self, skus: list[str]) -> dict[str, int]:
+        return dict(self._q("SELECT sku, stock FROM products WHERE sku = ANY(%s)", (list(skus),)))
+
+    def add_payment_failure(self, order_id: str) -> None:
+        self._q("UPDATE orders SET payment_failures = payment_failures + 1 WHERE id=%s", (order_id,))
+
+    def mark_payment_approved(self, order_id: str) -> None:
+        self._q("""UPDATE orders SET payment_status='APPROVED', payment_reason=NULL
+                   WHERE id=%s AND status NOT IN ('PROCESSED','REJECTED')""", (order_id,))
+
+    def mark_payment_declined(self, order_id: str, reason: str) -> None:
+        self._q("""UPDATE orders SET status='REJECTED', payment_status='DECLINED', payment_reason=%s
+                   WHERE id=%s AND status NOT IN ('PROCESSED','REJECTED')""", (reason, order_id))
+
+    def reject_out_of_stock(self, order_id: str, reason: str) -> None:
+        self._q("""UPDATE orders SET status='REJECTED', payment_reason=%s
+                   WHERE id=%s AND status NOT IN ('PROCESSED','REJECTED')""", (reason, order_id))
+
+    def payment_counts(self) -> dict[str, int]:
+        counts = {s.value: 0 for s in PaymentStatus}
+        for status, n in self._q("SELECT payment_status, COUNT(*) FROM orders WHERE payment_status IS NOT NULL "
+                                 "GROUP BY payment_status"):
+            counts[status] = n
+        return counts
 
     def statuses(self, order_ids: list[str]) -> dict[str, str]:
         return dict(self._q("SELECT id, status FROM orders WHERE id = ANY(%s)", (list(order_ids),)))
@@ -159,9 +194,11 @@ class PostgresOrderRepository(OrderRepository):
 
     @staticmethod
     def _to_order(row) -> Order:
-        id_, email, items, status, created = row
+        id_, email, items, status, created, token, brand, last4, pay_status, reason, failures = row
         return Order(email, [OrderItem(**i) for i in items], id=id_, status=OrderStatus(status),
-                     created_at=created.isoformat())
+                     created_at=created.isoformat(), payment_token=token, card_brand=brand, card_last4=last4,
+                     payment_status=PaymentStatus(pay_status) if pay_status else None, payment_reason=reason,
+                     payment_failures=failures or 0)
 
 
 class PostgresProductRepository(ProductRepository):
@@ -170,9 +207,8 @@ class PostgresProductRepository(ProductRepository):
     FRESH_S = 1.0    # el stock que ve la tienda puede atrasarse hasta 1 s (el que vale es el de la BD al descontar)
     RETRY_S = 5.0    # con la BD caída, vuelve a intentar cada 5 s
 
-    def __init__(self, pool: ConnectionPool, precio_yape=None, incluir_yape: bool = True):
+    def __init__(self, pool: ConnectionPool):
         self.pool = pool
-        self.precio_yape, self.incluir_yape = precio_yape, incluir_yape
         self._cache: list[Product] | None = None
         self._next = 0.0
         self._lock = threading.Lock()
@@ -181,8 +217,7 @@ class PostgresProductRepository(ProductRepository):
         with self.pool.connection() as conn:
             rows = conn.execute(f"SELECT {PRODUCT_COLS} FROM products ORDER BY category, sku").fetchall()
         cols = [c.strip() for c in PRODUCT_COLS.split(",")]
-        return [to_product(dict(zip(cols, r)), self.precio_yape) for r in rows
-                if self.incluir_yape or not r[-1]]   # r[-1] = pago_yape_real
+        return [to_product(dict(zip(cols, r))) for r in rows]
 
     def all(self) -> list[Product]:
         now = time.monotonic()
@@ -193,7 +228,7 @@ class PostgresProductRepository(ProductRepository):
             except (psycopg.Error, PoolTimeout):
                 self._next = time.monotonic() + self.RETRY_S
                 if self._cache is None:   # nunca se leyó la tabla: se muestra la semilla
-                    self._cache = load_products(precio_yape=self.precio_yape, incluir_yape=self.incluir_yape)
+                    self._cache = load_products()
             finally:
                 self._lock.release()
         return list(self._cache or [])
@@ -208,7 +243,7 @@ class PostgresProductRepository(ProductRepository):
         rows = sorted((product_row(p) for p in read_catalog()), key=lambda r: r[0])   # en orden de sku, como el worker
         with self.pool.connection() as conn, conn.transaction(), conn.cursor() as cur:
             # upsert: un producto que faltara vuelve a la tabla; a los que ya están solo se les cambia el stock
-            cur.executemany(f"""INSERT INTO products ({PRODUCT_COLS}) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            cur.executemany(f"""INSERT INTO products ({PRODUCT_COLS}) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                                 ON CONFLICT (sku) DO UPDATE SET stock = EXCLUDED.stock, updated_at = now()""", rows)
         self._next = 0.0   # la próxima lectura ya muestra el stock restablecido
         return len(rows)
@@ -241,7 +276,7 @@ class PostgresOutbox(Outbox):
     def pending_email_count(self) -> int:
         with self.pool.connection() as conn:
             return conn.execute("""SELECT COUNT(*) FROM outbox WHERE published_at IS NULL
-                                   AND event_type <> 'OrderCreated' AND event_type <> %s""", (PAGO_EVENT,)).fetchone()[0]
+                                   AND event_type <> 'OrderCreated'""").fetchone()[0]
 
     def mark_sent(self, order_id: str) -> None:
         with self.pool.connection() as conn:

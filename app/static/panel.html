@@ -190,17 +190,6 @@
   .key { display:flex; gap:16px; font-size:13px; font-weight:700; color:var(--n-300); margin:-6px 0 8px; }
   .key i { display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:6px; vertical-align:-1px; }
 
-  /* ---------- laboratorio ---------- */
-  .lead { color:var(--n-300); font-size:15px; margin:-6px 0 14px; }
-  .exp-row { display:grid; grid-template-columns:150px 1fr; gap:12px; align-items:center; padding:12px 0; border-top:1.5px solid var(--n-700); }
-  .exp-row:first-child { border-top:0; }
-  .exp-bar { display:flex; gap:2px; height:22px; border-radius:999px; overflow:hidden; background:var(--n-700); }
-  .exp-bar i { display:block; min-width:0; } .exp-bar .s { background:var(--inti-green); } .exp-bar .l { background:var(--red-500); }
-  .exp-meta { font-size:13px; color:var(--n-300); margin-top:4px; font-weight:600; }
-  .exp-meta .g { color:var(--green-300); font-weight:800; } .exp-meta .r { color:#F08A8D; font-weight:800; }
-  .exp-conc { margin-top:12px; padding:12px 14px; border-radius:14px; background:var(--n-850); font-size:14px; font-weight:600; }
-  .exp-err { color:#F08A8D; font-size:14px; font-weight:700; margin-top:12px; }
-
   /* ---------- tablas, DLQ y bitácora ---------- */
   table { width:100%; border-collapse:collapse; font-size:15px; }
   th { text-align:left; font-weight:800; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--n-400); padding:0 8px 10px; }
@@ -231,47 +220,9 @@
   .stock-tbl tr.low td.n.cur { color:var(--inti-yellow); }
   .stock-tbl tr.out td.n.cur { color:#F08A8D; }
 
-  /* Pagos Yape en vivo */
-  .yp-grid { grid-template-columns:repeat(5,minmax(0,1fr)); }
-  @media (max-width:900px) { .yp-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-  .yp-banner { display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:14px; margin:-4px 0 14px; font-weight:700; font-size:14px; }
-  .yp-banner.bad { background:rgba(229,72,77,.14); border:1.5px solid rgba(229,72,77,.5); color:#F7B4B6; }
-  .yp-banner.warn { background:rgba(255,201,60,.1); border:1.5px solid rgba(255,201,60,.45); color:var(--inti-yellow); }
-  .yp-bar { display:flex; gap:8px; justify-content:space-between; align-items:center; flex-wrap:wrap; margin:16px 0 12px; }
-  .yp-bar small { color:var(--n-400); font-weight:700; }
-  .yp-cols { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,3fr); gap:20px; }
-  @media (max-width:1100px) { .yp-cols { grid-template-columns:minmax(0,1fr); } }
-  .yp-cols h3 { font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--n-300); margin:0 0 10px; }
-  .yp-w td.cd { font-family:var(--font-mono); font-weight:700; color:var(--inti-yellow); white-space:nowrap; }
-  .yp-w td.cd.low { color:#F08A8D; }
-  .yp-w .amt, .yp-n .amt { font-family:var(--font-display); font-weight:600; color:#E7B6F2; }
-  .yp-list { display:flex; flex-direction:column; gap:10px; max-height:560px; overflow:auto; padding-right:4px; }
-  .yp-n { padding:12px 14px; border-radius:14px; background:var(--n-850); border:1.5px solid var(--n-700); display:flex; flex-direction:column; gap:8px; }
-  .yp-n.st-sin_coincidencia { border-color:rgba(255,201,60,.55); }
-  .yp-n-h { display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:14px; }
-  .yp-n-h .t { color:var(--n-400); font-family:var(--font-mono); font-size:13px; }
-  .yb { display:inline-flex; align-items:center; height:22px; padding:0 9px; border-radius:999px; font-size:12px; font-weight:800; letter-spacing:.02em; }
-  .yb-recibida { background:rgba(35,87,245,.22); color:var(--blue-300); }
-  .yb-asociada { background:rgba(18,183,106,.2); color:var(--green-300); }
-  .yb-sin_coincidencia { background:rgba(255,201,60,.18); color:var(--inti-yellow); }
-  .yb-ignorada, .yb-rechazada { background:rgba(142,152,175,.18); color:var(--n-200); }
-  .yb-simulada { background:rgba(116,35,132,.45); color:#F1D2F8; }
-  .yp-raw { margin:0; padding:8px 10px; border-radius:10px; background:#0F1420; color:var(--text2); font-family:var(--font-mono); font-size:12.5px; white-space:pre-wrap; word-break:break-word; max-height:110px; overflow:auto; }
-  .yp-det { font-size:13px; color:var(--n-400); font-weight:700; }
-  .yp-stages { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; }
-  .yp-stages span { display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; font-weight:800; color:var(--n-500); text-align:center; }
-  .yp-stages i { width:100%; height:6px; border-radius:6px; background:var(--n-700); }
-  .yp-stages .done { color:var(--green-300); } .yp-stages .done i { background:var(--green-500); }
-  .yp-stages .active { color:var(--inti-yellow); } .yp-stages .active i { background:var(--inti-yellow); animation:ypPulse 1s ease-in-out infinite alternate; }
-  .yp-stages .stop { color:var(--n-300); } .yp-stages .stop i { background:repeating-linear-gradient(45deg,var(--n-600) 0 4px,transparent 4px 8px); }
-  @keyframes ypPulse { from { opacity:.45; } to { opacity:1; } }
-  @media (prefers-reduced-motion:reduce) { .yp-stages .active i { animation:none; } }
-  .yp-act { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
-  .yp-act select { height:32px; border-radius:10px; border:1.5px solid var(--n-700); background:var(--n-800); color:var(--text); font:inherit; font-size:13px; padding:0 8px; max-width:260px; }
-  .yp-guion { margin-top:16px; border-radius:14px; border:1.5px dashed var(--n-600); padding:12px 16px; }
-  .yp-guion summary { cursor:pointer; font-weight:800; }
-  .yp-guion ol { margin:10px 0 0; padding-left:20px; line-height:1.6; color:var(--text2); }
-  .yp-guion b { color:var(--text); }
+  /* barra de texto + botón dentro de una tarjeta (stock por producto) */
+  .card-bar { display:flex; gap:8px; justify-content:space-between; align-items:center; flex-wrap:wrap; margin:16px 0 12px; }
+  .card-bar small { color:var(--n-400); font-weight:700; }
   @media (max-width:760px) { .mail-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
   .badge { display:inline-flex; gap:6px; align-items:center; height:28px; padding:0 12px; border-radius:999px; font-size:13px; font-weight:800; letter-spacing:.02em; white-space:nowrap; }
   .b-PENDING { background:rgba(142,152,175,.18); color:var(--n-200); } .b-PUBLISHED { background:rgba(35,87,245,.22); color:var(--blue-300); }
@@ -325,6 +276,18 @@
   .auto-list { display:flex; flex-direction:column; gap:10px; }
   .sc { position:relative; display:flex; flex-direction:column; padding:10px 12px; border-radius:16px; background:var(--n-850); border:1.5px solid rgba(229,72,77,.3); transition:border-color 200ms, background 200ms; }
   .sc:hover { border-color:rgba(229,72,77,.6); }
+  /* Black Friday no rompe nada (prueba de carga): acento azul en vez del rojo de los sabotajes */
+  .sc.load { border-color:rgba(84,128,248,.38); background:#161D2C; }
+  .sc.load:hover:not(.is-run) { border-color:rgba(84,128,248,.7); }
+  .sc.load .sc-n { background:rgba(84,128,248,.2); color:var(--blue-300); }
+  .sc-tag { white-space:nowrap; padding:2px 7px; border-radius:999px; font-size:10.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; background:rgba(84,128,248,.16); color:var(--blue-300); }
+  /* separador de grupo: sobre cada tarjeta que empieza un tramo distinto al de la anterior. Va en CSS y no en el HTML
+     para que siga teniendo sentido cuando la tarjeta en curso sube al primer lugar (ver placeTopScenario) */
+  .auto-list > .sc:first-child, .sc.load + .sc.sab, .sc.sab + .sc.load { margin-top:22px; }
+  .auto-list > .sc:first-child::before, .sc.load + .sc.sab::before, .sc.sab + .sc.load::before {
+    content:attr(data-grp); position:absolute; left:4px; right:4px; bottom:100%; padding-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#F08A8D; pointer-events:none; }
+  .auto-list > .sc.load:first-child::before, .sc.sab + .sc.load::before { color:var(--blue-300); }
   .sc.is-run { border-color:var(--inti-yellow); background:#22201A; }
   .sc-h { display:grid; grid-template-columns:auto minmax(0,1fr) auto auto auto; align-items:center; gap:8px; }
   .sc-n { width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:800; background:var(--n-700); color:var(--n-300); }
@@ -372,11 +335,16 @@
   .sc-tip dd { margin:0; font-size:14px; line-height:1.45; color:#fff; }
   @media (hover:hover) { .sc:has(.sc-h:hover):not(.tip-off) .sc-tip { opacity:1; visibility:visible; transform:none; transition-delay:0s; } }
   .sc.tip-open .sc-tip, .sc:has(.sc-h :focus-visible):not(.tip-off) .sc-tip { opacity:1; visibility:visible; transform:none; transition-delay:0s; }
-  /* controles manuales (plegados) */
-  .manual { border-top:1px dashed rgba(229,72,77,.4); padding-top:10px; }
-  .manual summary { cursor:pointer; display:flex; align-items:center; gap:8px; font-weight:700; font-size:14px; color:var(--n-300); list-style:none; }
-  .manual summary::-webkit-details-marker { display:none; }
-  .manual summary::after { content:"▸"; margin-left:auto; transition:transform 150ms; } .manual[open] summary::after { transform:rotate(90deg); }
+  /* pestañas: controles manuales / autosabotaje, una a la vez (mismo estilo que los selectores .seg) */
+  .sab-tabs { display:flex; }
+  .sab-tabs button { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+  .sab-tabs button .i { width:15px; height:15px; }
+  .sab-tabs button[aria-selected="true"] { background:var(--n-700); color:#fff; }
+  .sab-tabs button:focus-visible { box-shadow:var(--ring-focus); outline:none; }
+  .sab-panel { display:flex; flex-direction:column; gap:14px; }
+  .sab-panel[hidden] { display:none; }   /* display:flex anularía el atributo hidden */
+  /* controles manuales: siempre a la vista dentro de su pestaña */
+  .manual { gap:0; }
   .mrow { display:grid; grid-template-columns:96px auto minmax(0,1fr); align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--n-700); font-size:14px; }
   .mrow .sc-m { grid-column:1 / -1; }
   .mrow-p { grid-template-columns:1fr; }
@@ -476,6 +444,16 @@
   .dbp.pinned .dbp-x { display:flex; }
   .dbp-down { display:flex; align-items:center; gap:8px; margin-bottom:12px; padding:8px 12px; border-radius:12px 8px 14px 9px; background:rgba(229,72,77,.2); border:2px solid rgba(240,138,141,.7); color:#FFE1E2; font-size:13px; font-weight:700; }
   .dbp-down[hidden] { display:none; }
+  /* franja de perdidos: RabbitMQ los olvidó, pero la BD los tiene (mismo rojo que el aviso de BD caída y el KPI) */
+  .dbp-lostbar { margin-bottom:12px; padding:9px 12px 10px; border-radius:12px 8px 14px 9px / 9px 13px 8px 12px; background:rgba(229,72,77,.2); border:2px solid rgba(240,138,141,.7); color:#FFE1E2; }
+  .dbp-lostbar[hidden] { display:none; }
+  .dbp-lostbar p { margin:0; }
+  .lb-t { display:flex; align-items:center; gap:8px; font-family:var(--font-chalk); font-size:18px; font-weight:700; line-height:1.25; }
+  .lb-t .i { flex:none; color:#F08A8D; }
+  .dbp-lostbar .lb-ids { display:flex; flex-wrap:wrap; gap:3px 10px; margin:6px 0 9px; font-size:12.5px; }
+  .dbp .lb-ids .mono { color:#FFE1E2; }
+  .lb-more { font-weight:700; color:var(--chalk-2); }
+  .dbp-lostbar .mini.busy { cursor:progress; opacity:.7; }
   .dbp.stale .ch-cell { opacity:.6; }
   /* dos columnas alineadas fila por fila (subgrid); el marco ámbar de la columna outbox las abarca a todas */
   .ch-grid { display:grid; grid-template-columns:minmax(0,1fr) 58px minmax(0,1.12fr); grid-template-rows:auto auto; }
@@ -519,7 +497,8 @@
   .st-FAILED { background:rgba(229,72,77,.2); color:#F08A8D; } .st-REJECTED { background:rgba(255,201,60,.16); color:var(--inti-yellow); }
   .dbp-wait { color:var(--inti-yellow); font-weight:800; }
   .dbp-ok { color:var(--green-300); font-weight:800; }
-  .dbp-wait .i, .dbp-ok .i { width:13px; height:13px; vertical-align:-2px; }
+  .dbp-lost { color:#F08A8D; font-weight:800; }   /* la BD dice PUBLISHED, pero el mensaje ya no está en RabbitMQ */
+  .dbp-wait .i, .dbp-ok .i, .dbp-lost .i { width:13px; height:13px; vertical-align:-2px; }
   /* poco ancho: la tabla de pedidos completa arriba y la de outbox completa abajo. display:contents deja las celdas
      como hijas directas de la rejilla, y order las agrupa por tabla sin tocar el HTML (que sigue emparejado) */
   @container dbp (max-width:640px) {
@@ -598,7 +577,7 @@
   @media (max-width:1500px) { .kpis { grid-template-columns:repeat(4,minmax(0,1fr)); } .kpi.rev { grid-column:span 2; } .warm-t small { display:none; } }
   @media (max-width:1180px) { .flow-row { grid-template-columns:1fr; } .two, .charts { grid-template-columns:1fr; } .top-title { display:none; } }
   @media (max-width:760px) { .kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } .kpi .v { font-size:36px; } .top { padding:10px 16px; gap:12px; } .wordmark { display:none; }
-    .layout, .banners { padding-left:16px; padding-right:16px; } .admin span:last-child { display:none; } .exp-row { grid-template-columns:1fr; } }
+    .layout, .banners { padding-left:16px; padding-right:16px; } .admin span:last-child { display:none; } }
   @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
 </style>
 </head>
@@ -767,88 +746,13 @@
     </section>
 
       <aside class="card sabotage auto" aria-labelledby="sabH">
-        <h2 id="sabH"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-bomb"/></svg>Autosabotaje
+        <h2 id="sabH"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-bomb"/></svg>Escenarios
           <button class="mini heal-mini" onclick="recoverAll(this)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-life-buoy"/></svg>Recuperar todo</button></h2>
-        <div class="auto-bar">
-          <span>Velocidad</span>
-          <div class="seg" id="spdAuto" role="radiogroup" aria-label="Pausa entre estados">
-            <button role="radio" aria-checked="true" data-s="expo" onclick="setAutoSpeed('expo')">Expo (pausas de 6 s)</button><button role="radio" aria-checked="false" data-s="rapido" onclick="setAutoSpeed('rapido')">Rápido (pausas de 2 s)</button>
-          </div>
+        <div class="seg sab-tabs" id="sabTabs" role="tablist" aria-label="Qué controles mostrar">
+          <button role="tab" id="tab-manual" aria-selected="true" aria-controls="pan-manual" onclick="sabTab('manual')"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-sliders-horizontal"/></svg>Controles manuales</button><button role="tab" id="tab-auto" aria-selected="false" aria-controls="pan-auto" tabindex="-1" onclick="sabTab('auto')"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-bomb"/></svg>Autosabotaje</button>
         </div>
-        <div class="auto-list">
-          <article class="sc" id="sc1">
-            <header class="sc-h"><span class="sc-n">1</span>
-              <div class="sc-t"><h3>Black Friday</h3>
-                <div class="seg mini-seg" id="bfSeg" role="radiogroup" aria-label="Pedidos de la ráfaga"><button role="radio" aria-checked="true" data-n="300" onclick="setBfN(300)">300</button><button role="radio" aria-checked="false" data-n="500" onclick="setBfN(500)">500</button></div></div>
-              <span class="sc-st" id="st1">Listo</span>
-              <button class="sc-q" aria-label="Qué hace Black Friday" aria-describedby="tip1" aria-expanded="false">?</button>
-              <button class="sc-run" id="run1" onclick="runScenario(1)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
-            <div class="sc-body" id="body1" hidden></div>
-            <div class="sc-tip" role="tooltip" id="tip1"><dl>
-              <dt>Qué hace</dt><dd>envía cientos de pedidos al mismo tiempo, como en una oferta masiva.</dd>
-              <dt>Qué vas a ver</dt><dd>la API responde al instante, la cola sube rápido y los workers la vacían poco a poco.</dd>
-              <dt>Qué demuestra</dt><dd>la cola separa recibir el pedido de procesarlo; la tienda no se traba ante un pico.</dd></dl></div>
-          </article>
-          <article class="sc" id="sc2">
-            <header class="sc-h"><span class="sc-n">2</span><div class="sc-t"><h3>Matar al worker</h3></div>
-              <span class="sc-st" id="st2">Listo</span>
-              <button class="sc-q" aria-label="Qué hace Matar al worker" aria-describedby="tip2" aria-expanded="false">?</button>
-              <button class="sc-run" id="run2" onclick="runScenario(2)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
-            <div class="sc-body" id="body2" hidden></div>
-            <div class="sc-tip" role="tooltip" id="tip2"><dl>
-              <dt>Qué hace</dt><dd>apaga el programa que procesa los pedidos, justo a mitad de uno.</dd>
-              <dt>Qué vas a ver</dt><dd>el pedido a medias vuelve a la cola y, al revivir el worker, se termina.</dd>
-              <dt>Qué demuestra</dt><dd>RabbitMQ solo borra un mensaje cuando el worker confirma (ack); nada se pierde.</dd></dl></div>
-          </article>
-          <article class="sc" id="sc3">
-            <header class="sc-h"><span class="sc-n">3</span><div class="sc-t"><h3>Tirar RabbitMQ</h3></div>
-              <span class="sc-st" id="st3">Listo</span>
-              <button class="sc-q" aria-label="Qué hace Tirar RabbitMQ" aria-describedby="tip3" aria-expanded="false">?</button>
-              <button class="sc-run" id="run3" onclick="runScenario(3)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
-            <div class="sc-body" id="body3" hidden></div>
-            <div class="sc-tip" role="tooltip" id="tip3"><dl>
-              <dt>Qué hace</dt><dd>apaga la cola de mensajería.</dd>
-              <dt>Qué vas a ver</dt><dd>la tienda sigue vendiendo y sube "outbox pendientes"; al revivir RabbitMQ, se envían todos.</dd>
-              <dt>Qué demuestra</dt><dd>el patrón outbox guarda los pedidos en la base hasta que la cola vuelve.</dd></dl></div>
-          </article>
-          <article class="sc" id="sc4">
-            <header class="sc-h"><span class="sc-n">4</span><div class="sc-t"><h3>Prueba de persistencia</h3></div>
-              <span class="sc-st" id="st4">Listo</span>
-              <button class="sc-q" aria-label="Qué hace la Prueba de persistencia" aria-describedby="tip4" aria-expanded="false">?</button>
-              <button class="sc-run" id="run4" onclick="runScenario(4)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
-            <div class="sc-body" id="body4" hidden></div>
-            <div class="sc-tip" role="tooltip" id="tip4"><dl>
-              <dt>Qué hace</dt><dd>compara una cola que guarda los mensajes solo en memoria con una que los guarda en disco.</dd>
-              <dt>Qué vas a ver</dt><dd>sin persistencia, al caer RabbitMQ la cola vuelve vacía; con persistencia, vuelve intacta.</dd>
-              <dt>Qué demuestra</dt><dd>la persistencia hace que los mensajes sobrevivan a una caída. Usar solo con pedidos de prueba.</dd></dl></div>
-          </article>
-          <article class="sc" id="sc5">
-            <header class="sc-h"><span class="sc-n">5</span><div class="sc-t"><h3>Pedidos venenosos</h3></div>
-              <span class="sc-st" id="st5">Listo</span>
-              <button class="sc-q" aria-label="Qué hace Pedidos venenosos" aria-describedby="tip5" aria-expanded="false">?</button>
-              <button class="sc-run" id="run5" onclick="runScenario(5)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
-            <div class="sc-body" id="body5" hidden></div>
-            <div class="sc-tip" role="tooltip" id="tip5"><dl>
-              <dt>Qué hace</dt><dd>hace que 1 de cada 5 pedidos falle a propósito.</dd>
-              <dt>Qué vas a ver</dt><dd>el pedido malo se reintenta (2 s, 5 s, 10 s) y termina en la DLQ; los demás siguen.</dd>
-              <dt>Qué demuestra</dt><dd>un pedido defectuoso no bloquea la fila; se aparta para revisarlo después.</dd></dl></div>
-          </article>
-          <article class="sc" id="sc6">
-            <header class="sc-h"><span class="sc-n">6</span><div class="sc-t"><h3>Tirar PostgreSQL</h3></div>
-              <span class="sc-st" id="st6">Listo</span>
-              <button class="sc-q" aria-label="Qué hace Tirar PostgreSQL" aria-describedby="tip6" aria-expanded="false">?</button>
-              <button class="sc-run" id="run6" onclick="runScenario(6)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
-            <div class="sc-body" id="body6" hidden></div>
-            <div class="sc-tip" role="tooltip" id="tip6"><dl>
-              <dt>Qué hace</dt><dd>apaga la base de datos.</dd>
-              <dt>Qué vas a ver</dt><dd>los pedidos nuevos se rechazan con un aviso claro; los que ya estaban en la cola esperan.</dd>
-              <dt>Qué demuestra</dt><dd>el sistema conoce su límite y falla de forma segura, sin perder pedidos aceptados.</dd></dl></div>
-          </article>
-        </div>
-
         <!-- por si el profesor pide repetir algo a mano: los mismos sabotajes, uno por uno -->
-        <details class="manual" id="manual">
-          <summary><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-sliders-horizontal"/></svg>Controles manuales</summary>
+        <div class="sab-panel manual" id="pan-manual" role="tabpanel" aria-labelledby="tab-manual">
           <div class="mrow"><b>Ráfaga</b><span></span><div class="mbtns">
             <button class="sc-btn danger" onclick="busy(this, post('/api/sim/burst', { count: 300 }))">300 pedidos</button>
             <button class="sc-btn danger" onclick="busy(this, post('/api/sim/burst', { count: 500 }))">500 pedidos</button></div></div>
@@ -870,7 +774,86 @@
             <button class="toggle" id="bPersist" role="switch" aria-checked="true" onclick="chaos(state.control.persistent ? 'persist-off' : 'persist-on')"><span><b id="persistLbl">Persistencia encendida</b><small id="persistSub">Mensajes y colas durables en disco</small></span><span class="sw"></span></button>
             <div class="sc-row"><p class="sc-m" id="mP">En cola: 0 en disco</p>
               <button class="mini" id="bRecon" onclick="busy(this, post('/api/reconcile'))"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-wrench"/></svg>Reconciliar desde la BD</button></div></div>
-        </details>
+        </div>
+        <!-- escenarios automáticos: un botón corre toda la secuencia -->
+        <div class="sab-panel" id="pan-auto" role="tabpanel" aria-labelledby="tab-auto" hidden>
+          <div class="auto-bar">
+            <span>Velocidad</span>
+            <div class="seg" id="spdAuto" role="radiogroup" aria-label="Pausa entre estados">
+              <button role="radio" aria-checked="true" data-s="expo" onclick="setAutoSpeed('expo')">Expo (pausas de 6 s)</button><button role="radio" aria-checked="false" data-s="rapido" onclick="setAutoSpeed('rapido')">Rápido (pausas de 2 s)</button>
+            </div>
+          </div>
+          <div class="auto-list" id="autoList">
+            <article class="sc load" id="sc1" data-grp="Prueba de carga · no rompe nada">
+              <header class="sc-h"><span class="sc-n">1</span>
+                <div class="sc-t"><h3>Black Friday</h3><span class="sc-tag">Prueba de carga</span>
+                  <div class="seg mini-seg" id="bfSeg" role="radiogroup" aria-label="Pedidos de la ráfaga"><button role="radio" aria-checked="true" data-n="300" onclick="setBfN(300)">300</button><button role="radio" aria-checked="false" data-n="500" onclick="setBfN(500)">500</button></div></div>
+                <span class="sc-st" id="st1">Listo</span>
+                <button class="sc-q" aria-label="Qué hace Black Friday (prueba de carga)" aria-describedby="tip1" aria-expanded="false">?</button>
+                <button class="sc-run" id="run1" onclick="runScenario(1)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
+              <div class="sc-body" id="body1" hidden></div>
+              <div class="sc-tip" role="tooltip" id="tip1"><dl>
+                <dt>Qué hace</dt><dd>no es un sabotaje: no rompe nada. Envía cientos de pedidos al mismo tiempo, como el pico de demanda de una oferta masiva.</dd>
+                <dt>Qué vas a ver</dt><dd>la API responde al instante, la cola sube rápido y los workers la vacían poco a poco.</dd>
+                <dt>Qué demuestra</dt><dd>la cola absorbe la carga: separa recibir el pedido de procesarlo, así la tienda no se traba ante el pico.</dd></dl></div>
+            </article>
+            <article class="sc sab" id="sc2" data-grp="Sabotajes · rompemos algo a propósito">
+              <header class="sc-h"><span class="sc-n">2</span><div class="sc-t"><h3>Matar al worker</h3></div>
+                <span class="sc-st" id="st2">Listo</span>
+                <button class="sc-q" aria-label="Qué hace Matar al worker" aria-describedby="tip2" aria-expanded="false">?</button>
+                <button class="sc-run" id="run2" onclick="runScenario(2)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
+              <div class="sc-body" id="body2" hidden></div>
+              <div class="sc-tip" role="tooltip" id="tip2"><dl>
+                <dt>Qué hace</dt><dd>apaga el programa que procesa los pedidos, justo a mitad de uno.</dd>
+                <dt>Qué vas a ver</dt><dd>el pedido a medias vuelve a la cola y, al revivir el worker, se termina.</dd>
+                <dt>Qué demuestra</dt><dd>RabbitMQ solo borra un mensaje cuando el worker confirma (ack); nada se pierde.</dd></dl></div>
+            </article>
+            <article class="sc sab" id="sc3" data-grp="Sabotajes · rompemos algo a propósito">
+              <header class="sc-h"><span class="sc-n">3</span><div class="sc-t"><h3>Tirar RabbitMQ</h3></div>
+                <span class="sc-st" id="st3">Listo</span>
+                <button class="sc-q" aria-label="Qué hace Tirar RabbitMQ" aria-describedby="tip3" aria-expanded="false">?</button>
+                <button class="sc-run" id="run3" onclick="runScenario(3)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
+              <div class="sc-body" id="body3" hidden></div>
+              <div class="sc-tip" role="tooltip" id="tip3"><dl>
+                <dt>Qué hace</dt><dd>apaga la cola de mensajería.</dd>
+                <dt>Qué vas a ver</dt><dd>la tienda sigue vendiendo y sube "outbox pendientes"; al revivir RabbitMQ, se envían todos.</dd>
+                <dt>Qué demuestra</dt><dd>el patrón outbox guarda los pedidos en la base hasta que la cola vuelve.</dd></dl></div>
+            </article>
+            <article class="sc sab" id="sc4" data-grp="Sabotajes · rompemos algo a propósito">
+              <header class="sc-h"><span class="sc-n">4</span><div class="sc-t"><h3>Prueba de persistencia</h3></div>
+                <span class="sc-st" id="st4">Listo</span>
+                <button class="sc-q" aria-label="Qué hace la Prueba de persistencia" aria-describedby="tip4" aria-expanded="false">?</button>
+                <button class="sc-run" id="run4" onclick="runScenario(4)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
+              <div class="sc-body" id="body4" hidden></div>
+              <div class="sc-tip" role="tooltip" id="tip4"><dl>
+                <dt>Qué hace</dt><dd>compara una cola que guarda los mensajes solo en memoria con una que los guarda en disco.</dd>
+                <dt>Qué vas a ver</dt><dd>sin persistencia, al caer RabbitMQ la cola vuelve vacía; con persistencia, vuelve intacta.</dd>
+                <dt>Qué demuestra</dt><dd>la persistencia hace que los mensajes sobrevivan a una caída. Usar solo con pedidos de prueba.</dd></dl></div>
+            </article>
+            <article class="sc sab" id="sc5" data-grp="Sabotajes · rompemos algo a propósito">
+              <header class="sc-h"><span class="sc-n">5</span><div class="sc-t"><h3>Pedidos venenosos</h3></div>
+                <span class="sc-st" id="st5">Listo</span>
+                <button class="sc-q" aria-label="Qué hace Pedidos venenosos" aria-describedby="tip5" aria-expanded="false">?</button>
+                <button class="sc-run" id="run5" onclick="runScenario(5)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
+              <div class="sc-body" id="body5" hidden></div>
+              <div class="sc-tip" role="tooltip" id="tip5"><dl>
+                <dt>Qué hace</dt><dd>hace que 1 de cada 5 pedidos falle a propósito.</dd>
+                <dt>Qué vas a ver</dt><dd>el pedido malo se reintenta (2 s, 5 s, 10 s) y termina en la DLQ; los demás siguen.</dd>
+                <dt>Qué demuestra</dt><dd>un pedido defectuoso no bloquea la fila; se aparta para revisarlo después.</dd></dl></div>
+            </article>
+            <article class="sc sab" id="sc6" data-grp="Sabotajes · rompemos algo a propósito">
+              <header class="sc-h"><span class="sc-n">6</span><div class="sc-t"><h3>Tirar PostgreSQL</h3></div>
+                <span class="sc-st" id="st6">Listo</span>
+                <button class="sc-q" aria-label="Qué hace Tirar PostgreSQL" aria-describedby="tip6" aria-expanded="false">?</button>
+                <button class="sc-run" id="run6" onclick="runScenario(6)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-play"/></svg>Ejecutar</button></header>
+              <div class="sc-body" id="body6" hidden></div>
+              <div class="sc-tip" role="tooltip" id="tip6"><dl>
+                <dt>Qué hace</dt><dd>apaga la base de datos.</dd>
+                <dt>Qué vas a ver</dt><dd>los pedidos nuevos se rechazan con un aviso claro; los que ya estaban en la cola esperan.</dd>
+                <dt>Qué demuestra</dt><dd>el sistema conoce su límite y falla de forma segura, sin perder pedidos aceptados.</dd></dl></div>
+            </article>
+          </div>
+        </div>
       </aside>
     </div>
 
@@ -897,32 +880,13 @@
     </section>
 
 
-    <section class="card yape" id="yapeCard" aria-labelledby="yapeH">
-      <h2 id="yapeH"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-wallet"/></svg>Pagos Yape en vivo <small>notificación → outbox → cola «pagos» → worker → pedido confirmado</small></h2>
-      <div id="ypBanner"></div>
-      <div class="mail-grid yp-grid">
-        <div class="mstat" id="ypWaitC"><span class="k">Esperando pago</span><b class="v num" id="ypWait">0</b><span class="d">pedidos con monto reservado</span></div>
-        <div class="mstat" id="ypQC"><span class="k">Cola «pagos»</span><b class="v num" id="ypQ">—</b><span class="d">notificaciones por procesar</span></div>
-        <div class="mstat" id="ypRetryC"><span class="k">Reintentando</span><b class="v num" id="ypRetry">—</b><span class="d">esperan 2 s, 5 s o 10 s</span></div>
-        <div class="mstat" id="ypDlqC"><span class="k">pagos.dlq</span><b class="v num" id="ypDlq">—</b><span class="d">tras 3 reintentos</span></div>
-        <div class="mstat" id="ypConsC"><span class="k">Worker de pagos</span><b class="v" id="ypCons">—</b><span class="d" id="ypConsD">consumidor de «pagos»</span></div>
+    <section class="card" id="payCard" aria-labelledby="payH">
+      <h2 id="payH"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-credit-card"/></svg>Pagos con tarjeta <small>simulados · el worker cobra antes de descontar el stock</small></h2>
+      <div class="mail-grid stock-grid">
+        <div class="mstat good"><span class="k">Aprobados</span><b class="v num" id="pyOk">0</b><span class="d" id="pyOkD">cobros aceptados por el proveedor</span></div>
+        <div class="mstat" id="pyDecC"><span class="k">Rechazados</span><b class="v num" id="pyDec">0</b><span class="d">sin descontar stock ni reintentar</span></div>
+        <div class="mstat" id="pyRefC"><span class="k">Reembolsados</span><b class="v num" id="pyRef">0</b><span class="d">cobrados, pero el stock ya no alcanzó</span></div>
       </div>
-      <div class="yp-bar"><small>Montos únicos: cada pedido espera un monto distinto; el pago se asocia por ese monto.</small>
-        <button class="mini warn" onclick="ypSimular()"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-flask-conical"/></svg>Simular notificación Yape</button></div>
-      <div class="yp-cols">
-        <div><h3>Esperando pago</h3><div id="ypWaitList"><div class="empty">Cargando…</div></div></div>
-        <div><h3>Notificaciones · orden de llegada (la más reciente arriba)</h3><div class="yp-list" id="ypNotifs"><div class="empty">Cargando…</div></div></div>
-      </div>
-      <details class="yp-guion">
-        <summary>Guion: Yape real + sabotaje</summary>
-        <ol>
-          <li>Alguien del público abre la <b>Zona Yape real</b>, elige un producto y yapea el monto exacto que le muestra su pantalla.</li>
-          <li>Pulsa <b>Matar al worker</b> justo después: su pantalla queda en <b>«Pago recibido ✓, en cola»</b> y aquí la notificación se detiene en «Cola pagos».</li>
-          <li>Pulsa <b>Recuperar todo</b>: el worker vuelve, asocia el pago y su pantalla pasa a <b>«Pedido confirmado»</b> (y le llega el comprobante).</li>
-          <li><b>Variante RabbitMQ</b>: <b>Tirar RabbitMQ</b> antes del yapeo. El webhook responde 200 igual, la notificación se acumula en el <b>outbox</b> y el cliente ve «Pago registrado ✓, esperando procesamiento». Al recuperar, el relay la publica.</li>
-          <li><b>Variante PostgreSQL</b>: <b>Tirar PostgreSQL</b>. El webhook responde <b>503</b> y MacroDroid reintenta; el cliente ve «Esperando confirmación de tu pago, no vuelvas a yapear». Al recuperar, el siguiente reintento entra y el pago se asocia. Si la BD estuvo caída más que el plazo del pedido, el pago queda «sin coincidencia» (nunca se pierde) y se asigna a mano con «Asignar a pedido».</li>
-        </ol>
-      </details>
     </section>
 
     <section class="card" id="stockCard" aria-labelledby="stockH">
@@ -932,26 +896,18 @@
         <div class="mstat good"><span class="k">Vendidas</span><b class="v num" id="stSold">—</b><span class="d">descontadas de forma atómica</span></div>
         <div class="mstat" id="stOutC"><span class="k">Agotados</span><b class="v num" id="stOut">—</b><span class="d">sus pedidos quedan rechazados</span></div>
       </div>
-      <div class="yp-bar"><small>Los menos disponibles primero. «Restablecer stock» vuelve a los valores de catalogo.json (no toca pedidos ni colas).</small>
+      <div class="card-bar"><small>Los menos disponibles primero. «Restablecer stock» vuelve a los valores de catalogo.json (no toca pedidos ni colas).</small>
         <button class="mini warn" id="bStockReset" onclick="resetStock(this)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-rotate-ccw"/></svg>Restablecer stock</button></div>
       <div class="stock-tbl" id="stockList"><div class="empty">Cargando…</div></div>
     </section>
 
-    <div class="two">
-      <section class="card">
-        <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-flask-conical"/></svg>Experimento de persistencia <small>RabbitMQ cae de verdad</small></h2>
-        <p class="lead">Publica 500 mensajes con persistencia y 500 sin ella, tira RabbitMQ (SIGKILL), lo vuelve a levantar y cuenta cuántos sobrevivieron.</p>
-        <button class="abtn" id="bLab" onclick="post('/api/lab/run')"></button>
-        <div id="labOut"></div>
-      </section>
-      <section class="card">
-        <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-inbox"/></svg>Mensajes fallidos (DLQ) <small id="dlqCount"></small></h2>
-        <div class="seg dlq-tabs" id="dlqTabs" role="radiogroup" aria-label="Qué DLQ mostrar">
-          <button role="radio" aria-checked="true" data-q="pedidos" onclick="dlqTab('pedidos')">Pedidos</button><button role="radio" aria-checked="false" data-q="correos" onclick="dlqTab('correos')">Correos</button><button role="radio" aria-checked="false" data-q="pagos" onclick="dlqTab('pagos')">Pagos Yape</button>
-        </div>
-        <div id="dlqList"><div class="empty">Cargando…</div></div>
-      </section>
-    </div>
+    <section class="card">
+      <h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-inbox"/></svg>Mensajes fallidos (DLQ) <small id="dlqCount"></small></h2>
+      <div class="seg dlq-tabs" id="dlqTabs" role="radiogroup" aria-label="Qué DLQ mostrar">
+        <button role="radio" aria-checked="true" data-q="pedidos" onclick="dlqTab('pedidos')">Pedidos</button><button role="radio" aria-checked="false" data-q="correos" onclick="dlqTab('correos')">Correos</button>
+      </div>
+      <div id="dlqList"><div class="empty">Cargando…</div></div>
+    </section>
 
     <div class="two">
       <section class="card"><h2><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-receipt"/></svg>Últimos pedidos</h2><div id="orders"><div class="empty">Aún no hay pedidos. Inicia la simulación desde Black Friday o compra desde la tienda.</div></div></section>
@@ -970,6 +926,11 @@
   <button class="dbp-x" id="dbPopX" aria-label="Cerrar las tablas de PostgreSQL" onclick="dbPin(false)"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-x"/></svg></button>
   <div class="dbp-body">
   <div class="dbp-down" id="dbPopDown" hidden><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-triangle-alert"/></svg>PostgreSQL no responde · se muestran los últimos datos conocidos</div>
+  <div class="dbp-lostbar" id="dbpLost" role="status" hidden>
+    <p class="lb-t"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-triangle-alert"/></svg><span id="dbpLostT"></span></p>
+    <p class="lb-ids" id="dbpLostIds"></p>
+    <button class="mini bad" onclick="busy(this, post('/api/reconcile'))"><svg class="i" aria-hidden="true"><use href="/static/icons.svg#i-wrench"/></svg>Reconciliar desde la BD</button>
+  </div>
   <div class="ch-grid">
     <div class="ch-frame" aria-hidden="true"></div>
     <div class="ch-head ch-head-ord"><h3>SOLICITUD DEL PEDIDO <code>orders</code></h3><p>Lo que pidió el cliente</p></div>
@@ -1045,6 +1006,30 @@ function svcRow(pillId, kill, rev, svc, st, downTx) {
   $(rev).disabled = !down || lifting;
 }
 
+/* ---------- pestañas de sabotajes: controles manuales / autosabotaje (una a la vez) ---------- */
+const SAB_TABS = ["manual", "auto"];
+let sabTabNow = "manual";
+try { if (localStorage.getItem("sabTab") === "auto") sabTabNow = "auto"; } catch {}
+function sabTab(t, { remember = true, focus = false } = {}) {
+  sabTabNow = t;
+  if (remember) try { localStorage.setItem("sabTab", t); } catch {}
+  SAB_TABS.forEach(k => {
+    const tab = $("tab-" + k), on = k === t;
+    tab.setAttribute("aria-selected", on);
+    tab.tabIndex = on ? 0 : -1;   // la pestaña activa es la única parada del Tab; las flechas cambian entre ellas
+    $("pan-" + k).hidden = !on;
+    if (on && focus) tab.focus();
+  });
+}
+$("sabTabs").addEventListener("keydown", e => {
+  const i = SAB_TABS.indexOf(sabTabNow), last = SAB_TABS.length - 1;
+  const to = { ArrowRight: i === last ? 0 : i + 1, ArrowLeft: i === 0 ? last : i - 1, Home: 0, End: last }[e.key];
+  if (to === undefined) return;
+  e.preventDefault();
+  sabTab(SAB_TABS[to], { focus: true });
+});
+sabTab(sabTabNow, { remember: false });
+
 /* ---------- escenarios automáticos: un botón «Ejecutar» corre toda la secuencia en el servidor ---------- */
 let autoSpeed = "expo";
 try { if (localStorage.getItem("autoSpeed") === "rapido") autoSpeed = "rapido"; } catch {}
@@ -1066,8 +1051,40 @@ async function runScenario(n) {
 function recoverAll(btn) { busy(btn, state.m?.scenarios?.running ? post("/api/scenarios/stop") : chaos("recover")); }
 function hideRun(n) { hiddenRuns.add(n); if (state.m) renderScenarios(state.m); }
 const FOCUS_NODES = ["nApi", "nQ", "nDb", "nWork", "nRelay", "nRetry", "nDlq"];
+/* el escenario en curso (o el último ejecutado) ocupa el primer lugar de la lista; los demás, en orden numérico.
+   Se mueve el mismo nodo (no se recrea): conserva listeners, ventana «?» y cuerpo. FLIP: se mide antes y después
+   del cambio y cada tarjeta se desliza desde donde estaba */
+let topSc = null, seenRun = null, scRendered = false;
+const scTops = () => new Map([...$("autoList").children].map(c => [c, c.getBoundingClientRect().top]));
+function placeTopScenario(n, before) {
+  const list = $("autoList"), card = $("sc" + n), num = c => +c.id.slice(2);
+  const order = [...list.children].sort((a, b) => (b === card) - (a === card) || num(a) - num(b));
+  const had = list.contains(document.activeElement) ? document.activeElement : null;   // mover un nodo le quita el foco
+  order.forEach((c, i) => { if (list.children[i] !== c) list.insertBefore(c, list.children[i]); });
+  if (had) had.focus({ preventScroll: true });
+  topSc = n;
+  if (before && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const ease = css("--ease-out") || "ease-out";
+    order.forEach(c => {
+      const dy = before.get(c) - c.getBoundingClientRect().top;
+      if (dy) c.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: 200, easing: ease });
+    });
+  }
+  revealInCard(card);
+}
+/* como scrollIntoView({block: "nearest"}), pero solo dentro de la pestaña: la página no se mueve */
+function revealInCard(card) {
+  const box = $("pan-auto"), r = card.getBoundingClientRect(), b = box.getBoundingClientRect();
+  if (r.top < b.top) box.scrollTop += r.top - b.top;
+  else if (r.bottom > b.bottom) box.scrollTop += Math.min(r.bottom - b.bottom, r.top - b.top);
+}
 function renderScenarios(m) {
   const sc = m.scenarios || { running: null, runs: {} }, running = sc.running;
+  // un escenario que empieza (o que ya corría al abrir el panel) muestra su pestaña, para no esconder lo que pasa
+  if (running && running !== seenRun && sabTabNow !== "auto") sabTab("auto", { remember: false });
+  seenRun = running;
+  const top = running || sc.last || null, moving = top && top !== topSc;
+  const before = moving && scRendered ? scTops() : null;   // al cargar la página se ubica sin animar
   const focus = running ? sc.runs[running]?.focus : null;
   FOCUS_NODES.forEach(id => $(id).classList.toggle("focus", id === focus));
   for (let n = 1; n <= 6; n++) {
@@ -1098,6 +1115,8 @@ function renderScenarios(m) {
     body.innerHTML = out;
   }
   $("bfSeg").querySelectorAll("button").forEach(b => b.disabled = !!running);
+  if (moving) placeTopScenario(top, before);
+  scRendered = true;
 }
 /* ventana explicativa: mouse (CSS :hover), teclado (:focus-visible) y toque (botón «?»). Escape la cierra */
 function placeTip(card) {
@@ -1178,7 +1197,10 @@ function tickNums(dt) {
   for (const n of Object.values(nums)) {
     n.v += (n.t - n.v) * Math.min(1, dt * 9);
     if (Math.abs(n.t - n.v) < 0.5) n.v = n.t;
-    n.el.textContent = n.f(n.v);
+    // solo si cambió lo que se ve: reescribir el texto en cada cuadro obligaba a recalcular estilos, layout y pintura
+    // de todos los números del panel 60 veces por segundo, aunque ninguno cambiara
+    const txt = n.f(n.v);
+    if (n.txt !== txt) { n.txt = txt; n.el.textContent = txt; }
   }
 }
 
@@ -1290,18 +1312,18 @@ function render(m) {
   $("btnConst").innerHTML = constRun ? `<b>${icon("stop")} Detener</b><span>corta el tráfico</span>` : `<b>${icon("play")} Constante</b><span>ritmo fijo</span>`;
   $("btnConst").classList.toggle("stop", constRun);
   renderMail(m, svcState("mailer", m));
+  renderPayments(m);
   renderSabotage(m, depth, { workSt, brokerSt, dbSt });
   updateRateLabel();
 
   renderNarrator(m, depth);
-  renderLab(m.lab);
   renderOrders(m.recent);
   renderLog(m.events);
   if (!$("dbPop").hidden) updateDbPop(m);
   drawAll();
 }
 
-/* controles manuales (plegados): estado real de cada servicio */
+/* controles manuales (su pestaña): estado real de cada servicio */
 function renderSabotage(m, depth, { workSt, brokerSt, dbSt }) {
   const q = m.queue, o = m.orders, ctl = m.control;
   svcRow("stW", "bKillW", "bRevW", "worker", workSt, "Caído");
@@ -1338,6 +1360,15 @@ function renderMail(m, mailSt) {
   $("mSvc").textContent = down ? "Caído" : "En línea";
   $("mSvcC").className = "mstat" + (down ? " bad" : " good");
   $("mSvcD").textContent = down ? "los correos esperan en disco" : "envía por Gmail (SMTP)";
+}
+
+/* pagos con tarjeta (simulados): lo que decidió el worker al cobrar */
+function renderPayments(m) {
+  const py = m.payments || {};
+  setNum("pyOk", py.approved || 0); setNum("pyDec", py.declined || 0); setNum("pyRef", py.refunded || 0);
+  $("pyOkD").textContent = py.pending ? `${fmt(py.pending)} esperando su cobro en la cola` : "cobros aceptados por el proveedor";
+  $("pyDecC").className = "mstat" + (py.declined ? " warn" : "");
+  $("pyRefC").className = "mstat" + (py.refunded ? " warn" : "");
 }
 
 function renderNarrator(m, depth) {
@@ -1403,23 +1434,6 @@ function renderNarrator(m, depth) {
 }
 
 const ST = { PENDING: ["clock", "Pendiente"], PUBLISHED: ["arrow", "En cola"], PROCESSED: ["check", "Procesado"], FAILED: ["x", "Fallido"], REJECTED: ["minus", "Rechazado"] };
-function renderLab(lab) {
-  if (!lab) return;
-  $("bLab").disabled = lab.running;
-  $("bLab").innerHTML = lab.running ? `<b>${icon("hourglass")} ${esc(lab.step)}…</b><span>el experimento tarda unos 20 segundos</span>`
-    : `<b>${icon("play")} ${lab.results ? "Repetir" : "Ejecutar"} experimento</b><span>tira RabbitMQ de verdad · ≈ 20 s</span>`;
-  if (lab.error) { $("labOut").innerHTML = `<div class="exp-err">${icon("alert")} ${esc(lab.error)}</div>`; return; }
-  if (!lab.results) { $("labOut").innerHTML = ""; return; }
-  const [d, v] = lab.results;
-  const rows = lab.results.map(r => `<div class="exp-row"><div><b>${r.mode}</b><div class="exp-meta">${fmt(r.rate)} msg/s al publicar</div></div>
-    <div><div class="exp-bar" role="img" aria-label="${r.survived} sobrevivieron, ${r.lost} perdidos"><i class="s" style="flex:${r.survived}"></i><i class="l" style="flex:${r.lost}"></i></div>
-    <div class="exp-meta"><span class="g">${fmt(r.survived)} sobrevivieron</span> · <span class="r">${fmt(r.lost)} perdidos</span> de ${fmt(r.sent)}</div></div></div>`).join("");
-  const cost = Math.round((1 - d.rate / v.rate) * 100);
-  const conc = `Conclusión: ${cost > 0 ? `escribir en disco hizo la publicación un ${cost}% más lenta (${fmt(d.rate)} vs ${fmt(v.rate)} msg/s)` : "en esta prueba la persistencia no restó velocidad"}, `
-    + `pero evitó perder ${fmt(v.lost)} de ${fmt(v.sent)} mensajes.`;
-  $("labOut").innerHTML = `<div style="margin-top:12px">${rows}</div><div class="exp-conc">${conc}</div>`;
-}
-
 let dlqQueue = "pedidos";
 const MAIL_KIND = { "email.registro": "Bienvenida", "email.login": "Inicio de sesión", "email.compra_confirmada": "Comprobante",
                     "email.recuperar": "Recuperar contraseña" };
@@ -1438,17 +1452,6 @@ async function loadDlq() {
     if (!r.ok) { $("dlqList").innerHTML = `<div class="empty">RabbitMQ no disponible en este momento</div>`; return; }
     const items = await r.json();
     $("dlqCount").textContent = items.length ? `${items.length} mensaje(s)` : "";
-    if (queue === "pagos") {
-      $("dlqList").innerHTML = !items.length
-        ? `<div class="empty">Sin pagos fallidos. Si una notificación de Yape falla 3 veces (2 s, 5 s, 10 s), llega aquí. Su texto sigue guardado en la BD.</div>`
-        : `<div class="dlq-head"><button class="mini warn" onclick="dlqAct('reprocess')">${icon("rotate-ccw")} Reprocesar todos</button><button class="mini bad" onclick="dlqAct('discard')">${icon("trash-2")} Descartar todos</button></div>
-          <table class="dlq"><tr><th>Notificación</th><th>Error</th><th>Intentos</th><th>Llegó</th><th></th></tr>` +
-          items.map(it => `<tr><td class="num">#${esc(it.notificacion_id ?? "?")}</td>
-            <td class="err">${esc(it.error)}</td><td class="num">${it.retries}</td>
-            <td class="num">${it.dead_at ? new Date(it.dead_at).toLocaleTimeString("es", { hour12: false }) : "—"}</td>
-            <td class="act"><button class="mini warn" onclick="dlqAct('reprocess','${esc(it.notificacion_id)}')">Reprocesar</button><button class="mini bad" onclick="dlqAct('discard','${esc(it.notificacion_id)}')">Descartar</button></td></tr>`).join("") + `</table>`;
-      return;
-    }
     if (queue === "correos") {
       $("dlqList").innerHTML = !items.length
         ? `<div class="empty">Sin correos fallidos. Si Gmail rechaza un envío 3 veces seguidas (2 s, 5 s, 10 s), el correo llega aquí.</div>`
@@ -1473,113 +1476,8 @@ async function loadDlq() {
 async function dlqAct(action, id) {
   if (!id && action === "discard" && !confirm("¿Descartar definitivamente todos los mensajes de la DLQ?")) return;
   const ids = id ? [id] : null;
-  await post(`/api/dlq/${action}?queue=${dlqQueue}`, dlqQueue === "correos" ? { email_ids: ids }
-    : dlqQueue === "pagos" ? { notificacion_ids: ids && ids.map(Number) } : { order_ids: ids });
+  await post(`/api/dlq/${action}?queue=${dlqQueue}`, dlqQueue === "correos" ? { email_ids: ids } : { order_ids: ids });
   loadDlq();
-}
-
-/* ================= Pagos Yape en vivo ================= */
-const YP_ST = { recibida: "recibida", asociada: "asociada", sin_coincidencia: "sin coincidencia", ignorada: "ignorada", rechazada: "rechazada" };
-const YP_STAGES = ["Notificación", "Outbox", "Cola pagos", "Worker", "Confirmado"];
-const YP_AT = { outbox: 1, cola_pagos: 2, worker: 3, confirmado: 5, fin: 3 };
-const ypState = { last: null, dbDown: false, fetchedAt: 0 };
-const ypSoles = v => "S/ " + Number(v).toFixed(2);
-const ypTime = iso => new Date(iso).toLocaleTimeString("es", { hour12: false });
-
-async function loadYape() {
-  try {
-    const r = await fetch("/api/yape/admin/panel");
-    if (r.status === 401 || r.status === 403) return;
-    if (!r.ok) { ypState.dbDown = true; renderYape(ypState.last); return; }
-    ypState.dbDown = false; ypState.fetchedAt = Date.now();
-    renderYape(await r.json());
-  } catch { ypState.dbDown = true; renderYape(ypState.last); }
-}
-
-function ypStages(etapa) {
-  const at = YP_AT[etapa] ?? 1;
-  return `<div class="yp-stages" aria-label="Etapa: ${esc(etapa)}">` + YP_STAGES.map((l, i) => {
-    const c = etapa === "fin" && i === 3 ? "stop" : i < at ? "done" : i === at ? "active" : "";
-    return `<span class="${c}"><i></i>${l}</span>`;
-  }).join("") + `</div>`;
-}
-
-function renderYape(d) {
-  const banner = [];
-  if (ypState.dbDown) banner.push(`<div class="yp-banner warn">${icon("database-zap")}<span>PostgreSQL no responde: se muestran los últimos datos conocidos. El webhook responde 503 y MacroDroid reintenta.</span></div>`);
-  if (d && !d.enabled) banner.push(`<div class="yp-banner bad">${icon("triangle-alert")}<span>Zona Yape real desactivada: ${esc(d.problem || "")}. El resto de la tienda funciona normal. Configura YAPE_WEBHOOK_SECRET (32+ caracteres) en el .env y reinicia la api.</span></div>`);
-  else if (d && !d.qr) banner.push(`<div class="yp-banner warn">${icon("info")}<span>Falta el QR de Yape (app/static/img/yape_qr.png): el cliente ve «QR no configurado», pero puede yapear al titular ${esc(d.titular)}.</span></div>`);
-  $("ypBanner").innerHTML = banner.join("");
-  if (!d) return;
-  ypState.last = d;
-  const q = d.queue;
-  setNum("ypWait", d.pendientes.length);
-  $("ypQ").textContent = q ? fmt(q.queued) : "—";
-  $("ypRetry").textContent = q ? fmt(q.retrying) : "—";
-  $("ypDlq").textContent = q ? fmt(q.dlq) : "—";
-  $("ypDlqC").className = "mstat" + (q && q.dlq > 0 ? " warn" : "");
-  $("ypQC").className = "mstat" + (q && q.queued > 0 && !q.consumers ? " warn" : "");
-  $("ypCons").textContent = !q ? "Sin broker" : q.consumers ? "Activo" : "Caído";
-  $("ypConsD").textContent = !q ? "RabbitMQ no responde: los pagos esperan en el outbox" : q.consumers ? "consumiendo «pagos»" : "los pagos esperan en la cola (en disco)";
-  $("ypConsC").className = "mstat" + (!q || !q.consumers ? " bad" : " good");
-
-  $("ypWaitList").innerHTML = !d.pendientes.length ? `<div class="empty">Ningún pedido esperando pago.</div>`
-    : `<table class="yp-w"><tr><th>Cliente</th><th>Monto</th><th>Queda</th><th></th></tr>` + d.pendientes.map(p =>
-      `<tr><td>${esc(p.cliente)}<br><span class="to" style="color:var(--n-400);font-size:12px">${esc(p.producto)}</span></td>
-        <td class="amt num">${ypSoles(p.monto)}</td><td class="cd" data-dl="${ypState.fetchedAt + p.segundos_restantes * 1000}">--:--</td>
-        <td class="act"><button class="mini" onclick="ypSimular('${esc(p.id)}')" title="Notificación simulada con este monto">Simular pago</button></td></tr>`).join("") + `</table>`;
-
-  // no redibujar mientras el administrador elige un pedido en un desplegable
-  if ($("ypNotifs").contains(document.activeElement) && document.activeElement.tagName === "SELECT") return;
-  const opts = d.asignables.map(p => `<option value="${esc(p.id)}">${ypSoles(p.monto)} · ${esc(p.cliente)} · ${p.estado === "expirado" ? "expirado" : "pendiente"} · ${esc(p.id.slice(0, 8))}</option>`).join("");
-  $("ypNotifs").innerHTML = !d.notificaciones.length ? `<div class="empty">Aún no llegan notificaciones. Yapea desde un celular o usa «Simular notificación Yape».</div>`
-    : d.notificaciones.map(n => {
-      const revisable = n.estado === "sin_coincidencia" || n.estado === "ignorada";
-      return `<div class="yp-n st-${n.estado}">
-        <div class="yp-n-h"><b>#${n.id}</b><span class="t">${ypTime(n.recibida_en)}</span><span class="yb yb-${n.estado}">${YP_ST[n.estado] || n.estado}</span>
-          ${n.simulada ? `<span class="yb yb-simulada">simulada</span>` : ""}${n.monto != null ? `<span class="amt">${ypSoles(n.monto)}</span>` : ""}
-          ${n.pagador ? `<span style="color:var(--text2)">de ${esc(n.pagador)}</span>` : ""}</div>
-        ${ypStages(n.etapa)}
-        <pre class="yp-raw">${n.titulo ? esc(n.titulo) + "\n" : ""}${esc(n.texto)}</pre>
-        ${n.detalle || n.pedido_id ? `<div class="yp-det">${esc(n.detalle || "")}${n.pedido_id ? ` · pedido ${esc(n.pedido_id.slice(0, 8))}` : ""}</div>` : ""}
-        ${revisable ? `<div class="yp-act">${opts ? `<select id="ypSel${n.id}" aria-label="Pedido al que asignar la notificación #${n.id}">${opts}</select>
-            <button class="mini warn" onclick="ypAsignar(${n.id})">Asignar a pedido</button>` : `<span class="yp-det">No hay pedidos pendientes o expirados a los que asignarla.</span>`}
-          <button class="mini bad" onclick="ypRechazar(${n.id})">Rechazar</button></div>` : ""}
-      </div>`;
-    }).join("");
-}
-
-function ypTick() {
-  document.querySelectorAll("#ypWaitList [data-dl]").forEach(el => {
-    const s = Math.max(0, Math.round((+el.dataset.dl - Date.now()) / 1000));
-    el.textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
-    el.classList.toggle("low", s <= 60);
-  });
-}
-
-async function ypSimular(pedidoId) {
-  let body = { pedido_id: pedidoId };
-  if (!pedidoId) {
-    const v = prompt("Monto de la notificación simulada (por ejemplo 1.37). Debe coincidir con un pedido esperando pago para asociarse:",
-      ypState.last?.pendientes?.[0]?.monto ?? "1.37");
-    if (v === null) return;
-    const monto = Number(String(v).replace(",", "."));
-    if (!(monto > 0)) { toast("Monto inválido"); return; }
-    body = { monto: monto.toFixed(2) };
-  }
-  await post("/api/yape/admin/simular", body);
-  loadYape();
-}
-async function ypAsignar(id) {
-  const sel = $("ypSel" + id); if (!sel) return;
-  if (!confirm(`¿Asignar la notificación #${id} al pedido ${sel.value.slice(0, 8)}? El pedido quedará pagado.`)) return;
-  await post(`/api/yape/admin/notificaciones/${id}/asignar`, { pedido_id: sel.value });
-  loadYape();
-}
-async function ypRechazar(id) {
-  if (!confirm(`¿Rechazar la notificación #${id}? Queda guardada con su texto, pero no se asocia a ningún pedido.`)) return;
-  await post(`/api/yape/admin/notificaciones/${id}/rechazar`);
-  loadYape();
 }
 
 /* ================= stock por producto (tabla products) ================= */
@@ -1592,19 +1490,18 @@ async function loadStock() {
 }
 function renderStock(list) {
   const units = list.reduce((s, p) => s + p.stock, 0), initial = list.reduce((s, p) => s + (p.initial ?? p.stock), 0);
-  const out = list.filter(p => p.stock - p.reserved <= 0).length;
+  const out = list.filter(p => p.stock <= 0).length;
   $("stUnits").textContent = fmt(units);
   $("stUnitsD").textContent = `de ${fmt(initial)} iniciales`;
   $("stSold").textContent = fmt(Math.max(0, initial - units));
   $("stOut").textContent = fmt(out);
   $("stOutC").className = "mstat" + (out ? " warn" : "");
-  const rows = [...list].sort((a, b) => (a.stock - a.reserved) - (b.stock - b.reserved) || a.name.localeCompare(b.name));
+  const rows = [...list].sort((a, b) => a.stock - b.stock || a.name.localeCompare(b.name));
   $("stockList").innerHTML = !rows.length ? `<div class="empty">La tabla products está vacía.</div>`
     : `<table><tr><th>Producto</th><th>Categoría</th><th class="n">Stock</th><th class="n">Inicial</th></tr>` + rows.map(p => {
-      const free = p.stock - p.reserved;
-      const cls = free <= 0 ? "out" : free <= 3 ? "low" : "";
+      const cls = p.stock <= 0 ? "out" : p.stock <= 3 ? "low" : "";
       return `<tr class="${cls}"><td>${esc(p.name)}<span class="sku">${esc(p.sku)}</span></td><td>${esc(p.category)}</td>
-        <td class="n cur">${fmt(p.stock)}${p.reserved ? ` <span title="reservadas por pedidos Yape pendientes de pago">(−${p.reserved})</span>` : ""}</td>
+        <td class="n cur">${fmt(p.stock)}</td>
         <td class="n">${p.initial == null ? "—" : fmt(p.initial)}</td></tr>`;
     }).join("") + `</table>`;
 }
@@ -1668,6 +1565,16 @@ function syncPairs(list, rows, empty, quiet) {
 function updateDbPop(m, quiet = false) {
   $("dbPopDown").hidden = m.db_up;
   $("dbPop").classList.toggle("stale", !m.db_up);   // sin BD: últimos datos conocidos, atenuados
+  // perdidos: publicados hace rato y la cola vacía. RabbitMQ los olvidó, pero aquí en PostgreSQL siguen guardados
+  const lostIds = m.lost > 0 ? (m.lost_ids || []) : [], lost = new Set(lostIds);
+  $("dbpLost").hidden = !lostIds.length;
+  if (lostIds.length) {
+    const n = m.lost, extra = lostIds.length - 8;
+    $("dbpLostT").textContent = `${fmt(n)} ${n === 1 ? "pedido perdido" : "pedidos perdidos"} en RabbitMQ · siguen guardados aquí en PostgreSQL`;
+    const ids = lostIds.slice(0, 8).map(id => `<span class="mono">${esc(id.slice(0, 8))}</span>`).join("")
+      + (extra > 0 ? `<span class="lb-more">+${fmt(extra)} más</span>` : "");
+    if ($("dbpLostIds")._h !== ids) $("dbpLostIds").innerHTML = $("dbpLostIds")._h = ids;   // sin redibujar si no cambió
+  }
   // lo que muestra la tabla va al ritmo de las bolitas (ver gates); los datos reales no se modifican
   const orders = (m.recent || []).map(o => ({ ...o, status: shownStatus(o) })).filter(o => o.status);
   const outbox = (m.outbox_recent || []).filter(e => { const g = gate(e.aggregate_id); return !g || g.saved || g.pub || g.proc; })
@@ -1688,7 +1595,7 @@ function updateDbPop(m, quiet = false) {
       e ? `<span class="ch-k">pedido</span> <span class="mono">${esc(e.aggregate_id.slice(0, 8))}</span>` : "",
       e ? esc(e.event_type) : "",
       e ? `<span class="ch-k">creado</span> ${hms(e.created_at)}` : "",
-      e ? (e.published_at ? `<span class="dbp-ok">${icon("check")} publicado ${hms(e.published_at)}</span>` : `<span class="dbp-wait">${icon("hourglass")} pendiente</span>`) : "",
+      e ? (e.published_at ? (lost.has(e.aggregate_id) ? `<span class="dbp-lost">${icon("circle-x")} perdido en RabbitMQ</span>` : `<span class="dbp-ok">${icon("check")} publicado ${hms(e.published_at)}</span>`) : `<span class="dbp-wait">${icon("hourglass")} pendiente</span>`) : "",
     ] }));
   syncPairs($("dbpPairs"), rows, "Aún no hay pedidos guardados", quiet);
   placeDbPop();
@@ -1891,22 +1798,24 @@ function buildBelts() {
   });
 }
 buildBelts();
-/* las cajas pasan "por detrás" de los cuadros: una máscara las deja casi transparentes (pero visibles) donde
-   coinciden con un cuadro; la parte de la caja que aún está fuera se ve normal */
+/* las cajas pasan "por detrás" de los cuadros: donde coinciden con uno se ven tenues (BEHIND). Antes lo hacía una
+   máscara SVG sobre toda la capa de cajas, y con cualquier caja en movimiento el navegador recalculaba esa máscara del
+   tamaño del diagrama en cada cuadro. Ahora cada caja calcula qué parte de ella está sobre un cuadro y baja su propia
+   opacidad en proporción: por cuadro solo cambian su transform y su opacity */
 const BEHIND = 0.22;   // cuánto se ve la caja detrás de un cuadro (0 = nada, 1 = igual que afuera)
-function maskBehindNodes() {
-  const m = document.createElementNS(NS, "mask"), vb = $("pipe").viewBox.baseVal;
-  m.id = "behindNodes"; m.setAttribute("maskUnits", "userSpaceOnUse");
-  ["x", "y", "width", "height"].forEach(k => m.setAttribute(k, vb[k]));
-  const area = (r, fill) => `<rect x="${r.getAttribute("x")}" y="${r.getAttribute("y")}" width="${r.getAttribute("width")}"`
-    + ` height="${r.getAttribute("height")}" rx="${r.getAttribute("rx") || 0}" fill="${fill}"/>`;
-  const gray = Math.round(255 * BEHIND), boxes = [...document.querySelectorAll("#pipe .node rect.box")];
-  m.innerHTML = `<rect x="${vb.x}" y="${vb.y}" width="${vb.width}" height="${vb.height}" fill="#fff"/>`
-    + boxes.map(r => area(r, `rgb(${gray},${gray},${gray})`)).join("");
-  $("pipe").querySelector("defs").appendChild(m);
-  $("particles").setAttribute("mask", "url(#behindNodes)");
+const NODE_RECTS = [...document.querySelectorAll("#pipe .node rect.box")].map(r => {
+  const [x, y, w, h] = ["x", "y", "width", "height"].map(k => +r.getAttribute(k));   // atributos: no dependen del render
+  return [x, y, x + w, y + h];
+});
+/* factor de opacidad de una caja centrada en (x, y) con medio ancho hw y medio alto hh */
+function behindFactor(x, y, hw, hh) {
+  let cover = 0;
+  for (const [x0, y0, x1, y1] of NODE_RECTS) {
+    const w = Math.min(x + hw, x1) - Math.max(x - hw, x0), h = Math.min(y + hh, y1) - Math.max(y - hh, y0);
+    if (w > 0 && h > 0) cover += w * h;
+  }
+  return 1 - (1 - BEHIND) * Math.min(1, cover / (4 * hw * hh));
 }
-maskBehindNodes();
 /* los rieles (invisibles) entran hasta el centro de los cuadros que unen: así la caja cruza por detrás de cada
    cuadro, tenue por la máscara, en vez de desaparecer en un borde y reaparecer en el otro. Las cintas no cambian */
 const RAILS = {
@@ -1926,7 +1835,15 @@ function extendRails() {
     const a = reach(s0, s0.x - s1.x, s0.y - s1.y, center(from)), b = reach(e1, e1.x - e0.x, e1.y - e0.y, center(to));
     p.setAttribute("d", `M${a} L${p.getAttribute("d").replace(/^M\s*/, "")} L${b}`);
   }
-  Object.values(flows).forEach(f => { f.len = f.path.getTotalLength(); });
+  Object.values(flows).forEach(f => { f.len = f.path.getTotalLength(); f.lut = railTable(f); });
+}
+/* getPointAtLength es lento (~0,16 ms por llamada) y se llamaba 3 veces por caja en cada cuadro: con 40 cajas eran
+   ~38 ms de JavaScript por cuadro (el presupuesto a 60 fps es 16,7 ms). Los rieles no cambian, así que se muestrean una
+   sola vez, un punto por unidad de largo, y en cada cuadro solo se interpola */
+function railTable(f) {
+  const n = Math.max(1, Math.ceil(f.len)), pts = new Float32Array((n + 1) * 2);
+  for (let i = 0; i <= n; i++) { const p = f.path.getPointAtLength(i * f.len / n); pts[2 * i] = p.x; pts[2 * i + 1] = p.y; }
+  return { n, pts };
 }
 extendRails();
 /* sabotajes: el cuadro caído queda "acordonado" con cinta de precaución amarilla y negra atravesada en cada cinta
@@ -1971,17 +1888,23 @@ function boxMarkup(k) {
 }
 function makeBox(color, k = 1) {
   const g = document.createElementNS(NS, "g");
-  g.setAttribute("class", k > 1 ? "pkg big" : "pkg"); g.setAttribute("transform", "translate(-50,-50)");
+  g.setAttribute("class", k > 1 ? "pkg big" : "pkg"); g.setAttribute("transform", "translate(-50,-50)"); g._k = k;
   g.innerHTML = boxMarkup(k);
   boxColor(g, color); $("particles").appendChild(g);
   return g;
 }
 const boxColor = (g, color) => g.style.setProperty("--tape", color);
-/* ubica la caja en la fracción s del tramo y la gira con la cinta (se nota en las curvas y en los tramos verticales) */
-function placeBox(g, f, s) {
-  const l = s * f.len, a = f.path.getPointAtLength(Math.max(0, l - .5)), b = f.path.getPointAtLength(Math.min(f.len, l + .5));
-  const pt = f.path.getPointAtLength(l), deg = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
-  g.setAttribute("transform", `translate(${pt.x.toFixed(1)},${pt.y.toFixed(1)}) rotate(${deg.toFixed(1)})`);
+/* ubica la caja en la fracción s del tramo y la gira con la cinta (se nota en las curvas y en los tramos verticales).
+   fade: opacidad propia de la caja (las que se desvanecen al rebotar). Solo escribe los atributos que cambiaron */
+function placeBox(g, f, s, fade = 1) {
+  const { n, pts } = f.lut, x = Math.max(0, Math.min(n, s * n)), i = Math.min(n - 1, Math.floor(x)), t = x - i, j = 2 * i;
+  const dx = pts[j + 2] - pts[j], dy = pts[j + 3] - pts[j + 1];
+  const px = pts[j] + dx * t, py = pts[j + 1] + dy * t, deg = Math.atan2(dy, dx) * 180 / Math.PI;
+  const tr = `translate(${px.toFixed(1)},${py.toFixed(1)}) rotate(${deg.toFixed(1)})`;
+  if (g._tr !== tr) { g._tr = tr; g.setAttribute("transform", tr); }
+  const k = g._k || 1, vert = Math.abs(dy) > Math.abs(dx);   // en los tramos verticales la caja va girada
+  const op = (fade * behindFactor(px, py, (vert ? 7 : 8.5) * k, (vert ? 8.5 : 7) * k)).toFixed(2);
+  if (g._op !== op) { g._op = op; g.setAttribute("opacity", op); }
 }
 function spawn(key, color, die = 1, done) {
   if (parts.length > 110) { done?.(); return; }
@@ -2138,8 +2061,7 @@ function stepTracers(dt) {
     const a = tr.anim;
     if (a) {
       a.s = Math.min(a.die, a.s + dt * animSpeed / TRACER_DUR);
-      placeBox(tr.c, flows[a.key], a.rev ? 1 - a.s : a.s);
-      tr.c.setAttribute("opacity", a.die < 1 ? 1 - a.s / a.die * .6 : 1);
+      placeBox(tr.c, flows[a.key], a.rev ? 1 - a.s : a.s, a.die < 1 ? 1 - a.s / a.die * .6 : 1);
       if (a.s >= a.die) {
         tr.anim = null;
         if (a.key === "db" && tr.dbCounted) { tr.dbCounted = false; vis.db -= 1; }
@@ -2190,8 +2112,7 @@ function stepParticles(dt) {
     const p = parts[i], f = flows[p.key];
     p.s += dt / DUR;   // velocidad normal: la cámara lenta es solo para «1 pedido»
     if (p.s >= p.die) { p.c.remove(); parts.splice(i, 1); p.done?.(); continue; }
-    placeBox(p.c, f, p.s);
-    p.c.setAttribute("opacity", p.die < 1 ? 1 - p.s / p.die * .6 : 1);
+    placeBox(p.c, f, p.s, p.die < 1 ? 1 - p.s / p.die * .6 : 1);
   }
 }
 
@@ -2369,7 +2290,6 @@ async function poll() {
 updateRateLabel();
 poll(); setInterval(poll, POLL_MS);
 loadDlq(); setInterval(loadDlq, 3000);
-loadYape(); setInterval(loadYape, 1500); setInterval(ypTick, 1000);
 loadStock(); setInterval(loadStock, 2000);
 fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(u => u && ($("whoName").textContent = u.email)).catch(() => {});
 // En el servidor (https, detrás de Caddy) el panel de RabbitMQ está en /rabbitmq/; en la laptop (http) sigue en el 15672

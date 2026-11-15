@@ -20,6 +20,11 @@ DISPLAY = "'Fredoka', ui-rounded, 'Trebuchet MS', Arial, sans-serif"
 BODY = "'Nunito Sans', 'Segoe UI', Arial, sans-serif"
 
 
+# estado del pago con tarjeta (simulado) tal como se muestra en el comprobante
+PAYMENT_LABELS = {"APPROVED": "Pago aprobado", "DECLINED": "Pago rechazado", "REFUNDED": "Pago reembolsado",
+                  "PENDING": "Pago pendiente"}
+
+
 def lima_time(iso: str) -> str:
     dt = datetime.fromisoformat(iso)
     if dt.tzinfo is None:
@@ -128,6 +133,12 @@ def render(event: EmailEvent, store: str, base_url: str,
                      f'<td align="right" style="padding:12px 0;border-bottom:1px solid {LINE};white-space:nowrap"><b>{soles(subtotal)}</b></td></tr>')
             lines.append(f"- {pname}: {qty} x {soles(unit)} = {soles(subtotal)}")
         total = soles(data["total"])
+        # pago con tarjeta (simulado): solo marca y últimos 4 dígitos. Los correos anteriores a los pagos no lo traen
+        card = data.get("card")
+        pay = PAYMENT_LABELS.get(data.get("payment_status") or "", "")
+        pay_html = (f'<p style="margin:16px 0 0;font-size:14px"><span style="color:{MUTED}">Pagado con</span> '
+                    f'<b>{escape(card)}</b> · {escape(pay)}</p>') if card else ""
+        pay_text = f"Pagado con: {card} · {pay}\n" if card else ""
         subject = f"Comprobante de tu compra {code} en {store}"
         body = (_p(f"{hi}. ¡Gracias por tu compra! Tu pedido fue <b>confirmado</b>.")
                 + f'<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:8px 0 16px;background:{CLOUD};border-radius:12px"><tr>'
@@ -137,10 +148,11 @@ def render(event: EmailEvent, store: str, base_url: str,
                 + f'<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;font-size:15px">{rows}'
                   f'<tr><td style="padding:16px 0 0;font-family:{DISPLAY};font-size:18px">Total</td>'
                   f'<td align="right" style="padding:16px 0 0;font-family:{DISPLAY};font-size:22px;color:{BLUE}"><b>{total}</b></td></tr></table>'
+                + pay_html
                 + f'<p style="margin:24px 0 0;padding:12px 16px;background:#FFF9E6;border-radius:10px;font-size:13px;color:{NIGHT}">'
                   f'Este correo es un comprobante de compra, no una boleta electrónica.</p>')
         text = (f"{hi}. ¡Gracias por tu compra! Tu pedido fue confirmado.\n\nPedido: {code}\nFecha y hora: {when}\n\n"
-                + "\n".join(lines) + f"\n\nTotal: {total}\n\n"
+                + "\n".join(lines) + f"\n\nTotal: {total}\n" + pay_text + "\n"
                 "Este correo es un comprobante de compra, no una boleta electrónica.\n")
         return subject, _layout(store, f"Pedido {code} confirmado · Total {total}", "Compra confirmada", body), text
 

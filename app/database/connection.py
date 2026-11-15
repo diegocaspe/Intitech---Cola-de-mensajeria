@@ -1,5 +1,5 @@
 """Conexión a PostgreSQL: pool de conexiones y creación de las tablas (orders, outbox, users, email_tokens,
-sent_emails, yape_pedidos, yape_notificaciones y products)."""
+sent_emails y products)."""
 import logging
 import time
 
@@ -88,42 +88,9 @@ CREATE TABLE IF NOT EXISTS sent_emails (
 -- los eventos de correo son pocos: este índice permite contarlos y descontarlos rápido de la numeración del panel
 CREATE INDEX IF NOT EXISTS idx_outbox_emails ON outbox (id) WHERE event_type <> 'OrderCreated';
 
--- Zona Yape real: pedidos esperando un yapeo. Al asociarse el pago nace su pedido normal en orders (mismo id)
-CREATE TABLE IF NOT EXISTS yape_pedidos (
-    id               TEXT PRIMARY KEY,
-    customer_email   TEXT NOT NULL,
-    customer_name    TEXT NOT NULL,
-    sku              TEXT NOT NULL,
-    producto         TEXT NOT NULL,
-    monto            NUMERIC(8,2) NOT NULL,
-    estado           TEXT NOT NULL CHECK (estado IN ('pendiente_pago_yape','pagado','expirado')),
-    creado_en        TIMESTAMPTZ NOT NULL,
-    expira_en        TIMESTAMPTZ NOT NULL,
-    pagado_en        TIMESTAMPTZ,
-    notificacion_id  BIGINT
-);
--- monto único entre los pedidos pendientes: aunque dos checkouts compitan, la BD nunca acepta dos con el mismo monto
-CREATE UNIQUE INDEX IF NOT EXISTS uq_yape_monto_pendiente ON yape_pedidos (monto) WHERE estado = 'pendiente_pago_yape';
-CREATE INDEX IF NOT EXISTS idx_yape_pedidos_estado ON yape_pedidos (estado, expira_en);
-CREATE INDEX IF NOT EXISTS idx_yape_pedidos_monto  ON yape_pedidos (monto, creado_en);
-
--- Notificaciones que reenvía MacroDroid: el texto crudo se guarda SIEMPRE (junto a su evento en el outbox)
-CREATE TABLE IF NOT EXISTS yape_notificaciones (
-    id            BIGSERIAL PRIMARY KEY,
-    hash          TEXT NOT NULL UNIQUE,     -- idempotencia: titulo + texto + minuto de llegada
-    titulo        TEXT NOT NULL DEFAULT '',
-    texto         TEXT NOT NULL,
-    recibida_en   TIMESTAMPTZ NOT NULL,
-    estado        TEXT NOT NULL DEFAULT 'recibida'
-                  CHECK (estado IN ('recibida','asociada','sin_coincidencia','ignorada','rechazada')),
-    simulada      BOOLEAN NOT NULL DEFAULT false,
-    monto_leido   NUMERIC(10,2),
-    pagador       TEXT,
-    pedido_id     TEXT,
-    detalle       TEXT,
-    procesada_en  TIMESTAMPTZ
-);
-CREATE INDEX IF NOT EXISTS idx_yape_notif_estado ON yape_notificaciones (estado, id);
+-- La Zona Yape real se eliminó: sus tablas se borran si quedaron de una versión anterior
+DROP TABLE IF EXISTS yape_notificaciones;
+DROP TABLE IF EXISTS yape_pedidos;
 
 -- Catálogo con el stock real. catalogo.json solo es la semilla (ver seed.py). CHECK: la última red de seguridad, la BD
 -- nunca acepta stock negativo aunque un UPDATE se equivoque
@@ -139,13 +106,32 @@ CREATE TABLE IF NOT EXISTS products (
     image           TEXT NOT NULL,
     description     TEXT NOT NULL DEFAULT '',
     related         JSONB NOT NULL DEFAULT '[]',
-    pago_yape_real  BOOLEAN NOT NULL DEFAULT false,
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_products_category ON products (category);
 
--- el stock de un pedido se descuenta UNA sola vez: lo hace el worker al confirmarlo o, en la Zona Yape, el pago
+-- migración: los productos de la antigua Zona Yape (pago_yape_real = true) salen de la tabla junto con la columna
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+               WHERE table_name = 'products' AND column_name = 'pago_yape_real') THEN
+        DELETE FROM products WHERE pago_yape_real;
+        ALTER TABLE products DROP COLUMN pago_yape_real;
+    END IF;
+END $$;
+
+-- el stock de un pedido se descuenta UNA sola vez: lo hace el worker al confirmarlo
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS stock_descontado BOOLEAN NOT NULL DEFAULT false;
+
+-- Pago con tarjeta SIMULADO (app/services/payments.py). Nunca se guarda el número completo ni el CVV: solo el token de
+-- prueba, la marca y los últimos 4 dígitos. payment_status NULL = pedido anterior a los pagos con tarjeta
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_token    TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS card_brand       TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS card_last4       TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status   TEXT
+    CHECK (payment_status IN ('PENDING','APPROVED','DECLINED','REFUNDED'));
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_reason   TEXT;
+-- errores temporales del proveedor en este pedido: el cobro con la tarjeta «error temporal» falla solo el primero
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_failures INTEGER NOT NULL DEFAULT 0;
 """
 
 

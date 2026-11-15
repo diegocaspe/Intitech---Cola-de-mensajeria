@@ -125,11 +125,6 @@ EMAIL_RETRY_QUEUES = tuple(f"correos.retry.{d}s" for d in RETRY_DELAYS)   # mism
 # Pedidos PUBLISHED sin procesar tras este tiempo (con la cola vacía) se consideran mensajes perdidos
 LOST_AFTER_S = 15
 
-# Experimento de persistencia (colas propias, no tocan los pedidos reales)
-LAB_MESSAGES = int(os.getenv("LAB_MESSAGES", "500"))
-LAB_DURABLE_QUEUE = "lab.persistente"
-LAB_VOLATILE_QUEUE = "lab.volatil"
-
 # Worker
 WORKERS = int(os.getenv("WORKERS", "1"))
 WORKER_DELAY = float(os.getenv("WORKER_DELAY", "0.15"))   # segundos que tarda "procesar" un pedido
@@ -157,66 +152,10 @@ def cookie_secure(env=os.environ) -> bool:
 
 COOKIE_SECURE = cookie_secure()
 
-# Fuerza bruta en el login: como mucho LOGIN_MAX_FAILS intentos fallidos por IP en LOGIN_WINDOW_S segundos
-LOGIN_MAX_FAILS = int(os.getenv("LOGIN_MAX_FAILS", "5"))
-LOGIN_WINDOW_S = int(os.getenv("LOGIN_WINDOW_S", "60"))
 
-
-# --- Zona Yape real: productos baratos que se pagan con Yape de verdad -----------------------------------------------
-# La app MacroDroid del celular del dueño reenvía cada notificación de Yape al webhook POST /api/pagos/yape/notificacion
-# con la cabecera X-Yape-Secret. Sin un secreto válido (32+ caracteres, sin palabras de ejemplo) la zona se desactiva
-# sola y el resto de la tienda sigue igual.
-MIN_YAPE_SECRET = 32
-YAPE_WEBHOOK_PER_MIN = 60          # peticiones por minuto al webhook (todas, válidas o no)
-YAPE_EXPIRE_EVERY_S = 5            # cada cuánto el relay vence los pedidos Yape sin pagar
-
-
-def _money_env(env, name: str, default: str):
-    from decimal import Decimal, InvalidOperation
-    raw = env.get(name, "").strip() or default
-    try:
-        value = Decimal(raw.replace(",", "."))
-    except InvalidOperation:
-        return None
-    return value.quantize(Decimal("0.01")) if value.is_finite() else None
-
-
-def yape_settings(env=os.environ) -> dict:
-    """Configuración de la Zona Yape real. problema: por qué está desactivada (None si está activa). Nunca incluye el
-    valor del secreto, solo su nombre."""
-    secret = env.get("YAPE_WEBHOOK_SECRET", "").strip()
-    base = _money_env(env, "YAPE_PRECIO_BASE", "1.00")
-    lo = _money_env(env, "YAPE_MONTO_MIN", "1.01")
-    hi = _money_env(env, "YAPE_MONTO_MAX", "1.99")
-    try:
-        minutes = int(env.get("YAPE_MINUTOS_EXPIRA", "").strip() or "10")
-    except ValueError:
-        minutes = 0
-    problem = None
-    if not secret:
-        problem = "Falta YAPE_WEBHOOK_SECRET en el .env"
-    elif len(secret) < MIN_YAPE_SECRET:
-        problem = f"YAPE_WEBHOOK_SECRET es muy corto: mínimo {MIN_YAPE_SECRET} caracteres"
-    elif any(p in secret.lower() for p in _PLACEHOLDERS):
-        problem = "YAPE_WEBHOOK_SECRET parece un valor de ejemplo"
-    elif base is None or base <= 0:
-        problem = "YAPE_PRECIO_BASE no es un monto válido"
-    elif lo is None or hi is None or lo <= 0 or hi < lo:
-        problem = "YAPE_MONTO_MIN / YAPE_MONTO_MAX no forman un rango válido"
-    elif (hi - lo) * 100 > 5000:
-        problem = "El rango YAPE_MONTO_MIN..YAPE_MONTO_MAX tiene más de 5000 montos: redúcelo"
-    elif minutes < 1 or minutes > 120:
-        problem = "YAPE_MINUTOS_EXPIRA debe estar entre 1 y 120"
-    return {"enabled": problem is None, "problem": problem, "secret": secret,
-            "titular": env.get("YAPE_TITULAR", "").strip() or "Titular no configurado",
-            "precio_base": base, "monto_min": lo, "monto_max": hi, "minutos": minutes}
-
-
-YAPE = yape_settings()
-
-# Cola de pagos: el mismo esquema que pedidos y correos (durable, reintentos con TTL y DLQ), en su propio exchange
-PAGOS_EXCHANGE = "tienda.pagos"
-PAGOS_QUEUE = "pagos"
-PAGOS_DLQ = "pagos.dlq"
-PAGOS_ROUTING_KEY = "pago"
-PAGOS_RETRY_QUEUES = tuple(f"pagos.retry.{d}s" for d in RETRY_DELAYS)
+# --- Pago con tarjeta SIMULADO (app/services/payments.py) -----------------------------------------------------------
+# No hay pasarela real: el worker "cobra" con un proveedor falso. Latencia de la llamada al proveedor, en segundos:
+# las compras reales de la tienda esperan 300-800 ms; los pedidos de prueba (simulador, escenarios, POST /orders) casi
+# nada, para que una ráfaga de 500 pedidos no tarde minutos en la exposición
+PAYMENT_LATENCY = (float(os.getenv("PAYMENT_LATENCY_MIN", "0.3")), float(os.getenv("PAYMENT_LATENCY_MAX", "0.8")))
+PAYMENT_LATENCY_TEST = (0.0, 0.05)

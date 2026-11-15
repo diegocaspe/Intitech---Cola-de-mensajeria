@@ -59,13 +59,6 @@ services:
       SECRET_KEY: ${SECRET_KEY:?Falta SECRET_KEY en .env (ver .env.example)}
       ADMIN_EMAIL: ${ADMIN_EMAIL:?Falta ADMIN_EMAIL en .env (ver .env.example)}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD en .env (ver .env.example)}
-      # Zona Yape real (opcional): sin un YAPE_WEBHOOK_SECRET válido la zona se desactiva sola
-      YAPE_WEBHOOK_SECRET: ${YAPE_WEBHOOK_SECRET:-}
-      YAPE_TITULAR: ${YAPE_TITULAR:-}
-      YAPE_PRECIO_BASE: ${YAPE_PRECIO_BASE:-1.00}
-      YAPE_MONTO_MIN: ${YAPE_MONTO_MIN:-1.01}
-      YAPE_MONTO_MAX: ${YAPE_MONTO_MAX:-1.99}
-      YAPE_MINUTOS_EXPIRA: ${YAPE_MINUTOS_EXPIRA:-10}
     volumes:
       - app_data:/data
       - /var/run/docker.sock:/var/run/docker.sock   # permite los botones de sabotaje reales

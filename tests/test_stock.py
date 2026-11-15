@@ -1,4 +1,4 @@
-"""Stock real en la tabla products: siembra, descuento atómico en el worker, todo-o-nada, idempotencia, Zona Yape y
+"""Stock real en la tabla products: siembra, descuento atómico en el worker, todo-o-nada, idempotencia y
 «Restablecer stock». SQLite + RabbitMQ falso: no necesitan PostgreSQL."""
 import threading
 from types import SimpleNamespace
@@ -7,12 +7,10 @@ import pytest
 
 from app.database import seed
 from app.models.order import OrderStatus
-from app.models.yape import EstadoPedidoYape
 from app.repositories.sqlite_repository import SqliteOrderRepository, SqliteProductRepository
 from app.services.order_service import POISON_SKU, OrderRejected
 from tests.test_consumer import deliver
 from tests.test_order_service import make, make_product
-from tests.test_yape import make as make_yape, pago
 
 
 def stock(svc, sku):
@@ -156,40 +154,6 @@ def test_muchos_workers_a_la_vez_nunca_venden_de_mas():
     assert stock(svc, "A1") == 0
 
 
-# --- Zona Yape ---------------------------------------------------------------------------------------------------------
-def test_yape_descuenta_al_pagar_y_el_worker_no_vuelve_a_descontar():
-    svc, orders, _, _ = make_yape(stock=3)
-    p = svc.checkout("a@mail.com", "Ana", "YAPE-CASE")
-    assert svc.products.get("YAPE-CASE").stock == 3                  # pendiente: reserva, aún no descuenta
-    assert svc.stock_disponible()["YAPE-CASE"] == 2
-    notif_id, _ = svc.recibir(*pago(p.monto))
-    assert svc.procesar(notif_id) == "asociada"
-    assert svc.products.get("YAPE-CASE").stock == 2                  # el pago se llevó su unidad
-    assert svc.stock_disponible()["YAPE-CASE"] == 2                  # y ya no cuenta como reservado
-    orders.process_order(p.id)                                       # el worker confirma sin descontar otra vez
-    assert orders.get_order(p.id).status == OrderStatus.PROCESSED
-    assert svc.products.get("YAPE-CASE").stock == 2
-
-
-def test_yape_pago_tardio_sin_stock_se_asocia_pero_no_vende_de_mas():
-    svc, orders, _, clock = make_yape(stock=1)
-    tarde = svc.checkout("a@mail.com", "A", "YAPE-CASE")
-    clock.advance(minutes=9)
-    notif_id, _ = svc.recibir(*pago(tarde.monto))                    # yapeó a tiempo...
-    clock.advance(minutes=2)
-    svc.expirar_vencidos()
-    otro = svc.checkout("b@mail.com", "B", "YAPE-CASE")             # ...pero el worker tardó y otro tomó la unidad
-    b, _ = svc.recibir(*pago(otro.monto))
-    assert svc.procesar(b) == "asociada"
-    assert svc.products.get("YAPE-CASE").stock == 0
-    assert svc.procesar(notif_id) == "asociada"                      # el pago nunca se pierde
-    assert svc.repo.get_pedido(tarde.id).estado == EstadoPedidoYape.PAGADO
-    with pytest.raises(OrderRejected):
-        orders.process_order(tarde.id)                               # pero no se vende lo que no hay
-    assert svc.products.get("YAPE-CASE").stock == 0
-    assert svc.estado_cliente(tarde.id, "a@mail.com")["fase"] == "sin_stock"
-
-
 # --- restablecer stock -------------------------------------------------------------------------------------------------
 def test_restablecer_stock_vuelve_a_los_valores_del_catalogo():
     svc, _ = make(seed=[make_product("A1", 5), make_product("B2", 2)])
@@ -205,7 +169,7 @@ def test_restablecer_stock_vuelve_a_los_valores_del_catalogo():
 
 def test_la_tienda_muestra_el_stock_de_la_tabla():
     svc, _ = make()                                                  # catálogo real sembrado desde catalogo.json
-    sku = next(p["sku"] for p in seed.read_catalog() if not p.get("pago_yape_real"))
+    sku = seed.read_catalog()[0]["sku"]
     inicial = stock(svc, sku)
     order = svc.create_order("a@b.com", items((sku, 1)))
     svc.process_order(order.id)

@@ -26,6 +26,14 @@ class OrderStatus(str, Enum):
         return self in (OrderStatus.PROCESSED, OrderStatus.REJECTED)
 
 
+class PaymentStatus(str, Enum):
+    """Estado del cobro con tarjeta (simulado, ver app/services/payments.py). Lo decide el worker, no la API."""
+    PENDING = "PENDING"        # aún no se cobra (el pedido espera en la cola)
+    APPROVED = "APPROVED"      # el proveedor aprobó el cobro
+    DECLINED = "DECLINED"      # el proveedor lo rechazó (p. ej. fondos insuficientes): el pedido queda REJECTED
+    REFUNDED = "REFUNDED"      # se cobró, pero al descontar ya no alcanzó el stock: reembolso simulado
+
+
 @dataclass
 class OrderItem:
     sku: str
@@ -51,10 +59,23 @@ class Order:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     status: OrderStatus = OrderStatus.PENDING
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    # Pago con tarjeta simulado. Solo se guarda el token de prueba, la marca y los últimos 4 dígitos: nunca el número
+    # completo ni el CVV. card_last4 None = pedido automático (simulador, escenarios, POST /orders) sin tarjeta
+    payment_token: str | None = None
+    card_brand: str | None = None
+    card_last4: str | None = None
+    payment_status: PaymentStatus | None = PaymentStatus.PENDING   # None: pedido anterior a los pagos con tarjeta
+    payment_reason: str | None = None
+    payment_failures: int = 0       # cobros que fallaron por un error temporal del proveedor (se reintentan)
 
     def __post_init__(self):
         if not self.items:
             raise ValueError("El pedido debe tener al menos un producto")
+
+    @property
+    def card_label(self) -> str | None:
+        """Lo que se muestra de la tarjeta: "Visa •••• 1111"."""
+        return f"{self.card_brand} •••• {self.card_last4}" if self.card_last4 else None
 
     @property
     def total(self) -> Decimal:

@@ -271,7 +271,7 @@ a{color:var(--fg-link)}a:hover{color:var(--fg-link-hover)}
 .pay-chips{display:flex;gap:6px;flex-wrap:wrap}
 .pay-chip{height:34px;min-width:50px;padding:0 8px;border-radius:8px;background:#fff;border:1.5px solid var(--border-1);display:inline-flex;align-items:center;justify-content:center;overflow:hidden;flex:none}
 .pay-chip img{height:18px;width:auto}
-.pay-chip.yape img{height:26px}.pay-chip.plin{padding:0 4px}.pay-chip.plin img{height:28px}.pay-chip.visa img{height:13px}
+.pay-chip.visa img{height:13px}
 .foot .pay-chip{border-color:transparent}
 
 /* ---------- capas: overlay, diálogo, cajón ---------- */
@@ -363,7 +363,6 @@ a{color:var(--fg-link)}a:hover{color:var(--fg-link-hover)}
 .buyer{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--n-50);font-size:14px}
 .av{width:40px;height:40px;border-radius:50%;background:var(--inti-yellow);color:var(--inti-night);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:18px;flex:none}
 .fld-l{display:block;font-weight:700;font-size:14px;margin-bottom:8px}
-.pay-opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .pay-opt{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:14px;border-radius:16px;border:1.5px solid var(--border-1);background:#fff;cursor:pointer;transition:all var(--dur-fast) var(--ease-out)}
 .pay-opt:hover{border-color:var(--blue-300)}
 .pay-opt input{position:absolute;opacity:0;pointer-events:none}
@@ -531,7 +530,7 @@ a.cat-tile{text-decoration:none}
 .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .grid5{gap:10px}
 .trust{grid-template-columns:1fr}
-.buy-btns,.pay-opts{grid-template-columns:1fr}
+.buy-btns{grid-template-columns:1fr}
 .pcard .pbody{padding:4px 10px 12px}
 .pcard .pname{font-size:14px}
 .pcard .price .now{font-size:19px}
@@ -563,30 +562,21 @@ a.cat-tile{text-decoration:none}
 .verify-alert .i{flex:none;color:var(--inti-blue);margin-top:2px}
 .verify-alert .linkbtn{display:inline;padding:0;border:0;background:none;font:inherit;font-weight:800;color:var(--fg-link);text-decoration:underline;cursor:pointer}
 .verify-alert .linkbtn:disabled{color:var(--fg-2);text-decoration:none;cursor:default}
-/* ================== Zona Yape real ================== */
-:root{--yape:#742384;--yape-700:#5B1A68;--yape-50:#F5EAF8}
-.badge.yape-b{background:var(--yape);color:#fff}
-.pcard.is-yape{border-color:#D9B8E2}
-.yape-btn{background:var(--yape);border-color:var(--yape);color:#fff}
-.yape-btn:hover{background:var(--yape-700);border-color:var(--yape-700)}
-.cat-tile.yape-tile{border-color:#D9B8E2;background:var(--yape-50)}
-.cat-tile.yape-tile .cat-ic{color:var(--yape)}
-.yape-tag{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;padding:4px 10px;border-radius:999px;background:var(--yape-50);color:var(--yape);font-weight:800;font-size:14px}
-.yape-note{margin:0;font-size:14px;color:var(--fg-2);line-height:1.5}
-.ypay{gap:12px}
-.ypay .yape-head{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:20px}
-.ypay .yape-head img{height:34px;width:auto}
-.yape-qr{width:220px;max-width:70vw;aspect-ratio:1;object-fit:contain;border-radius:16px;border:1.5px solid #D9B8E2;background:#fff;padding:8px}
-.yape-qr.none{display:flex;align-items:center;justify-content:center;border-style:dashed;color:var(--fg-3);font-weight:700;background:var(--yape-50)}
-.yape-holder{font-size:15px;color:var(--fg-2)}
-.yape-amount{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 20px;border-radius:16px;background:var(--yape-50);color:var(--yape-700);width:100%}
-.yape-amount span{font-weight:800;letter-spacing:.04em;text-transform:uppercase;font-size:13px}
-.yape-amount b{font-family:var(--font-display);font-size:44px;line-height:1.1;color:var(--yape)}
-.yape-cd{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--fg-2)}
-.yape-cd b{font-size:18px;color:var(--fg-1)}
-.yape-cd.low b{color:var(--red-600)}
-.yape-warn{text-align:left;width:100%}
-.ypay .yape-sub{margin:-4px 0 0;padding:0 12px;line-height:1.5}
-.yape-off{display:flex;align-items:center;gap:6px;margin:0;font-size:13px;color:var(--fg-3)}
-.yape-pill{position:fixed;left:16px;bottom:16px;z-index:60;display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:999px;border:0;background:var(--yape);color:#fff;font:inherit;font-weight:600;box-shadow:var(--shadow-m);cursor:pointer}
-.yape-pill[hidden]{display:none}
+/* ================== pago con tarjeta (simulado): formulario y tarjetas de prueba ================== */
+.pay-opt.is-on{flex-direction:row;align-items:center;gap:12px;border:2px solid var(--blue-500);cursor:default}
+.card-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cf{display:flex;flex-direction:column;min-width:0}
+.cf.wide{grid-column:1/-1}
+.cf .fld-l{margin-bottom:6px}
+.cf input{width:100%;height:48px;border:1.5px solid var(--border-1);border-radius:var(--radius-s);padding:0 14px;font:inherit;font-size:16px;color:var(--fg-1);background:#fff;outline:none;transition:border-color var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out)}
+.cf input::placeholder{color:var(--n-500)}
+.cf input:hover{border-color:var(--border-2)}
+.cf input:focus{border-color:var(--border-focus);box-shadow:var(--ring-focus)}
+.test-cards{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:var(--radius-m);border:1.5px dashed var(--border-2);background:var(--bg-sunken)}
+.tc-t{font-weight:800;font-size:14px}
+.tc-t small{display:block;font-weight:600;font-size:13px;color:var(--fg-3)}
+.tc{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;width:100%;padding:10px 12px;border-radius:var(--radius-s);border:1.5px solid var(--border-1);background:#fff;font:inherit;text-align:left;color:var(--fg-1);cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out)}
+.tc:hover{border-color:var(--blue-300)}
+.tc:focus-visible{outline:none;box-shadow:var(--ring-focus)}
+.tc .num{font-weight:700;letter-spacing:.02em}
+.tc small{font-size:13px;color:var(--fg-2)}
